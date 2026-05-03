@@ -203,9 +203,8 @@ export const Sidebar: React.FC = () => {
         const filePath = `${absoluteParentPath}/${finalName}`;
         console.log('[NewFile] Tauri 环境创建文件:', filePath);
         
-        const { writeFile } = await import('@tauri-apps/plugin-fs');
-        const encoder = new TextEncoder();
-        await writeFile(filePath, encoder.encode(defaultContent));
+        const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+        await writeTextFile(filePath, defaultContent);
         
         // 刷新文件树
         const fullRoot = getFullRootPath();

@@ -43,9 +43,8 @@ async function writeToFileSystem(docPath: string, content: string): Promise<bool
   try {
     if (isTauriCached()) {
       // Tauri 环境
-      const { writeFile } = await import('@tauri-apps/plugin-fs');
-      const encoder = new TextEncoder();
-      await writeFile(fullPath, encoder.encode(content));
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      await writeTextFile(fullPath, content);
       console.log('[FileSystem] 文件已写入:', fullPath);
       return true;
     } else {
