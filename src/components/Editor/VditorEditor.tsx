@@ -354,7 +354,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             let docDir = '';
             if (path.startsWith('file://')) {
               const fullPath = path.replace('file://', '');
-              const lastSlash = fullPath.lastIndexOf('/');
+              const lastSlash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
               if (lastSlash > 0) {
                 docDir = fullPath.substring(0, lastSlash);
               }
@@ -544,6 +544,13 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
               
               if (cell) {
                 // 在表格内，使用 Vditor 默认行为（跳到下一个单元格）
+                return;
+              }
+              
+              // 检查是否在列表内（有序或无序）
+              const listItem = range.startContainer.parentElement?.closest('li, [data-type="li"]');
+              if (listItem) {
+                // 在列表内，使用 Vditor 默认行为（缩进到下一层级）
                 return;
               }
             }

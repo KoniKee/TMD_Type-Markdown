@@ -2,28 +2,40 @@
 
 一个类似 Typora 的本地 Markdown 编辑器，支持所见即所得的单栏编辑模式。
 
+Markdown的实时渲染基于[Vanessa219/vditor: ♏ 一款浏览器端的 Markdown 编辑器，支持所见即所得（富文本）、即时渲染（类似 Typora）和分屏预览模式](https://github.com/Vanessa219/vditor) 项目搭建（感谢大佬的Markdown实时渲染项目，效果非常接近Typora，再次基础上仅修改了tab代码块，改为2中文缩进）
+
 ## 特性
 
 - ✨ **所见即所得** - 输入 Markdown 语法，实时渲染展示
-- 🎯 **单栏编辑** - 不是传统的左右两栏，而是直接在编辑区渲染
-- 🖼️ **图片粘贴** - Ctrl+V 粘贴图片，自动保存到 img 目录
-- 📂 **目录树** - 左侧边栏查看文件结构，支持新建/重命名/删除
+- 🎯 **三种模式** - 所见即所得，实时渲染（类似Typora），分屏预览（古法md）
+- 🖼️ **图片粘贴** - Ctrl+V 粘贴图片，自动保存到 img 目录并以相对路径引用图片（可配置目录名）
+- 📂 **目录树** - 左侧边栏查看文件结构，支持目录和md文档的新建和重命名
 - 📑 **多标签页** - 支持同时打开多个文档
 - 💾 **自动保存** - 文档修改自动保存到本地文件
 - 🌙 **主题切换** - 亮色/暗色模式
 - ⌨️ **快捷键** - 支持 Ctrl+B/I/S 等快捷操作
 
+## 功能截图
+
+Markdown语法实时渲染
+
+![PixPin_2026_05_03_22_45_36](img/1777819544358_PixPin_2026_05_03_22_45_36.png)
+
+
+支持
+
 ## 技术栈
 
-| 技术 | 说明 |
-|------|------|
-| React 18 | 前端框架 |
-| TypeScript | 类型安全 |
-| Vditor | Markdown 编辑器引擎 |
-| TailwindCSS | 样式方案 |
-| Zustand | 状态管理 |
-| Vite | 构建工具 |
-| Lucide React | 图标库 |
+
+| 技术         | 说明                |
+| ------------ | ------------------- |
+| React 18     | 前端框架            |
+| TypeScript   | 类型安全            |
+| Vditor       | Markdown 编辑器引擎 |
+| TailwindCSS  | 样式方案            |
+| Zustand      | 状态管理            |
+| Vite         | 构建工具            |
+| Lucide React | 图标库              |
 
 ## 项目结构
 
@@ -48,14 +60,18 @@ md_editor/
 
 ## 快捷键
 
-| 快捷键 | 功能 |
-|--------|------|
-| Ctrl+N | 新建文档 |
-| Ctrl+O | 打开文件 |
-| Ctrl+S | 保存 |
-| Ctrl+B | 加粗 |
-| Ctrl+I | 斜体 |
-| Ctrl+M | 插入表格 |
+
+| 快捷键       | 功能           |
+| ------------ | -------------- |
+| Ctrl+S       | 保存           |
+| Ctrl+B       | 加粗           |
+| Ctrl+I       | 斜体           |
+| Ctrl+D       | 删除线         |
+| Ctrl+M       | 插入表格       |
+| Ctrl+=       | 表格插入行     |
+| Ctrl+-       | 表格删除当前行 |
+| Ctrl+Shift+= | 表格插入列     |
+| Ctrl+Shift+- | 表格删除当前列 |
 
 ## 支持的 Markdown 语法
 
@@ -98,21 +114,23 @@ npm run build
 
 ### 系统要求
 
-| 操作系统 | 最低版本 | 说明 |
-|----------|----------|------|
-| Windows | 10 (1803+) | Windows 7 不支持 |
-| macOS | 10.15 (Catalina) | - |
-| Linux | - | 支持 x86_64 架构 |
+
+| 操作系统 | 最低版本         | 说明             |
+| -------- | ---------------- | ---------------- |
+| Windows  | 10 (1803+)       | Windows 7 不支持 |
+| macOS    | 10.15 (Catalina) | -                |
+| Linux    | -                | 支持 x86_64 架构 |
 
 ### WebView2 运行时（仅 Windows）
 
 Tauri 应用在 Windows 上依赖 Microsoft Edge WebView2 运行时：
 
-| 系统 | 自带 WebView2 | 绿色版 | 安装包 |
-|------|--------------|--------|--------|
-| Windows 11 | ✅ 是 | ✅ 直接用 | ✅ 直接用 |
-| Windows 10 (21H2+) | ✅ 大部分有 | ✅ 可用 | ✅ 直接用 |
-| Windows 10 (旧版) | ❌ 可能没有 | ⚠️ 需安装 | ✅ 自动安装 |
+
+| 系统               | 自带 WebView2 | 绿色版      | 安装包      |
+| ------------------ | ------------- | ----------- | ----------- |
+| Windows 11         | ✅ 是         | ✅ 直接用   | ✅ 直接用   |
+| Windows 10 (21H2+) | ✅ 大部分有   | ✅ 可用     | ✅ 直接用   |
+| Windows 10 (旧版)  | ❌ 可能没有   | ⚠️ 需安装 | ✅ 自动安装 |
 
 如果使用绿色版遇到缺少运行时的问题，请下载安装：
 https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section
@@ -125,11 +143,12 @@ https://developer.microsoft.com/en-us/microsoft-edge/webview2/#download-section
 
 推送代码到 GitHub 后，Actions 会自动打包：
 
-| 平台 | 产物 |
-|------|------|
+
+| 平台    | 产物                                 |
+| ------- | ------------------------------------ |
 | Windows | `.msi` 安装包、`.exe` 安装包、绿色版 |
-| macOS | `.dmg` 安装包、`.app` |
-| Linux | `.deb` 安装包、`.AppImage` |
+| macOS   | `.dmg` 安装包、`.app`                |
+| Linux   | `.deb` 安装包、`.AppImage`           |
 
 ### 下载
 
