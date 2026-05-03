@@ -177,6 +177,7 @@
 .dark .vditor .vditor-ir pre.vditor-reset table th,
 .dark .vditor .vditor-ir pre.vditor-reset table td {
   border-color: var(--editor-border, #334155) !important;
+  background-color: var(--editor-bg, #0f172a) !important;
 }
 
 .dark .vditor .vditor-ir pre.vditor-reset table th {

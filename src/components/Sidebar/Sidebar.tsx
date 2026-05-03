@@ -122,7 +122,8 @@ export const Sidebar: React.FC = () => {
     if (node.isDir) {
       setSelectedDir(node.path);
     } else {
-      const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
+      const lastSlash = Math.max(node.path.lastIndexOf('/'), node.path.lastIndexOf('\\'));
+      const parentPath = lastSlash > 0 ? node.path.substring(0, lastSlash) : '';
       setSelectedDir(parentPath || rootPath || '');
     }
     

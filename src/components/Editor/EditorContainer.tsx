@@ -4,27 +4,6 @@ import { VditorEditor } from './VditorEditor';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { FilePlus, FileText, FolderOpen } from 'lucide-react';
 
-// 打开文件的处理函数
-const handleOpenFile = (openDocument: any) => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.md,.markdown,.txt';
-  input.multiple = true;
-  
-  input.onchange = async (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files) return;
-    
-    for (const file of files) {
-      const content = await file.text();
-      const docPath = `file://${file.name}`;
-      openDocument(docPath, content, false);
-    }
-  };
-  
-  input.click();
-};
-
 // 新建文档的处理函数
 const handleNewFile = (openDocument: any) => {
   const fileName = `新建文档-${Date.now()}.md`;
@@ -36,7 +15,7 @@ export const EditorContainer: React.FC = () => {
   // 只订阅 activeDocPath 和 openDocument，不订阅 documents
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const openDocument = useEditorStore((state) => state.openDocument);
-  const { handleOpenFolder } = useFileOperations();
+  const { handleOpenFolder, handleOpenFile } = useFileOperations();
   
   // 没有文档时显示欢迎界面
   if (!activeDocPath) {
@@ -66,7 +45,7 @@ export const EditorContainer: React.FC = () => {
               <span>新建文档</span>
             </button>
             <button
-              onClick={() => handleOpenFile(openDocument)}
+              onClick={handleOpenFile}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--sidebar-bg)] border border-[var(--editor-border)] hover:bg-[var(--sidebar-hover)] transition-colors"
             >
               <FileText size={18} />

@@ -118,7 +118,9 @@ export const useFileOperations = () => {
       const entries = await readDir(dirPath);
       
       for (const entry of entries) {
-        const nodePath = `${dirPath}/${entry.name}`;
+        const nodePath = dirPath.endsWith('\\') || dirPath.endsWith('/') 
+          ? `${dirPath}${entry.name}` 
+          : `${dirPath}\\${entry.name}`;
         
         if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
           nodes.push({
