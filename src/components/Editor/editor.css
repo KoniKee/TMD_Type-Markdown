@@ -1,0 +1,348 @@
+/* 编辑器容器样式 */
+.editor-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.editor-container.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.welcome-content {
+  text-align: center;
+  color: white;
+  padding: 2rem;
+  max-width: 800px;
+}
+
+.welcome-content h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  font-weight: 300;
+}
+
+.welcome-content p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+
+.welcome-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.feature {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.feature h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.feature p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.editor-container.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+.error-content {
+  text-align: center;
+  color: #dc3545;
+  padding: 2rem;
+}
+
+.error-content h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.error-content p {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+/* 编辑器内容样式 */
+.editor-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.editor-content:focus {
+  outline: none;
+}
+
+/* 块级节点样式 */
+.block-node {
+  position: relative;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.block-node:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.block-node.editing {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.block-node.selected {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* 内容模式样式 */
+.block-content.source-mode {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  white-space: pre-wrap;
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.block-content.rendered-mode {
+  /* 渲染模式样式由ProseMirror默认处理 */
+}
+
+/* 节点类型特定样式 */
+.block-node[data-node-type="heading"] {
+  margin: 1.5rem 0 0.5rem 0;
+  font-weight: bold;
+}
+
+.block-node[data-node-type="heading"][data-level="1"] {
+  font-size: 2rem;
+}
+
+.block-node[data-node-type="heading"][data-level="2"] {
+  font-size: 1.5rem;
+}
+
+.block-node[data-node-type="heading"][data-level="3"] {
+  font-size: 1.25rem;
+}
+
+.block-node[data-node-type="heading"][data-level="4"] {
+  font-size: 1rem;
+}
+
+.block-node[data-node-type="heading"][data-level="5"] {
+  font-size: 0.875rem;
+}
+
+.block-node[data-node-type="heading"][data-level="6"] {
+  font-size: 0.85rem;
+}
+
+.block-node[data-node-type="blockquote"] {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #007bff;
+  background-color: rgba(0, 123, 255, 0.05);
+  font-style: italic;
+}
+
+.block-node[data-node-type="code_block"] {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.block-node[data-node-type="code_block"][data-language]::before {
+  content: attr(data-language);
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.block-node[data-node-type="bullet_list"],
+.block-node[data-node-type="ordered_list"] {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.block-node[data-node-type="list_item"] {
+  margin: 0.25rem 0;
+}
+
+/* 占位符样式 */
+.placeholder {
+  color: #6c757d;
+  font-style: italic;
+  pointer-events: none;
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/* ProseMirror默认样式覆盖 */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p {
+  margin: 0.5rem 0;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  margin: 1.5rem 0 0.5rem 0;
+  font-weight: bold;
+}
+
+.ProseMirror h1 {
+  font-size: 2rem;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+}
+
+.ProseMirror h4 {
+  font-size: 1rem;
+}
+
+.ProseMirror h5 {
+  font-size: 0.875rem;
+}
+
+.ProseMirror h6 {
+  font-size: 0.85rem;
+}
+
+.ProseMirror blockquote {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #007bff;
+  background-color: rgba(0, 123, 255, 0.05);
+  font-style: italic;
+}
+
+.ProseMirror pre {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.ProseMirror code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.ProseMirror hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid #dee2e6;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.ProseMirror a:hover {
+  text-decoration: underline;
+}
+
+.ProseMirror strong {
+  font-weight: bold;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror del {
+  text-decoration: line-through;
+}
+
+/* 选中文本样式 */
+.ProseMirror ::selection {
+  background-color: rgba(0, 123, 255, 0.3);
+}
+
+/* 滚动条样式 */
+.editor-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.editor-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.editor-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

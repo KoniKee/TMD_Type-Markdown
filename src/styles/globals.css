@@ -1,0 +1,335 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   设计系统 - 现代编辑器配色方案
+   灵感来源: VS Code + Notion + Linear
+   ============================================ */
+
+:root {
+  /* 主色调 - 深蓝灰色系 */
+  --primary-50: #f0f4f8;
+  --primary-100: #d9e2ec;
+  --primary-200: #bcccdc;
+  --primary-300: #9fb3c8;
+  --primary-400: #829ab1;
+  --primary-500: #627d98;
+  --primary-600: #486581;
+  --primary-700: #334e68;
+  --primary-800: #243b53;
+  --primary-900: #102a43;
+
+  /* 强调色 - 活力蓝 */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+
+  /* 成功色 */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+
+  /* 警告色 */
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* 错误色 */
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* 编辑器颜色 - 浅色模式 */
+  --editor-bg: #ffffff;
+  --editor-surface: #f8fafc;
+  --editor-text: #1e293b;
+  --editor-text-secondary: #64748b;
+  --editor-text-muted: #94a3b8;
+  --editor-border: #e2e8f0;
+  --editor-border-focus: #3b82f6;
+  --editor-code-bg: #f1f5f9;
+  --editor-heading: #0f172a;
+  --editor-link: #3b82f6;
+  --editor-accent: #3b82f6;
+  --editor-quote-bg: rgba(59, 130, 246, 0.08);
+  --editor-selection: rgba(59, 130, 246, 0.15);
+
+  /* 侧边栏颜色 - 浅色模式 */
+  --sidebar-bg: #f8fafc;
+  --sidebar-surface: #ffffff;
+  --sidebar-text: #334155;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: #e2e8f0;
+  --sidebar-border: #e2e8f0;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #ffffff;
+  --toolbar-hover: #f1f5f9;
+  --toolbar-active: #e2e8f0;
+
+  /* 标签栏颜色 */
+  --tab-bg: #f8fafc;
+  --tab-active-bg: #ffffff;
+  --tab-inactive-bg: #f1f5f9;
+  --tab-border: #e2e8f0;
+  --tab-active-indicator: #3b82f6;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #f8fafc;
+  --statusbar-text: #64748b;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* ============================================
+   暗色模式
+   ============================================ */
+.dark {
+  /* 编辑器颜色 - 暗色模式 */
+  --editor-bg: #0f172a;
+  --editor-surface: #1e293b;
+  --editor-text: #e2e8f0;
+  --editor-text-secondary: #94a3b8;
+  --editor-text-muted: #64748b;
+  --editor-border: #334155;
+  --editor-border-focus: #60a5fa;
+  --editor-code-bg: #1e293b;
+  --editor-heading: #f8fafc;
+  --editor-link: #60a5fa;
+  --editor-accent: #60a5fa;
+  --editor-quote-bg: rgba(96, 165, 250, 0.1);
+  --editor-selection: rgba(96, 165, 250, 0.2);
+
+  /* 侧边栏颜色 - 暗色模式 */
+  --sidebar-bg: #1e293b;
+  --sidebar-surface: #334155;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #64748b;
+  --sidebar-hover: #334155;
+  --sidebar-active: #475569;
+  --sidebar-border: #334155;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #1e293b;
+  --toolbar-hover: #334155;
+  --toolbar-active: #475569;
+
+  /* 标签栏颜色 */
+  --tab-bg: #1e293b;
+  --tab-active-bg: #0f172a;
+  --tab-inactive-bg: #1e293b;
+  --tab-border: #334155;
+  --tab-active-indicator: #60a5fa;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #1e293b;
+  --statusbar-text: #94a3b8;
+
+  /* 阴影 - 暗色模式更深 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+}
+
+/* ============================================
+   基础样式
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--editor-bg);
+  color: var(--editor-text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   滚动条样式 - 更现代的设计
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--editor-text-muted);
+  border-radius: 100px;
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--editor-text-secondary);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--editor-text-muted) transparent;
+}
+
+/* ============================================
+   动画关键帧
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============================================
+   工具类
+   ============================================ */
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal);
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-normal);
+}
+
+.animate-slide-down {
+  animation: slideDown var(--transition-normal);
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-fast);
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   文件树层级线条
+   ============================================ */
+.tree-line {
+  position: relative;
+}
+
+.tree-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--sidebar-border);
+  opacity: 0.5;
+}
+
+/* ============================================
+   按钮悬停效果增强
+   ============================================ */
+.btn-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.btn-hover:hover::after {
+  opacity: 0.08;
+}
+
+.btn-hover:active::after {
+  opacity: 0.12;
+}
+
+/* ============================================
+   Focus 状态
+   ============================================ */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   响应 prefers-reduced-motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

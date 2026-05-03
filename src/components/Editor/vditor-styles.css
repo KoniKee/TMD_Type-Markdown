@@ -1,0 +1,223 @@
+/* Vditor编辑器容器 */
+.vditor-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--editor-bg);
+}
+
+.vditor-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+/* Vditor编辑器主体 */
+.vditor.vditor {
+  border: none !important;
+  height: 100% !important;
+  background-color: var(--editor-bg) !important;
+}
+
+/* 工具栏 */
+.vditor .vditor-toolbar {
+  border-bottom: 1px solid var(--editor-border, #e0e0e0) !important;
+  background-color: var(--toolbar-bg, #f5f5f5) !important;
+}
+
+/* 内容区域 */
+.vditor .vditor-content {
+  overflow-y: auto !important;
+  background-color: var(--editor-bg) !important;
+}
+
+/* 修复有序列表序号 - 需要覆盖TailwindCSS preflight的重置 */
+/* 使用更高specificity的选择器 */
+.vditor .vditor-content .vditor-reset ol,
+.vditor .vditor-content .vditor-reset ol ol,
+.vditor .vditor-content .vditor-reset ol ol ol,
+.vditor .vditor-ir pre.vditor-reset ol,
+.vditor .vditor-ir pre.vditor-reset ol ol,
+.vditor .vditor-ir pre.vditor-reset ol ol ol {
+  list-style: decimal !important;
+  list-style-type: decimal !important;
+  padding-left: 2em !important;
+  margin: 0 0 16px 0 !important;
+}
+
+.vditor .vditor-content .vditor-reset ul,
+.vditor .vditor-content .vditor-reset ul ul,
+.vditor .vditor-content .vditor-reset ul ul ul,
+.vditor .vditor-ir pre.vditor-reset ul,
+.vditor .vditor-ir pre.vditor-reset ul ul,
+.vditor .vditor-ir pre.vditor-reset ul ul ul {
+  list-style: disc !important;
+  list-style-type: disc !important;
+  padding-left: 2em !important;
+  margin: 0 0 16px 0 !important;
+}
+
+.vditor .vditor-content .vditor-reset li,
+.vditor .vditor-ir pre.vditor-reset li {
+  display: list-item !important;
+  list-style-position: outside !important;
+}
+
+.vditor .vditor-content .vditor-reset ul ul,
+.vditor .vditor-ir pre.vditor-reset ul ul {
+  list-style-type: circle !important;
+}
+
+.vditor .vditor-content .vditor-reset ul ul ul,
+.vditor .vditor-ir pre.vditor-reset ul ul ul {
+  list-style-type: square !important;
+}
+
+/* 引用块样式 - 浅色模式 */
+.vditor .vditor-ir pre.vditor-reset blockquote,
+.vditor .vditor-sv pre.vditor-reset blockquote,
+.vditor .vditor-content .vditor-reset blockquote {
+  border-left: 4px solid var(--accent-500, #3b82f6) !important;
+  background-color: var(--editor-quote-bg, rgba(59, 130, 246, 0.08)) !important;
+  color: var(--editor-text-secondary, #64748b) !important;
+  padding: 8px 16px !important;
+  margin: 16px 0 !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+/* 暗色主题 */
+.dark .vditor .vditor-toolbar {
+  background-color: var(--toolbar-bg, #1e293b) !important;
+  border-bottom-color: var(--editor-border, #334155) !important;
+}
+
+.dark .vditor .vditor-content {
+  background-color: var(--editor-bg, #0f172a) !important;
+}
+
+/* 暗色主题 - 强制统一背景色 */
+.dark .vditor,
+.dark .vditor .vditor-ir,
+.dark .vditor .vditor-sv,
+.dark .vditor .vditor-content,
+.dark .vditor .vditor-ir pre.vditor-reset,
+.dark .vditor .vditor-sv pre.vditor-reset,
+.dark .vditor-panel {
+  background-color: var(--editor-bg, #0f172a) !important;
+}
+
+/* 暗色主题 - 右侧大纲 */
+.dark .vditor .vditor-outline {
+  background-color: var(--editor-bg, #0f172a) !important;
+  border-left-color: var(--editor-border, #334155) !important;
+}
+
+.dark .vditor .vditor-outline ul {
+  color: var(--editor-text, #e2e8f0) !important;
+}
+
+/* 暗色主题文字颜色 */
+.dark .vditor .vditor-ir pre.vditor-reset,
+.dark .vditor .vditor-sv pre.vditor-reset,
+.dark .vditor .vditor-content .vditor-reset {
+  color: var(--editor-text, #e2e8f0) !important;
+}
+
+/* 暗色主题标题 */
+.dark .vditor .vditor-ir pre.vditor-reset h1,
+.dark .vditor .vditor-ir pre.vditor-reset h2,
+.dark .vditor .vditor-ir pre.vditor-reset h3,
+.dark .vditor .vditor-ir pre.vditor-reset h4,
+.dark .vditor .vditor-ir pre.vditor-reset h5,
+.dark .vditor .vditor-ir pre.vditor-reset h6 {
+  color: var(--editor-heading, #f8fafc) !important;
+  border-bottom-color: var(--editor-border, #334155) !important;
+}
+
+/* 暗色主题链接 */
+.dark .vditor .vditor-ir pre.vditor-reset a {
+  color: var(--editor-link, #60a5fa) !important;
+}
+
+/* 暗色主题代码块 */
+.dark .vditor .vditor-ir pre.vditor-reset code:not(.hljs),
+.dark .vditor .vditor-sv pre.vditor-reset code:not(.hljs) {
+  background-color: var(--editor-code-bg, #1e293b) !important;
+  color: var(--editor-text, #e2e8f0) !important;
+}
+
+.dark .vditor .vditor-ir pre.vditor-reset pre code,
+.dark .vditor .vditor-sv pre.vditor-reset pre code {
+  background-color: var(--editor-code-bg, #1e293b) !important;
+}
+
+/* 暗色主题引用 */
+.dark .vditor .vditor-ir pre.vditor-reset blockquote,
+.dark .vditor .vditor-sv pre.vditor-reset blockquote,
+.dark .vditor .vditor-content .vditor-reset blockquote {
+  border-left-color: var(--accent-400, #60a5fa) !important;
+  color: var(--editor-text-secondary, #94a3b8) !important;
+  background-color: var(--editor-quote-bg, rgba(96, 165, 250, 0.1)) !important;
+}
+
+/* 暗色主题表格 */
+.dark .vditor .vditor-ir pre.vditor-reset table th,
+.dark .vditor .vditor-ir pre.vditor-reset table td {
+  border-color: var(--editor-border, #334155) !important;
+}
+
+.dark .vditor .vditor-ir pre.vditor-reset table th {
+  background-color: var(--editor-code-bg, #1e293b) !important;
+}
+
+/* 暗色主题分割线 */
+.dark .vditor .vditor-ir pre.vditor-reset hr {
+  border-color: var(--editor-border, #334155) !important;
+}
+
+/* 编辑区域底部缓冲 - 约50%高度，类似 Typora */
+.vditor .vditor-ir pre.vditor-reset,
+.vditor .vditor-sv pre.vditor-reset {
+  padding-bottom: 50vh !important;
+  min-height: 100% !important;
+}
+
+/* 编辑区域内容最大宽度 - 提升阅读体验 */
+.vditor .vditor-ir pre.vditor-reset {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* 滚动区域配置 - 让光标不在最底部 */
+.vditor .vditor-content {
+  scroll-padding-bottom: 40vh !important;
+}
+
+/* 滚动条样式 */
+.vditor .vditor-content::-webkit-scrollbar {
+  width: 12px !important;
+}
+
+.vditor .vditor-content::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+}
+
+.vditor .vditor-content::-webkit-scrollbar-thumb {
+  background: #888 !important;
+  border-radius: 6px !important;
+  border: 3px solid #f1f1f1 !important;
+}
+
+.vditor .vditor-content::-webkit-scrollbar-thumb:hover {
+  background: #555 !important;
+}
+
+.dark .vditor .vditor-content::-webkit-scrollbar-track {
+  background: #2d2d2d !important;
+}
+
+.dark .vditor .vditor-content::-webkit-scrollbar-thumb {
+  background: #666 !important;
+  border-color: #2d2d2d !important;
+}
