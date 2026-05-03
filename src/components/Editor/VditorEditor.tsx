@@ -230,6 +230,13 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
   useEffect(() => {
     if (!containerRef.current) return;
     
+    // 调试信息
+    console.log('[VditorEditor] 初始化编辑器');
+    console.log('[VditorEditor] path:', path);
+    console.log('[VditorEditor] isTauriCached():', isTauriCached());
+    console.log('[VditorEditor] __TAURI__:', typeof window !== 'undefined' && '__TAURI__' in window);
+    console.log('[VditorEditor] __TAURI_INTERNALS__:', typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window);
+    
     // 从 store 获取文档（不订阅）
     const documents = useEditorStore.getState().documents;
     const doc = documents[path];
@@ -335,11 +342,20 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
       // 图片上传配置
       upload: {
         handler: async (files: File[]): Promise<null> => {
+          console.log('[ImageUpload] 开始处理图片');
+          console.log('[ImageUpload] isTauriCached():', isTauriCached());
+          console.log('[ImageUpload] path:', path);
+          
           const imageDirectory = useSettingsStore.getState().imageDirectory || 'img';
           
           // 没有打开文件夹，使用 base64
           const { rootHandle } = useFileStore.getState();
-          if (!rootHandle && !isTauriCached()) {
+          console.log('[ImageUpload] rootHandle:', rootHandle);
+          
+          const isTauri = isTauriCached();
+          if (!rootHandle && !isTauri) {
+            alert('[ImageUpload] 没有打开文件夹且非 Tauri，使用 base64');
+            console.log('[ImageUpload] 没有打开文件夹且非 Tauri，使用 base64');
             for (const file of files) {
               const base64 = await fileToBase64(file);
               const markdown = `![${file.name}](${base64})`;
@@ -353,23 +369,41 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             let docDir = '';
             if (path.startsWith('file://')) {
               const fullPath = path.replace('file://', '');
+              console.log('[ImageUpload] fullPath:', fullPath);
               const lastSlash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+              console.log('[ImageUpload] lastSlash:', lastSlash);
               if (lastSlash > 0) {
                 docDir = fullPath.substring(0, lastSlash);
               }
+            }
+            
+            console.log('[ImageUpload] docDir:', docDir);
+            
+            if (!docDir) {
+              alert(`[ImageUpload] docDir 为空!\npath: ${path}`);
+              console.log('[ImageUpload] docDir 为空，使用 base64');
+              for (const file of files) {
+                const base64 = await fileToBase64(file);
+                const markdown = `![${file.name}](${base64})`;
+                vditorRef.current?.insertValue(markdown);
+              }
+              return null;
             }
             
             if (isTauriCached()) {
               // Tauri 环境 - 使用正确的路径分隔符
               const pathSep = '\\';
               const imgDirPath = `${docDir}${pathSep}${imageDirectory}`;
+              console.log('[ImageUpload] imgDirPath:', imgDirPath);
+              
               const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');
               
               // 创建图片目录
               try {
                 await mkdir(imgDirPath, { recursive: true });
+                console.log('[ImageUpload] 目录创建成功');
               } catch (e) {
-                // 目录可能已存在
+                console.log('[ImageUpload] 目录已存在或创建失败:', e);
               }
               
               // 保存每个图片
@@ -378,6 +412,8 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
                 const safeName = file.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.]/g, '_');
                 const fileName = `${timestamp}_${safeName}`;
                 const filePath = `${imgDirPath}${pathSep}${fileName}`;
+                
+                console.log('[ImageUpload] 保存图片到:', filePath);
                 
                 // 读取文件内容
                 const arrayBuffer = await file.arrayBuffer();
@@ -436,6 +472,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             }
           } catch (e) {
             console.error('[ImageUpload] 保存图片失败:', e);
+            alert(`[ImageUpload] 保存图片失败!\npath: ${path}\nisTauri: ${isTauriCached()}\nrootHandle: ${rootHandle}\nerror: ${e}`);
             // 回退到 base64
             for (const file of files) {
               const base64 = await fileToBase64(file);
