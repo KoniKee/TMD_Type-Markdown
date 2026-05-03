@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useFileStore, useEditorStore, TreeNode } from '../../stores';
 import { useFileOperations } from '../../hooks/useFileOperations';
-import { isTauri } from '../../utils/platform';
+import { isTauriCached } from '../../utils/platform';
 import {
   Folder,
   FolderOpen,
@@ -92,7 +92,7 @@ export const Sidebar: React.FC = () => {
       const docPath = `file://${node.path}`;
 
       try {
-        if (isTauri()) {
+        if (isTauriCached()) {
           // Tauri 环境
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
           const content = await readTextFile(node.path);
@@ -175,7 +175,7 @@ export const Sidebar: React.FC = () => {
     const defaultContent = `# ${finalName.replace('.md', '')}\n\n在这里开始写作...\n`;
 
     try {
-      if (isTauri()) {
+      if (isTauriCached()) {
         // Tauri 环境
         const { writeFile } = await import('@tauri-apps/plugin-fs');
         const encoder = new TextEncoder();
@@ -250,7 +250,7 @@ export const Sidebar: React.FC = () => {
     const dirPath = `${parentPath}/${dirName}`;
 
     try {
-      if (isTauri()) {
+      if (isTauriCached()) {
         // Tauri 环境
         const { mkdir } = await import('@tauri-apps/plugin-fs');
         await mkdir(dirPath);
@@ -317,7 +317,7 @@ export const Sidebar: React.FC = () => {
         const newFilePath = `${parentPath}/${finalName}`;
 
         try {
-          if (isTauri()) {
+          if (isTauriCached()) {
             // Tauri 环境
             const { rename, readTextFile, writeFile } = await import('@tauri-apps/plugin-fs');
             const content = await readTextFile(oldFilePath);

@@ -1,10 +1,6 @@
 import { useCallback } from 'react';
 import { useFileStore, useEditorStore, TreeNode } from '../stores';
-
-// 检测是否在 Tauri 环境中
-const isTauri = () => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
-};
+import { isTauriCached } from '../utils/platform';
 
 /**
  * 文件操作 Hook
@@ -23,10 +19,11 @@ export const useFileOperations = () => {
 
   // 打开本地文件
   const handleOpenFile = useCallback(async () => {
-    if (isTauri()) {
+    if (isTauriCached()) {
       // Tauri 环境：使用原生对话框
+      console.log('[OpenFile] 使用 Tauri 对话框');
       const { open } = await import('@tauri-apps/plugin-dialog');
-      const { readFile } = await import('@tauri-apps/plugin-fs');
+      const { readTextFile } = await import('@tauri-apps/plugin-fs');
       
       const selected = await open({
         multiple: true,
@@ -37,11 +34,9 @@ export const useFileOperations = () => {
         const files = Array.isArray(selected) ? selected : [selected];
         for (const filePath of files) {
           try {
-            const content = await readFile(filePath as string);
-            const decoder = new TextDecoder();
-            const text = decoder.decode(content);
+            const content = await readTextFile(filePath as string);
             const fileName = (filePath as string).split(/[/\\]/).pop() || 'untitled.md';
-            openDocument(`file://${filePath}`, text, false);
+            openDocument(`file://${filePath}`, content, false);
             console.log(`[OpenFile] 加载: ${fileName}`);
           } catch (err) {
             console.error('读取文件失败:', err);
@@ -50,6 +45,7 @@ export const useFileOperations = () => {
       }
     } else {
       // 浏览器环境：使用 input 元素
+      console.log('[OpenFile] 使用浏览器 input');
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = '.md,.markdown,.txt';
@@ -155,13 +151,19 @@ export const useFileOperations = () => {
 
   // 打开文件夹
   const handleOpenFolder = useCallback(async () => {
-    if (isTauri()) {
+    console.log('[OpenFolder] 开始执行');
+    console.log('[OpenFolder] isTauriCached():', isTauriCached());
+    
+    if (isTauriCached()) {
       // Tauri 环境：使用原生对话框
+      console.log('[OpenFolder] 使用 Tauri 对话框');
       const { open } = await import('@tauri-apps/plugin-dialog');
       
       const selected = await open({
         directory: true,
       });
+      
+      console.log('[OpenFolder] 选择结果:', selected);
       
       if (selected) {
         const folderPath = selected as string;
@@ -173,10 +175,11 @@ export const useFileOperations = () => {
         const tree = await readDirectoryTauri(folderPath);
         setFileTree(tree);
         
-        console.log(`[OpenFolder] 打开文件夹: ${folderName}`);
+        console.log(`[OpenFolder] 打开文件夹成功: ${folderName}`);
       }
     } else {
       // 浏览器环境：使用 File System Access API
+      console.log('[OpenFolder] 使用浏览器 showDirectoryPicker');
       if ('showDirectoryPicker' in window) {
         try {
           const dirHandle = await (window as any).showDirectoryPicker();

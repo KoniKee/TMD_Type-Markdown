@@ -6,17 +6,6 @@
   "permissions": [
     "core:default",
     "fs:default",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DESKTOP/**" },
-        { "path": "$APP/**" },
-        { "path": "$RESOURCE/**" }
-      ]
-    },
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-exists",
@@ -24,6 +13,11 @@
     "fs:allow-remove",
     "fs:allow-rename",
     "fs:allow-read-dir",
+    "fs:allow-copy-file",
+    {
+      "identifier": "fs:scope",
+      "allow": ["**"]
+    },
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",

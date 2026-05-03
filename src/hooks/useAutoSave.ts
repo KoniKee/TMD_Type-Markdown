@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useFileStore } from '../stores';
-import { isTauri } from '../utils/platform';
+import { isTauriCached } from '../utils/platform';
 
 const STORAGE_KEY_DOCS = 'md-editor-docs';
 const STORAGE_KEY_TABS = 'md-editor-tabs';
@@ -41,7 +41,7 @@ async function writeToFileSystem(docPath: string, content: string): Promise<bool
   const fullPath = docPath.startsWith('file://') ? docPath.replace('file://', '') : docPath;
   
   try {
-    if (isTauri()) {
+    if (isTauriCached()) {
       // Tauri 环境
       const { writeFile } = await import('@tauri-apps/plugin-fs');
       const encoder = new TextEncoder();

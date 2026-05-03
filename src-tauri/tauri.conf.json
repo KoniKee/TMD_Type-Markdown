@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/aspect-build/aspect/main/aspect-cli.json",
+  "$schema": "https://schema.tauri.app/config/2",
   "productName": "MD Editor",
   "version": "0.1.0",
   "identifier": "com.mdeditor.app",

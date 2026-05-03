@@ -3,9 +3,38 @@
  * 统一处理浏览器和 Tauri 环境的差异
  */
 
-// 检测是否在 Tauri 环境中
+// 检测是否在 Tauri 环境中 - 使用多种方式确保准确性
 export const isTauri = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window;
+  if (typeof window === 'undefined') return false;
+  
+  // 方式1: 检查 __TAURI__ 全局对象
+  if ('__TAURI__' in window) return true;
+  
+  // 方式2: 检查 __TAURI_INTERNALS__
+  if ('__TAURI_INTERNALS__' in window) return true;
+  
+  // 方式3: 检查 userAgent
+  if (navigator.userAgent.includes('Tauri')) return true;
+  
+  // 方式4: 检查 tauri 协议
+  if (window.location.protocol === 'tauri:' || window.location.hostname === 'tauri.localhost') return true;
+  
+  return false;
+};
+
+// 缓存结果，避免重复检测
+let _isTauriCache: boolean | null = null;
+export const isTauriCached = (): boolean => {
+  if (_isTauriCache === null) {
+    _isTauriCache = isTauri();
+    console.log('[Platform] Tauri 环境检测:', _isTauriCache);
+    console.log('[Platform] location.href:', window.location.href);
+    console.log('[Platform] location.protocol:', window.location.protocol);
+    console.log('[Platform] location.hostname:', window.location.hostname);
+    console.log('[Platform] __TAURI__ exists:', '__TAURI__' in window);
+    console.log('[Platform] __TAURI_INTERNALS__ exists:', '__TAURI_INTERNALS__' in window);
+  }
+  return _isTauriCache;
 };
 
 // 检测是否在浏览器环境且支持 File System Access API

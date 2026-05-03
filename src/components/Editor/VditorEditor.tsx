@@ -4,7 +4,7 @@ import 'vditor/dist/index.css';
 import './vditor-styles.css';
 import { useEditorStore, useFileStore, useSettingsStore } from '../../stores';
 import { useSaveToFile } from '../../hooks/useAutoSave';
-import { isTauri } from '../../utils/platform';
+import { isTauriCached } from '../../utils/platform';
 
 interface VditorEditorProps {
   path: string;
@@ -30,7 +30,7 @@ async function loadLocalImage(imageSrc: string, docPath: string): Promise<string
   const cleanSrc = imageSrc.replace(/^\.\//, '');
   
   try {
-    if (isTauri()) {
+    if (isTauriCached()) {
       // Tauri 环境：直接返回相对路径，Tauri 可以直接加载
       // 或者读取文件转为 blob URL
       const { readFile } = await import('@tauri-apps/plugin-fs');
@@ -329,7 +329,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
           
           // 没有打开文件夹，使用 base64
           const { rootHandle } = useFileStore.getState();
-          if (!rootHandle && !isTauri()) {
+          if (!rootHandle && !isTauriCached()) {
             for (const file of files) {
               const base64 = await fileToBase64(file);
               const markdown = `![${file.name}](${base64})`;
@@ -351,7 +351,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             
             const imgDirPath = `${docDir}/${imageDirectory}`;
             
-            if (isTauri()) {
+            if (isTauriCached()) {
               // Tauri 环境
               const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');
               
