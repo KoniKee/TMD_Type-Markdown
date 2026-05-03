@@ -31,21 +31,20 @@ async function loadLocalImage(imageSrc: string, docPath: string): Promise<string
   
   try {
     if (isTauriCached()) {
-      // Tauri 环境：直接返回相对路径，Tauri 可以直接加载
-      // 或者读取文件转为 blob URL
+      // Tauri 环境：读取文件转为 blob URL
       const { readFile } = await import('@tauri-apps/plugin-fs');
       
       // 从文档路径提取目录路径
       let docDir = '';
       if (docPath.startsWith('file://')) {
         const fullPath = docPath.replace('file://', '');
-        const lastSlash = fullPath.lastIndexOf('/');
+        const lastSlash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
         if (lastSlash > 0) {
           docDir = fullPath.substring(0, lastSlash);
         }
       }
       
-      const imagePath = `${docDir}/${cleanSrc}`;
+      const imagePath = `${docDir}\\${cleanSrc}`;
       const imageData = await readFile(imagePath);
       const blob = new Blob([imageData]);
       const blobUrl = URL.createObjectURL(blob);
@@ -360,10 +359,10 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
               }
             }
             
-            const imgDirPath = `${docDir}/${imageDirectory}`;
-            
             if (isTauriCached()) {
-              // Tauri 环境
+              // Tauri 环境 - 使用正确的路径分隔符
+              const pathSep = '\\';
+              const imgDirPath = `${docDir}${pathSep}${imageDirectory}`;
               const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');
               
               // 创建图片目录
@@ -378,7 +377,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
                 const timestamp = Date.now();
                 const safeName = file.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.]/g, '_');
                 const fileName = `${timestamp}_${safeName}`;
-                const filePath = `${imgDirPath}/${fileName}`;
+                const filePath = `${imgDirPath}${pathSep}${fileName}`;
                 
                 // 读取文件内容
                 const arrayBuffer = await file.arrayBuffer();

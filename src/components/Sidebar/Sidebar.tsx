@@ -73,7 +73,7 @@ export const Sidebar: React.FC = () => {
         console.log('[toAbsolutePath] fullRoot 为空，返回原路径');
         return relativePath;
       }
-      const result = `${fullRoot}/${relativePath}`;
+      const result = `${fullRoot}\\${relativePath}`;
       console.log('[toAbsolutePath] 拼接结果:', result);
       return result;
     }
@@ -232,9 +232,10 @@ export const Sidebar: React.FC = () => {
   // 开始创建新文件
   const startNewFile = () => {
     if (contextMenu.node) {
+      const lastSlash = Math.max(contextMenu.node.path.lastIndexOf('/'), contextMenu.node.path.lastIndexOf('\\'));
       const parentPath = contextMenu.node.isDir
         ? contextMenu.node.path
-        : contextMenu.node.path.substring(0, contextMenu.node.path.lastIndexOf('/'));
+        : contextMenu.node.path.substring(0, lastSlash);
 
       setNewFileState({ parentPath });
       closeContextMenu();
@@ -256,7 +257,7 @@ export const Sidebar: React.FC = () => {
       if (isTauriCached()) {
         // Tauri 环境 - 使用绝对路径
         const absoluteParentPath = toAbsolutePath(parentPath);
-        const filePath = `${absoluteParentPath}/${finalName}`;
+        const filePath = `${absoluteParentPath}\\${finalName}`;
         console.log('[NewFile] Tauri 环境创建文件:', filePath);
         
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
@@ -314,9 +315,10 @@ export const Sidebar: React.FC = () => {
   // 开始创建新目录
   const startNewDir = () => {
     if (contextMenu.node) {
+      const lastSlash = Math.max(contextMenu.node.path.lastIndexOf('/'), contextMenu.node.path.lastIndexOf('\\'));
       const parentPath = contextMenu.node.isDir
         ? contextMenu.node.path
-        : contextMenu.node.path.substring(0, contextMenu.node.path.lastIndexOf('/'));
+        : contextMenu.node.path.substring(0, lastSlash);
 
       setNewDirState({ parentPath });
       closeContextMenu();
@@ -336,7 +338,7 @@ export const Sidebar: React.FC = () => {
       if (isTauriCached()) {
         // Tauri 环境 - 使用绝对路径
         const absoluteParentPath = toAbsolutePath(parentPath);
-        const dirPath = `${absoluteParentPath}/${dirName}`;
+        const dirPath = `${absoluteParentPath}\\${dirName}`;
         console.log('[NewDir] Tauri 环境创建目录:', dirPath);
         
         const { mkdir } = await import('@tauri-apps/plugin-fs');
@@ -403,9 +405,11 @@ export const Sidebar: React.FC = () => {
         renameDocument(oldDocPath, newDocPath);
         console.log(`[Rename] 重命名新建文档: ${oldName} -> ${finalName}`);
       } else {
-        const parentPath = path.substring(0, path.lastIndexOf('/'));
-        const oldEntryPath = `${parentPath}/${oldName}`;
-        const newEntryPath = `${parentPath}/${finalName}`;
+        const lastSlash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+        const parentPath = path.substring(0, lastSlash);
+        const pathSep = isTauriCached() ? '\\' : '/';
+        const oldEntryPath = `${parentPath}${pathSep}${oldName}`;
+        const newEntryPath = `${parentPath}${pathSep}${finalName}`;
 
         try {
           if (isTauriCached()) {

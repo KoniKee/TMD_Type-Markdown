@@ -19,7 +19,6 @@ Markdown的实时渲染基于[Vanessa219/vditor: ♏ 一款浏览器端的 Markd
 
 Markdown语法实时渲染，光标移动到附近显示Markdown源码方便修改
 
-![PixPin_2026_05_03_22_45_36](img/1777819544358_PixPin_2026_05_03_22_45_36.png)
 
 支持文档目录树和文档大纲
 
