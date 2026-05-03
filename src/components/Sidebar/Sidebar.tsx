@@ -28,6 +28,7 @@ interface ContextMenuState {
 interface RenameState {
   path: string;
   oldName: string;
+  isDir: boolean;
 }
 
 interface NewFileState {
@@ -165,7 +166,8 @@ export const Sidebar: React.FC = () => {
     if (contextMenu.node) {
       setRenameState({
         path: contextMenu.node.path,
-        oldName: contextMenu.node.name
+        oldName: contextMenu.node.name,
+        isDir: contextMenu.node.isDir
       });
       closeContextMenu();
     }
@@ -333,10 +335,11 @@ export const Sidebar: React.FC = () => {
   const finishRename = async (newName: string) => {
     if (!renameState) return;
 
-    const { path, oldName } = renameState;
+    const { path, oldName, isDir } = renameState;
 
     if (newName && newName !== oldName) {
-      const finalName = newName.endsWith('.md') ? newName : `${newName}.md`;
+      // 文件夹不加 .md 后缀
+      const finalName = isDir ? newName : (newName.endsWith('.md') ? newName : `${newName}.md`);
       const oldDocPath = `file://${path}`;
       const isNewFile = documents[oldDocPath]?.isNewFile;
 
@@ -346,21 +349,21 @@ export const Sidebar: React.FC = () => {
         console.log(`[Rename] 重命名新建文档: ${oldName} -> ${finalName}`);
       } else {
         const parentPath = path.substring(0, path.lastIndexOf('/'));
-        const oldFilePath = `${parentPath}/${oldName}`;
-        const newFilePath = `${parentPath}/${finalName}`;
+        const oldEntryPath = `${parentPath}/${oldName}`;
+        const newEntryPath = `${parentPath}/${finalName}`;
 
         try {
           if (isTauriCached()) {
             // Tauri 环境
-            const { rename, readTextFile, writeFile } = await import('@tauri-apps/plugin-fs');
-            const content = await readTextFile(oldFilePath);
-            const encoder = new TextEncoder();
-            await writeFile(newFilePath, encoder.encode(content));
-            await rename(oldFilePath, newFilePath);
+            const { rename } = await import('@tauri-apps/plugin-fs');
+            await rename(oldEntryPath, newEntryPath);
 
-        // 刷新文件树
-        const tree = await readDirectoryTauri(rootPath!);
-        setFileTree(tree);
+            // 刷新文件树
+            const fullRoot = getFullRootPath();
+            if (fullRoot) {
+              const tree = await readDirectoryTauri(fullRoot);
+              setFileTree(tree);
+            }
             
             console.log(`[Rename] 重命名成功: ${oldName} -> ${finalName}`);
           } else {
@@ -372,20 +375,35 @@ export const Sidebar: React.FC = () => {
               return;
             }
 
-            const oldFileHandle = await dirHandle.getFileHandle(oldName);
-            const file = await oldFileHandle.getFile();
-            const content = await file.text();
+            if (isDir) {
+              // 重命名文件夹
+              const oldDirHandle = await dirHandle.getDirectoryHandle(oldName);
+              const newDirHandle = await dirHandle.getDirectoryHandle(finalName, { create: true });
+              
+              // 递归复制所有内容
+              await copyDirectoryContents(oldDirHandle, newDirHandle);
+              
+              // 删除旧目录
+              await dirHandle.removeEntry(oldName, { recursive: true });
+              
+              setDirHandle(newEntryPath, newDirHandle);
+            } else {
+              // 重命名文件
+              const oldFileHandle = await dirHandle.getFileHandle(oldName);
+              const file = await oldFileHandle.getFile();
+              const content = await file.text();
 
-            const newFileHandle = await dirHandle.getFileHandle(finalName, { create: true });
-            const writable = await newFileHandle.createWritable();
-            await writable.write(content);
-            await writable.close();
+              const newFileHandle = await dirHandle.getFileHandle(finalName, { create: true });
+              const writable = await newFileHandle.createWritable();
+              await writable.write(content);
+              await writable.close();
 
-            if ('removeEntry' in dirHandle) {
-              await dirHandle.removeEntry(oldName);
+              if ('removeEntry' in dirHandle) {
+                await dirHandle.removeEntry(oldName);
+              }
+
+              setFileHandle(newEntryPath, newFileHandle);
             }
-
-            setFileHandle(newFilePath, newFileHandle);
 
             if (rootHandle && rootPath) {
               const tree = await readDirectoryRecursive(rootHandle, rootPath);
@@ -402,6 +420,24 @@ export const Sidebar: React.FC = () => {
     }
 
     setRenameState(null);
+  };
+
+  // 递归复制目录内容
+  const copyDirectoryContents = async (sourceDir: FileSystemDirectoryHandle, targetDir: FileSystemDirectoryHandle) => {
+    // @ts-ignore - FileSystemDirectoryHandle.values() is part of File System Access API
+    for await (const entry of sourceDir.values()) {
+      if (entry.kind === 'file') {
+        const file = await entry.getFile();
+        const content = await file.text();
+        const newFileHandle = await targetDir.getFileHandle(entry.name, { create: true });
+        const writable = await newFileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+      } else {
+        const newSubDir = await targetDir.getDirectoryHandle(entry.name, { create: true });
+        await copyDirectoryContents(entry as FileSystemDirectoryHandle, newSubDir);
+      }
+    }
   };
 
   // 取消重命名
