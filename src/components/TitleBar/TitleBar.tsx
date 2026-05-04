@@ -10,6 +10,9 @@ declare global {
       window: {
         getCurrentWindow: () => any;
       };
+      event: {
+        listen: (event: string, callback: (payload: any) => void) => () => void;
+      };
     };
   }
 }
@@ -34,11 +37,12 @@ export const TitleBar: React.FC = () => {
 
   useEffect(() => {
     const win = getTauriWindow();
-    if (win) {
-      win.onResized(async () => {
+    if (win && window.__TAURI__?.event) {
+      win.isMaximized().then(setIsMaximized);
+      const unlisten = window.__TAURI__.event.listen('tauri://resize', async () => {
         setIsMaximized(await win.isMaximized());
       });
-      win.isMaximized().then(setIsMaximized);
+      return unlisten;
     }
   }, []);
 
