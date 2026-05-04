@@ -30,7 +30,7 @@ export const TitleBar: React.FC = () => {
   }, []);
 
   const handleDrag = (e: React.MouseEvent) => {
-    if (appWindow && e.buttons === 1) {
+    if (appWindow && e.button === 0) {
       appWindow.startDragging();
     }
   };
@@ -95,6 +95,7 @@ export const TitleBar: React.FC = () => {
                         : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-active-bg)] hover:text-[var(--editor-text)]'
                       }
                     `}
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveDocument(tabPath);
@@ -125,6 +126,7 @@ export const TitleBar: React.FC = () => {
                         text-[var(--editor-text-muted)] hover:text-[var(--editor-text)]
                         transition-all
                       `}
+                      onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         closeDocument(tabPath);
@@ -147,11 +149,15 @@ export const TitleBar: React.FC = () => {
         />
 
         {/* 右侧操作区域 */}
-        <div className="flex items-center h-full flex-shrink-0">
+        <div 
+          className="flex items-center h-full flex-shrink-0"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           {/* 保存按钮 */}
           {activeDocPath && (
             <button
               className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-[var(--accent-500)] text-white hover:bg-[var(--accent-600)] transition-all mx-1"
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); saveToFile(); }}
               title="保存 (Ctrl+S)"
             >
