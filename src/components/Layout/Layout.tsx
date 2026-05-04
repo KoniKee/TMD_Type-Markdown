@@ -5,7 +5,7 @@ import { EditorContainer } from '../Editor/EditorContainer';
 import { SettingsPanel } from '../Settings/SettingsPanel';
 import { Toolbar } from '../Toolbar/Toolbar';
 import { useEditorStore } from '../../stores';
-import { useAutoSave, useTheme } from '../../hooks';
+import { useAutoSave, useTheme, useFileChangeDetection } from '../../hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -15,6 +15,7 @@ export const Layout: React.FC = () => {
   // 使用hooks
   useAutoSave();
   useTheme();
+  useFileChangeDetection();
 
   const handleSidebarResize = (e: React.MouseEvent) => {
     const startX = e.clientX;

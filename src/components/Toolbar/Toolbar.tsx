@@ -40,21 +40,18 @@ export const Toolbar: React.FC = () => {
         <div className="flex items-center gap-0.5">
           <ToolbarButton
             icon={FilePlus}
-            title="新建文档 (Ctrl+N)"
+            title="新建文档"
             onClick={handleNewFile}
-            shortcut="Ctrl+N"
           />
           <ToolbarButton
             icon={FileText}
-            title="打开文件 (Ctrl+O)"
+            title="打开文件"
             onClick={handleOpenFile}
-            shortcut="Ctrl+O"
           />
           <ToolbarButton
             icon={FolderOpen}
-            title="打开文件夹 (Ctrl+Shift+O)"
+            title="打开文件夹"
             onClick={handleOpenFolder}
-            shortcut="Ctrl+Shift+O"
           />
         </div>
 
@@ -98,9 +95,6 @@ export const Toolbar: React.FC = () => {
 const ShortcutsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const shortcuts = [
     { category: '文件操作', items: [
-      { key: 'Ctrl + N', action: '新建文档' },
-      { key: 'Ctrl + O', action: '打开文件' },
-      { key: 'Ctrl + Shift + O', action: '打开文件夹' },
       { key: 'Ctrl + S', action: '保存文件' },
     ]},
     { category: '编辑操作', items: [

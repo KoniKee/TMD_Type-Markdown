@@ -15,8 +15,11 @@ import {
   Pencil,
   MoreHorizontal,
   X,
+  RefreshCw,
+  Trash2,
   LucideIcon
 } from 'lucide-react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface ContextMenuState {
   visible: boolean;
@@ -39,6 +42,12 @@ interface NewDirState {
   parentPath: string;
 }
 
+interface DeleteState {
+  path: string;
+  name: string;
+  isDir: boolean;
+}
+
 export const Sidebar: React.FC = () => {
   const { fileTree, rootPath, setFileTree, setFileHandle, setDirHandle, rootHandle, dirHandles } = useFileStore();
   const { openDocument, renameDocument, documents } = useEditorStore();
@@ -46,38 +55,43 @@ export const Sidebar: React.FC = () => {
 
   // 获取 Tauri 环境下的完整根路径
   const getFullRootPath = useCallback(() => {
-    console.log('[getFullRootPath] isTauriCached:', isTauriCached());
-    console.log('[getFullRootPath] rootHandle:', rootHandle);
-    console.log('[getFullRootPath] rootPath:', rootPath);
-    
     if (isTauriCached() && rootHandle) {
-      console.log('[getFullRootPath] 返回 rootHandle:', rootHandle);
       return rootHandle as unknown as string;
     }
-    console.log('[getFullRootPath] 返回 rootPath:', rootPath);
     return rootPath;
   }, [rootHandle, rootPath]);
 
+  // 刷新文件树
+  const refreshTree = useCallback(async () => {
+    const fullRoot = getFullRootPath();
+    if (!fullRoot) return;
+    
+    try {
+      if (isTauriCached()) {
+        const tree = await readDirectoryTauri(fullRoot);
+        setFileTree(tree);
+      } else if (rootHandle) {
+        const tree = await readDirectoryRecursive(rootHandle, rootPath!);
+        setFileTree(tree);
+      }
+    } catch (err) {
+      console.error('[RefreshTree] 刷新失败:', err);
+    }
+  }, [getFullRootPath, readDirectoryTauri, readDirectoryRecursive, rootHandle, rootPath, setFileTree]);
+
   // 将相对路径转换为绝对路径（Tauri 环境）
   const toAbsolutePath = useCallback((relativePath: string) => {
-    console.log('[toAbsolutePath] 输入:', relativePath);
-    
     if (isTauriCached()) {
       // 如果已经是绝对路径（Windows 包含盘符，Unix 以 / 开头），直接返回
       if (relativePath.includes(':') || relativePath.startsWith('/')) {
-        console.log('[toAbsolutePath] 已是绝对路径，直接返回:', relativePath);
         return relativePath;
       }
       const fullRoot = getFullRootPath();
       if (!fullRoot) {
-        console.log('[toAbsolutePath] fullRoot 为空，返回原路径');
         return relativePath;
       }
-      const result = `${fullRoot}\\${relativePath}`;
-      console.log('[toAbsolutePath] 拼接结果:', result);
-      return result;
+      return `${fullRoot}\\${relativePath}`;
     }
-    console.log('[toAbsolutePath] 非 Tauri 环境，返回原路径');
     return relativePath;
   }, [getFullRootPath]);
 
@@ -91,12 +105,35 @@ export const Sidebar: React.FC = () => {
   const [renameState, setRenameState] = useState<RenameState | null>(null);
   const [newFileState, setNewFileState] = useState<NewFileState | null>(null);
   const [newDirState, setNewDirState] = useState<NewDirState | null>(null);
+  const [deleteState, setDeleteState] = useState<DeleteState | null>(null);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   const [selectedDir, setSelectedDir] = useState<string | null>(null);
 
   const renameInputRef = useRef<HTMLInputElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const newDirInputRef = useRef<HTMLInputElement>(null);
+
+  // 窗口获得焦点时刷新文件树
+  useEffect(() => {
+    if (isTauriCached()) {
+      const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+        if (focused && rootPath) {
+          refreshTree();
+        }
+      });
+      return () => {
+        unlisten.then(fn => fn());
+      };
+    } else {
+      const handleFocus = () => {
+        if (rootPath) {
+          refreshTree();
+        }
+      };
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [rootPath, refreshTree]);
 
   // 拖放文件支持
   const handleDrop = useCallback(async (e: React.DragEvent) => {
@@ -136,7 +173,6 @@ export const Sidebar: React.FC = () => {
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
           const content = await readTextFile(node.path);
           openDocument(docPath, content, false);
-          console.log(`[FileClick] 从文件系统加载: ${node.path}`);
         } else {
           // 浏览器环境
           if (node.handle && node.handle.kind === 'file') {
@@ -144,7 +180,6 @@ export const Sidebar: React.FC = () => {
             const file = await node.handle.getFile();
             const content = await file.text();
             openDocument(docPath, content, false);
-            console.log(`[FileClick] 从文件系统加载: ${node.path}`);
           }
         }
       } catch (err) {
@@ -165,7 +200,6 @@ export const Sidebar: React.FC = () => {
       
       // 检查是否需要加载子目录（延迟加载）
       if (node && node.isDir && (!node.children || node.children.length === 0)) {
-        console.log('[toggleDir] 延迟加载子目录:', path);
         try {
           let children: TreeNode[];
           
@@ -504,6 +538,83 @@ export const Sidebar: React.FC = () => {
     setRenameState(null);
   };
 
+  // 开始删除
+  const startDelete = () => {
+    if (contextMenu.node) {
+      setDeleteState({
+        path: contextMenu.node.path,
+        name: contextMenu.node.name,
+        isDir: contextMenu.node.isDir
+      });
+      closeContextMenu();
+    }
+  };
+
+  // 完成删除
+  const finishDelete = async () => {
+    if (!deleteState) return;
+
+    const { path, name, isDir } = deleteState;
+
+    try {
+      // 移动到回收站
+      const absolutePath = toAbsolutePath(path);
+      console.log('[Delete] 删除:', absolutePath);
+      
+      // 使用系统命令移动到回收站
+      const { Command } = await import('@tauri-apps/plugin-shell');
+      
+      // 检测操作系统
+      const platform = navigator.platform.toLowerCase();
+      
+      if (platform.includes('win')) {
+        // Windows: 使用 PowerShell 移动到回收站
+        const deleteMethod = isDir ? 'DeleteDirectory' : 'DeleteFile';
+        const command = Command.create('powershell', [
+          '-Command',
+          `Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::${deleteMethod}('${absolutePath}', 'OnlyErrorDialogs', 'SendToRecycleBin')`
+        ]);
+        await command.execute();
+      } else if (platform.includes('mac')) {
+        // macOS: 使用 osascript 移动到回收站
+        const command = Command.create('osascript', [
+          '-e',
+          `tell application "Finder" to delete POSIX file "${absolutePath}"`
+        ]);
+        await command.execute();
+      } else {
+        // Linux: 使用 gio trash（如果可用）或 kioclient（KDE）
+        try {
+          const command = Command.create('gio', ['trash', absolutePath]);
+          await command.execute();
+        } catch {
+          // 如果 gio 不可用，尝试 kioclient
+          const command = Command.create('kioclient', ['move', absolutePath, 'trash:/']);
+          await command.execute();
+        }
+      }
+      
+      // 刷新文件树
+      const fullRoot = getFullRootPath();
+      if (fullRoot) {
+        const tree = await readDirectoryTauri(fullRoot);
+        setFileTree(tree);
+      }
+      
+      console.log(`[Delete] 已移到回收站: ${name}`);
+    } catch (err) {
+      console.error('[Delete] 删除失败:', err);
+      alert('删除失败: ' + (err instanceof Error ? err.message : String(err)));
+    }
+
+    setDeleteState(null);
+  };
+
+  // 取消删除
+  const cancelDelete = () => {
+    setDeleteState(null);
+  };
+
   // 点击其他地方关闭菜单
   useEffect(() => {
     const handleClick = () => closeContextMenu();
@@ -680,6 +791,13 @@ export const Sidebar: React.FC = () => {
           <div className="flex items-center gap-1">
             <button
               className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
+              onClick={refreshTree}
+              title="刷新目录树"
+            >
+              <RefreshCw size={14} />
+            </button>
+            <button
+              className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
               onClick={() => {
                 setNewFileState({ parentPath: selectedDir || rootPath || '' });
               }}
@@ -773,6 +891,15 @@ export const Sidebar: React.FC = () => {
           {contextMenu.node?.isDir ? (
             <>
               <ContextMenuItem
+                icon={RefreshCw}
+                label="刷新"
+                onClick={() => {
+                  closeContextMenu();
+                  refreshTree();
+                }}
+              />
+              <div className="h-px bg-[var(--sidebar-border)] my-1" />
+              <ContextMenuItem
                 icon={Plus}
                 label="新建文档"
                 onClick={startNewFile}
@@ -788,13 +915,40 @@ export const Sidebar: React.FC = () => {
                 label="重命名"
                 onClick={startRename}
               />
+              {isTauriCached() && (
+                <ContextMenuItem
+                  icon={Trash2}
+                  label="删除"
+                  onClick={startDelete}
+                  danger
+                />
+              )}
             </>
           ) : (
-            <ContextMenuItem
-              icon={Pencil}
-              label="重命名"
-              onClick={startRename}
-            />
+            <>
+              <ContextMenuItem
+                icon={RefreshCw}
+                label="刷新"
+                onClick={() => {
+                  closeContextMenu();
+                  refreshTree();
+                }}
+              />
+              <div className="h-px bg-[var(--sidebar-border)] my-1" />
+              <ContextMenuItem
+                icon={Pencil}
+                label="重命名"
+                onClick={startRename}
+              />
+              {isTauriCached() && (
+                <ContextMenuItem
+                  icon={Trash2}
+                  label="删除"
+                  onClick={startDelete}
+                  danger
+                />
+              )}
+            </>
           )}
         </div>
       )}
@@ -820,6 +974,18 @@ export const Sidebar: React.FC = () => {
           onCancel={cancelNewDir}
         />
       )}
+
+      {/* 删除确认对话框 */}
+      {deleteState && (
+        <ConfirmDialog
+          title="确认删除"
+          message={`确定要删除${deleteState.isDir ? '文件夹' : '文件'} "${deleteState.name}" 吗？\n\n文件将被移动到回收站，可以从回收站恢复。`}
+          confirmText="删除"
+          danger
+          onConfirm={finishDelete}
+          onCancel={cancelDelete}
+        />
+      )}
     </div>
   );
 };
@@ -829,14 +995,15 @@ interface ContextMenuItemProps {
   icon: LucideIcon;
   label: string;
   onClick: () => void;
+  danger?: boolean;
 }
 
-const ContextMenuItem: React.FC<ContextMenuItemProps> = ({ icon: Icon, label, onClick }) => (
+const ContextMenuItem: React.FC<ContextMenuItemProps> = ({ icon: Icon, label, onClick, danger = false }) => (
   <button
-    className="w-full px-3 py-2 text-sm text-left hover:bg-[var(--sidebar-hover)] flex items-center gap-2.5 transition-colors"
+    className={`w-full px-3 py-2 text-sm text-left hover:bg-[var(--sidebar-hover)] flex items-center gap-2.5 transition-colors ${danger ? 'text-red-500 hover:text-red-600' : ''}`}
     onClick={onClick}
   >
-    <Icon size={14} className="text-[var(--sidebar-text-muted)]" />
+    <Icon size={14} className={danger ? 'text-red-500' : 'text-[var(--sidebar-text-muted)]'} />
     <span>{label}</span>
   </button>
 );
@@ -884,6 +1051,52 @@ const Dialog: React.FC<DialogProps> = ({ title, placeholder, inputRef, onConfirm
           }}
         >
           创建
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// 确认对话框组件
+interface ConfirmDialogProps {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  title,
+  message,
+  confirmText = '确认',
+  cancelText = '取消',
+  danger = false,
+  onConfirm,
+  onCancel
+}) => (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fade-in">
+    <div className="bg-[var(--sidebar-surface)] border border-[var(--sidebar-border)] rounded-xl p-5 shadow-2xl min-w-[320px] max-w-[480px] animate-scale-in">
+      <h3 className="text-sm font-semibold mb-3 text-[var(--sidebar-text)]">{title}</h3>
+      <p className="text-sm text-[var(--sidebar-text-muted)] mb-4 whitespace-pre-wrap">{message}</p>
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-4 py-2 text-sm rounded-lg hover:bg-[var(--sidebar-hover)] transition-colors text-[var(--sidebar-text)]"
+          onClick={onCancel}
+        >
+          {cancelText}
+        </button>
+        <button
+          className={`px-4 py-2 text-sm rounded-lg text-white transition-colors font-medium ${
+            danger
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-[var(--accent-500)] hover:bg-[var(--accent-600)]'
+          }`}
+          onClick={onConfirm}
+        >
+          {confirmText}
         </button>
       </div>
     </div>

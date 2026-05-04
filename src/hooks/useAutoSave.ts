@@ -97,6 +97,7 @@ export function useAutoSave(): void {
   const saveDocument = useEditorStore((state) => state.saveDocument);
   
   const autoSaveEnabled = useSettingsStore((state) => state.autoSave);
+  const autoSaveDelay = useSettingsStore((state) => state.autoSaveDelay);
   
   const timeoutRef = useRef<number | null>(null);
 
@@ -143,8 +144,8 @@ export function useAutoSave(): void {
     timeoutRef.current = window.setTimeout(() => {
       performSave();
       timeoutRef.current = null;
-    }, 1000);
-  }, [performSave]);
+    }, autoSaveDelay);
+  }, [performSave, autoSaveDelay]);
 
   useEffect(() => {
     if (!autoSaveEnabled) return;
@@ -158,7 +159,7 @@ export function useAutoSave(): void {
         timeoutRef.current = null;
       }
     };
-  }, [autoSaveEnabled, saveStatus, scheduleSave]);
+  }, [autoSaveEnabled, saveStatus, scheduleSave, autoSaveDelay]);
 
   useEffect(() => {
     return () => {

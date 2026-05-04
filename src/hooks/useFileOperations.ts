@@ -155,19 +155,13 @@ export const useFileOperations = () => {
 
   // 打开文件夹
   const handleOpenFolder = useCallback(async () => {
-    console.log('[OpenFolder] 开始执行');
-    console.log('[OpenFolder] isTauriCached():', isTauriCached());
-    
     if (isTauriCached()) {
       // Tauri 环境：使用原生对话框
-      console.log('[OpenFolder] 使用 Tauri 对话框');
       const { open } = await import('@tauri-apps/plugin-dialog');
       
       const selected = await open({
         directory: true,
       });
-      
-      console.log('[OpenFolder] 选择结果:', selected);
       
       if (selected) {
         const folderPath = selected as string;
@@ -180,17 +174,11 @@ export const useFileOperations = () => {
         setRootPath(folderName);
         setRootHandle(folderPath as any);
         
-        console.log('[OpenFolder] 设置 rootPath:', folderName);
-        console.log('[OpenFolder] 设置 rootHandle:', folderPath);
-        
         const tree = await readDirectoryTauri(folderPath);
         setFileTree(tree);
-        
-        console.log(`[OpenFolder] 打开文件夹成功: ${folderName}`);
       }
     } else {
       // 浏览器环境：使用 File System Access API
-      console.log('[OpenFolder] 使用浏览器 showDirectoryPicker');
       if ('showDirectoryPicker' in window) {
         try {
           const dirHandle = await (window as any).showDirectoryPicker();
@@ -199,10 +187,8 @@ export const useFileOperations = () => {
           
           const tree = await readDirectoryRecursive(dirHandle, dirHandle.name);
           setFileTree(tree);
-          
-          console.log(`[OpenFolder] 打开文件夹: ${dirHandle.name}`);
         } catch (err) {
-          console.log('用户取消了选择');
+          // 用户取消了选择
         }
       } else {
         alert('您的浏览器不支持文件夹浏览，请使用"打开文件"功能');

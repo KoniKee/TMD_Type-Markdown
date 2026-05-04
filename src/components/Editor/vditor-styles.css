@@ -196,12 +196,13 @@
   min-height: 100% !important;
 }
 
-/* 编辑区域内容最大宽度 - 提升阅读体验 */
+/* 编辑区域内容自适应宽度 */
 .vditor .vditor-ir pre.vditor-reset {
-  max-width: 900px;
+  max-width: 100%;
   margin: 0 auto;
-  padding-left: 24px !important;
+  padding-left: 48px !important;
   padding-right: 24px !important;
+  box-sizing: border-box !important;
 }
 
 /* 滚动区域配置 - 让光标不在最底部 */
@@ -235,4 +236,25 @@
 .dark .vditor .vditor-content::-webkit-scrollbar-thumb {
   background: #666 !important;
   border-color: #2d2d2d !important;
+}
+
+/* 表格自适应宽度 - 不出现水平滚动条 */
+.vditor .vditor-ir pre.vditor-reset table,
+.vditor .vditor-sv pre.vditor-reset table,
+.vditor .vditor-content .vditor-reset table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.vditor .vditor-ir pre.vditor-reset table th,
+.vditor .vditor-ir pre.vditor-reset table td,
+.vditor .vditor-sv pre.vditor-reset table th,
+.vditor .vditor-sv pre.vditor-reset table td,
+.vditor .vditor-content .vditor-reset table th,
+.vditor .vditor-content .vditor-reset table td {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
 }

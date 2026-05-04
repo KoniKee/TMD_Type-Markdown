@@ -226,6 +226,24 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
     return unsubscribe;
   }, [path]);
 
+  // 监听外部内容变化（文件重新加载）
+  useEffect(() => {
+    const unsubscribe = useEditorStore.subscribe((state, prevState) => {
+      const doc = state.documents[path];
+      const prevDoc = prevState.documents[path];
+      
+      if (doc && prevDoc && 
+          doc.content !== prevDoc.content && 
+          !doc.isModified && 
+          doc.content !== vditorRef.current?.getValue()) {
+        vditorRef.current?.setValue(doc.content);
+        contentRef.current = doc.content;
+      }
+    });
+    
+    return unsubscribe;
+  }, [path]);
+
   // 当 path 变化时初始化编辑器
   useEffect(() => {
     if (!containerRef.current) return;
@@ -442,6 +460,16 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
         if ((event.ctrlKey || event.metaKey) && event.key === 's') {
           event.preventDefault();
           saveToFile();
+          return true;
+        }
+        
+        // Ctrl+Shift+Z 重做 - 触发工具栏 redo 按钮
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          const redoBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="redo"]') as HTMLButtonElement;
+          if (redoBtn) {
+            redoBtn.click();
+          }
           return true;
         }
         

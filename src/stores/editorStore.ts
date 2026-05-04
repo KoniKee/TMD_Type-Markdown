@@ -28,8 +28,6 @@ function loadFromStorage(): { documents: Record<string, DocumentState>; tabs: st
     localStorage.removeItem(STORAGE_KEY_TABS);
     localStorage.removeItem(STORAGE_KEY_ACTIVE_PATH);
     
-    console.log('[EditorStore] 已清理旧的缓存数据');
-    
     return { documents, tabs: [], activeDocPath: null };
   } catch (e) {
     console.error('[EditorStore] 恢复数据失败:', e);
