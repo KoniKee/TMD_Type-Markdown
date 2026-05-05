@@ -79,7 +79,7 @@ jobs:
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.platform == 'ubuntu-22.04' && '--bundles deb' || '' }}
+          args: ${{ matrix.platform == 'windows-latest' && '--bundles nsis' || (matrix.platform == 'ubuntu-22.04' && '--bundles deb' || '') }}
 
       - name: Upload portable exe to Release (Windows)
         if: matrix.platform == 'windows-latest' && startsWith(github.ref, 'refs/tags/')
