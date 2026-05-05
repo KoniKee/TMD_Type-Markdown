@@ -463,6 +463,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
       value: contentRef.current,
       input: (value: string) => {
         updateDocument(path, value);
+        useEditorStore.getState().setMarkdownLength(value.length);
       },
       // 自定义快捷键
       keydown: (event: KeyboardEvent) => {
@@ -509,6 +510,10 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
         vditorRef.current = vditor;
         isInitializedRef.current = true;
         
+        // 设置初始 markdown 长度
+        const initialValue = vditor.getValue();
+        useEditorStore.getState().setMarkdownLength(initialValue.length);
+        
         // 手动启用上标和下标功能（等待官方发布 3.11.3）
         try {
           const lute = (vditor as any).vditor?.lute;
@@ -526,7 +531,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
         // 处理本地图片加载
         processLocalImages(containerRef.current!, path);
         
-        // TOC 目录点击跳转处理（使用事件委托）
+        // TOC 目录点击跳转处理（使用事件委托，绑定到容器）
         const handleTocClick = (e: MouseEvent) => {
           const target = e.target as HTMLElement;
           
@@ -562,9 +567,9 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
               const headingText = decodeURIComponent(headingId);
               const headings = vditorReset.querySelectorAll('h1, h2, h3, h4, h5, h6');
               for (const h of headings) {
-                if (h.textContent?.trim() === headingText || 
-                    h.getAttribute('data-id') === headingId ||
-                    h.getAttribute('data-node-id') === headingId) {
+                const hId = h.getAttribute('data-id') || h.getAttribute('data-node-id');
+                const hText = h.textContent?.trim();
+                if (hId === headingId || hText === headingText) {
                   heading = h as HTMLElement;
                   break;
                 }
@@ -580,11 +585,11 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
           }
         };
         
-        const vditorResetEl = containerRef.current?.querySelector('.vditor-ir .vditor-reset');
-        if (vditorResetEl) {
-          vditorResetEl.addEventListener('click', handleTocClick as EventListener);
+        // 绑定到整个编辑器容器
+        if (containerRef.current) {
+          containerRef.current.addEventListener('click', handleTocClick as EventListener);
           (vditorRef.current as any)._tocClickHandler = handleTocClick;
-          (vditorRef.current as any)._tocClickTarget = vditorResetEl;
+          (vditorRef.current as any)._tocClickTarget = containerRef.current;
         }
         
         // 渲染 Mermaid 图表

@@ -56,6 +56,7 @@ interface EditorStateStore {
   tabs: string[];
   saveStatus: SaveStatus;
   wordCount: number;
+  markdownLength: number;
 
   openDocument: (path: string, content?: string, isNew?: boolean) => void;
   closeDocument: (path: string) => void;
@@ -64,6 +65,7 @@ interface EditorStateStore {
   setActiveDocument: (path: string | null) => void;
   renameDocument: (oldPath: string, newPath: string) => void;
   setWordCount: (count: number) => void;
+  setMarkdownLength: (length: number) => void;
 }
 
 export const useEditorStore = create<EditorStateStore>((set, get) => ({
@@ -72,6 +74,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
   tabs: initialState.tabs,
   saveStatus: 'saved',
   wordCount: 0,
+  markdownLength: 0,
 
   openDocument: (path: string, content?: string, isNew?: boolean) => {
     const { documents, tabs } = get();
@@ -198,4 +201,5 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
   },
 
   setWordCount: (count: number) => set({ wordCount: count }),
+  setMarkdownLength: (length: number) => set({ markdownLength: length }),
 }));

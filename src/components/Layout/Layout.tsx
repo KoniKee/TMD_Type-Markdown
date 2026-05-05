@@ -101,6 +101,7 @@ const StatusBar: React.FC = () => {
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const saveStatus = useEditorStore((state) => state.saveStatus);
   const wordCount = useEditorStore((state) => state.wordCount);
+  const markdownLength = useEditorStore((state) => state.markdownLength);
 
   const getStatusText = () => {
     switch (saveStatus) {
@@ -134,11 +135,17 @@ const StatusBar: React.FC = () => {
       <div className="flex items-center gap-4 text-[var(--statusbar-text)]">
         <span 
           className="opacity-70 cursor-help relative group"
-          title="统计纯文本字符数（不含 Markdown 语法标记）"
         >
           {wordCount} 字
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[var(--tooltip-bg)] text-[var(--tooltip-text)] text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-            统计纯文本字符数，不含 Markdown 语法标记
+          <span className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 text-xs rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100] border-2 border-gray-300 dark:border-gray-600 font-medium">
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-600 dark:text-gray-300">字数</span>
+              <span>{wordCount}</span>
+            </div>
+            <div className="flex justify-between gap-4 mt-1">
+              <span className="text-gray-600 dark:text-gray-300">Markdown文本</span>
+              <span>{markdownLength}</span>
+            </div>
           </span>
         </span>
         <span className={`flex items-center gap-1 ${getStatusColor()}`}>
