@@ -598,8 +598,15 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
         const handleTocClick = (e: MouseEvent) => {
           const target = e.target as HTMLElement;
           
+          console.log('[TOC] click detected on:', target.className);
+          
           const tocContainer = target.closest('.vditor-toc');
-          if (!tocContainer) return;
+          if (!tocContainer) {
+            console.log('[TOC] no toc container found');
+            return;
+          }
+          
+          console.log('[TOC] found toc container');
           
           const tocItem = target.closest('li');
           if (!tocItem) return;
@@ -620,18 +627,25 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             headingId = link.getAttribute('data-target-id');
           }
           
+          console.log('[TOC] headingId:', headingId);
+          
           if (headingId) {
             const vditorReset = containerRef.current?.querySelector('.vditor-ir .vditor-reset') as HTMLElement;
-            if (!vditorReset) return;
+            if (!vditorReset) {
+              console.log('[TOC] no vditor-reset found');
+              return;
+            }
             
             let heading = vditorReset.querySelector(`[id="${headingId}"]`) as HTMLElement;
             
             if (!heading) {
               const headingText = decodeURIComponent(headingId);
+              console.log('[TOC] searching for heading text:', headingText);
               const headings = vditorReset.querySelectorAll('h1, h2, h3, h4, h5, h6');
               for (const h of headings) {
                 const hId = h.getAttribute('data-id') || h.getAttribute('data-node-id');
                 const hText = h.textContent?.trim();
+                console.log('[TOC] checking heading:', hText, 'id:', hId);
                 if (hId === headingId || hText === headingText) {
                   heading = h as HTMLElement;
                   break;
@@ -640,10 +654,13 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             }
             
             if (heading) {
+              console.log('[TOC] found heading, scrolling to:', heading.offsetTop);
               vditorReset.scrollTo({
                 top: heading.offsetTop - 20,
                 behavior: 'smooth'
               });
+            } else {
+              console.log('[TOC] heading not found');
             }
           }
         };
