@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useFileStore, useEditorStore, TreeNode } from '../../stores';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { isTauriCached } from '../../utils/platform';
+import { useRecentFilesStore, formatTime } from '../../stores/recentFilesStore';
 import {
   Folder,
   FolderOpen,
@@ -18,7 +19,10 @@ import {
   RefreshCw,
   Trash2,
   LucideIcon,
-  FilePlus
+  FilePlus,
+  Clock,
+  Pin,
+  PinOff
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -53,6 +57,10 @@ export const Sidebar: React.FC = () => {
   const { fileTree, rootPath, setFileTree, setFileHandle, setDirHandle, rootHandle, dirHandles } = useFileStore();
   const { openDocument, renameDocument, documents } = useEditorStore();
   const { readDirectoryRecursive, readDirectoryTauri, handleNewFile, handleOpenFile, handleOpenFolder } = useFileOperations();
+  const { recentFiles, addFile, removeFile, clearAll, pinFile, unpinFile } = useRecentFilesStore();
+
+  // 视图切换：'files' | 'recent'
+  const [viewMode, setViewMode] = useState<'files' | 'recent'>('files');
 
   // 获取 Tauri 环境下的完整根路径
   const getFullRootPath = useCallback(() => {
@@ -757,98 +765,234 @@ export const Sidebar: React.FC = () => {
     >
       {/* Header */}
       <div className="h-10 flex items-center justify-between px-3 border-b border-[var(--sidebar-border)]">
-        <span className="text-xs font-semibold text-[var(--sidebar-text-muted)] uppercase tracking-wider">
-          文件浏览器
-        </span>
-        <div className="flex items-center gap-1">
+      {/* Tab切换 - 仅桌面版显示最近列表 */}
+      <div className="flex items-center gap-1">
+        <button
+          className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${
+            viewMode === 'files' 
+              ? 'bg-[var(--accent-500)] text-white' 
+              : 'text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]'
+          }`}
+          onClick={() => setViewMode('files')}
+        >
+          文件
+        </button>
+        {isTauriCached() && (
           <button
-            className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
-            onClick={handleNewFile}
-            title="新建文档"
+            className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${
+              viewMode === 'recent' 
+                ? 'bg-[var(--accent-500)] text-white' 
+                : 'text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)]'
+            }`}
+            onClick={() => setViewMode('recent')}
           >
-            <FilePlus size={14} />
+            最近
           </button>
-          <button
-            className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
-            onClick={handleOpenFile}
-            title="打开文件"
-          >
-            <FileText size={14} />
-          </button>
-          <button
-            className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
-            onClick={handleOpenFolder}
-            title="打开文件夹"
-          >
-            <FolderOpen size={14} />
-          </button>
-          {rootHandle && (
+        )}
+      </div>
+        {viewMode === 'files' && (
+          <div className="flex items-center gap-1">
             <button
               className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
-              onClick={refreshTree}
-              title="刷新目录树"
+              onClick={handleNewFile}
+              title="新建文档"
             >
-              <RefreshCw size={14} />
+              <FilePlus size={14} />
             </button>
-          )}
-        </div>
+            <button
+              className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
+              onClick={handleOpenFile}
+              title="打开文件"
+            >
+              <FileText size={14} />
+            </button>
+            <button
+              className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
+              onClick={handleOpenFolder}
+              title="打开文件夹"
+            >
+              <FolderOpen size={14} />
+            </button>
+            {rootHandle && (
+              <button
+                className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
+                onClick={refreshTree}
+                title="刷新目录树"
+              >
+                <RefreshCw size={14} />
+              </button>
+            )}
+          </div>
+        )}
+        {viewMode === 'recent' && recentFiles.length > 0 && (
+          <button
+            className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-red-500 transition-colors"
+            onClick={() => {
+              if (confirm('确定要清空所有最近打开记录吗？')) {
+                clearAll();
+              }
+            }}
+            title="清空全部"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
 
-      {/* 文件树 */}
+      {/* 文件树 / 最近文件列表 */}
       <div className="flex-1 overflow-auto py-2">
-        {rootPath ? (
-          <div className="px-1">
-            {/* 根文件夹 */}
-            <div key={rootPath}>
-              <div
-                className={`
-                  group flex items-center py-1.5 px-2 cursor-pointer
-                  transition-all duration-[var(--transition-fast)]
-                  rounded-md
-                  ${hoveredPath === rootPath ? 'bg-[var(--sidebar-hover)]' : ''}
-                `}
-                onClick={() => toggleDir(rootPath)}
-                onContextMenu={(e) => handleContextMenu(e, {
-                  name: rootPath,
-                  path: getFullRootPath() || rootPath,  // 使用完整路径
-                  isDir: true,
-                  handle: rootHandle || undefined
-                })}
-                onMouseEnter={() => setHoveredPath(rootPath)}
-                onMouseLeave={() => setHoveredPath(null)}
-              >
-                <span className="w-4 h-4 flex items-center justify-center mr-1 text-[var(--sidebar-text-muted)]">
+        {viewMode === 'files' ? (
+          // 文件视图
+          rootPath ? (
+            <div className="px-1">
+              {/* 根文件夹 */}
+              <div key={rootPath}>
+                <div
+                  className={`
+                    group flex items-center py-1.5 px-2 cursor-pointer
+                    transition-all duration-[var(--transition-fast)]
+                    rounded-md
+                    ${hoveredPath === rootPath ? 'bg-[var(--sidebar-hover)]' : ''}
+                  `}
+                  onClick={() => toggleDir(rootPath)}
+                  onContextMenu={(e) => handleContextMenu(e, {
+                    name: rootPath,
+                    path: getFullRootPath() || rootPath,  // 使用完整路径
+                    isDir: true,
+                    handle: rootHandle || undefined
+                  })}
+                  onMouseEnter={() => setHoveredPath(rootPath)}
+                  onMouseLeave={() => setHoveredPath(null)}
+                >
+                  <span className="w-4 h-4 flex items-center justify-center mr-1 text-[var(--sidebar-text-muted)]">
+                    {expandedDirs.has(rootPath) ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+                  </span>
                   {expandedDirs.has(rootPath) ? (
-                    <ChevronDown size={14} />
+                    <FolderOpen size={16} className="mr-2 text-[var(--accent-400)]" />
                   ) : (
-                    <ChevronRight size={14} />
+                    <Folder size={16} className="mr-2 text-[var(--accent-400)]" />
                   )}
-                </span>
-                {expandedDirs.has(rootPath) ? (
-                  <FolderOpen size={16} className="mr-2 text-[var(--accent-400)]" />
-                ) : (
-                  <Folder size={16} className="mr-2 text-[var(--accent-400)]" />
-                )}
-                <span className="truncate text-sm font-medium text-[var(--sidebar-text)]">
-                  {rootPath}
-                </span>
-              </div>
-
-              {/* 根文件夹内容 */}
-              {expandedDirs.has(rootPath) && (
-                <div className="mt-0.5">
-                  {renderTree(fileTree, 1)}
+                  <span className="truncate text-sm font-medium text-[var(--sidebar-text)]">
+                    {rootPath}
+                  </span>
                 </div>
-              )}
+
+                {/* 根文件夹内容 */}
+                {expandedDirs.has(rootPath) && (
+                  <div className="mt-0.5">
+                    {renderTree(fileTree, 1)}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 px-4 text-center">
+              <FolderOpen size={32} className="text-[var(--sidebar-text-muted)] mb-2 opacity-50" />
+              <p className="text-sm text-[var(--sidebar-text-muted)]">
+                打开文件夹以查看文件
+              </p>
+            </div>
+          )
         ) : (
-          <div className="flex flex-col items-center justify-center h-32 px-4 text-center">
-            <FolderOpen size={32} className="text-[var(--sidebar-text-muted)] mb-2 opacity-50" />
-            <p className="text-sm text-[var(--sidebar-text-muted)]">
-              打开文件夹以查看文件
-            </p>
-          </div>
+          // 最近文件视图
+          recentFiles.length > 0 ? (
+            <div className="px-1">
+              {recentFiles.map((file) => (
+                <div
+                  key={file.path}
+                  className="group flex items-center py-1.5 px-2 cursor-pointer rounded-md hover:bg-[var(--sidebar-hover)] transition-all"
+                  onMouseEnter={() => setHoveredPath(file.path)}
+                  onMouseLeave={() => setHoveredPath(null)}
+                  onClick={async () => {
+                    try {
+                      if (isTauriCached()) {
+                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                        // Tauri版本：去掉file://前缀
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const content = await readTextFile(realPath);
+                        openDocument(file.path, content, false);
+                        addFile(file.path, file.name);
+                      } else {
+                        // 浏览器环境：尝试从fileStore获取文件句柄
+                        const { getFileHandle } = useFileStore.getState();
+                        
+                        // 去掉 file:// 前缀（存储句柄时用的是原始路径）
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        
+                        // 标准化路径
+                        const normalizedPath = realPath.replace(/\\/g, '/');
+                        
+                        // 尝试多种方式查找句柄
+                        const handle = getFileHandle(normalizedPath) || 
+                                       getFileHandle(realPath) || 
+                                       getFileHandle(file.name);
+                        
+                        if (handle && handle.kind === 'file') {
+                          const fileObj = await handle.getFile();
+                          const content = await fileObj.text();
+                          openDocument(file.path, content, false);
+                          addFile(file.path, file.name);
+                        } else {
+                          // 文件句柄已失效，提示用户
+                          alert(`文件句柄已失效，请从文件树中打开。\n查找路径: ${normalizedPath}`);
+                        }
+                      }
+                    } catch (err) {
+                      console.error('打开最近文件失败:', err);
+                      alert(`打开文件失败: ${err}`);
+                    }
+                  }}
+                >
+                  <div className="w-4 h-4 flex items-center justify-center mr-2">
+                    {file.isPinned ? (
+                      <Pin size={12} className="text-[var(--accent-500)]" />
+                    ) : (
+                      <FileText size={14} className="text-[var(--editor-text-secondary)]" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-[var(--sidebar-text)] truncate">{file.name}</div>
+                    <div className="text-xs text-[var(--sidebar-text-muted)]">{formatTime(file.lastOpened)}</div>
+                  </div>
+                  {hoveredPath === file.path && (
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          file.isPinned ? unpinFile(file.path) : pinFile(file.path);
+                        }}
+                        title={file.isPinned ? '取消置顶' : '置顶'}
+                      >
+                        {file.isPinned ? <PinOff size={12} /> : <Pin size={12} />}
+                      </button>
+                      <button
+                        className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(file.path);
+                        }}
+                        title="移除"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 px-4 text-center">
+              <Clock size={32} className="text-[var(--sidebar-text-muted)] mb-2 opacity-50" />
+              <p className="text-sm text-[var(--sidebar-text-muted)]">
+                暂无最近打开的文件
+              </p>
+            </div>
+          )
         )}
       </div>
 

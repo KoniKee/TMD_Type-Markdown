@@ -9,6 +9,7 @@ import { isTauriCached, waitForTauri } from '../../utils/platform';
 import { isLocalMdFile, resolveDocPath, readMdFileContent, getFileDisplayName, normalizePath, getFileName } from '../../utils/linkUtils';
 import { shouldRenderEmbed, processEmbedsInMarkdown, createEmbedContainer, createEmbedWarning, EmbedContext } from '../../utils/embedUtils';
 import EmojiPicker from './EmojiPicker';
+import ReplaceDialog from './ReplaceDialog';
 
 // 本地化 Vditor CDN 路径
 const VDITOR_CDN = './vditor';
@@ -298,6 +299,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
   const [initKey, setInitKey] = useState(0);
   const processedEmbedsRef = useRef<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   
   // 字数统计节流 - 使用ref保存debounce函数
   const wordCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -351,6 +353,51 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
   useEffect(() => {
     setPreviewModeRef.current = setPreviewMode;
   }, [setPreviewMode]);
+  
+  // Ctrl+/ 快捷键 - 在IR和SV模式间切换
+  useEffect(() => {
+    const handleModeSwitch = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
+        if (!toolbar) return;
+        
+        const currentMode = vditorRef.current?.getCurrentMode();
+        const targetMode = currentMode === 'ir' ? 'sv' : 'ir';
+        
+        // 直接点击工具栏中的模式按钮
+        const buttons = toolbar.querySelectorAll('button');
+        for (const btn of buttons) {
+          const text = btn.textContent?.trim() || '';
+          
+          if ((targetMode === 'ir' && text.includes('即时渲染')) ||
+              (targetMode === 'sv' && text.includes('分屏预览'))) {
+            (btn as HTMLElement).click();
+            return;
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleModeSwitch, true);
+    return () => window.removeEventListener('keydown', handleModeSwitch, true);
+  }, []);
+  
+  // Ctrl+H 快捷键 - 打开查找替换弹窗
+  useEffect(() => {
+    const handleFindReplace = (e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'h') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowReplaceDialog(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleFindReplace, true);
+    return () => window.removeEventListener('keydown', handleFindReplace, true);
+  }, []);
 
   const handleLocalMdLinkClick = useCallback(async (href: string): Promise<boolean> => {
     if (!href || !isLocalMdFile(href)) {
@@ -1698,6 +1745,14 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path }) => {
             }
           }}
           onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
+      {/* 查找替换弹窗 */}
+      {showReplaceDialog && (
+        <ReplaceDialog
+          isOpen={showReplaceDialog}
+          onClose={() => setShowReplaceDialog(false)}
+          vditor={vditorRef.current}
         />
       )}
     </div>

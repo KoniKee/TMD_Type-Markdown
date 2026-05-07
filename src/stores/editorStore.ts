@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useRecentFilesStore } from './recentFilesStore';
 
 export type EditorMode = 'ir' | 'sv' | 'wysiwyg';
 export type PreviewMode = 'editor' | 'both' | 'preview';
@@ -130,6 +131,11 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
       activeDocPath: path,
       saveStatus: isNew ? 'unsaved' : 'saved',
     });
+    
+    // 记录到最近文件
+    const { addFile } = useRecentFilesStore.getState();
+    const fileName = path.split('/').pop()?.split('\\').pop() || path;
+    addFile(path, fileName);
   },
 
   closeDocument: (path: string) => {
