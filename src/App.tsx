@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { useTheme } from './hooks';
 import { waitForTauri } from './utils/platform';
-import { useEditorStore } from './stores';
+import { useEditorStore, useUpdateStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
-  
+  const checkForUpdate = useUpdateStore((state) => state.checkForUpdate);
+
   useTheme();
   
   useEffect(() => {
@@ -42,13 +43,28 @@ function App() {
     
     document.addEventListener('drop', handleGlobalDrop);
     document.addEventListener('dragover', handleDragOver);
-    
+
     return () => {
       document.removeEventListener('drop', handleGlobalDrop);
       document.removeEventListener('dragover', handleDragOver);
     };
   }, []);
-  
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      checkForUpdate();
+    }, 5000);
+
+    const interval = setInterval(() => {
+      checkForUpdate();
+    }, 4 * 60 * 60 * 1000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [checkForUpdate]);
+
   if (!isReady) {
     return (
       <div style={{ 

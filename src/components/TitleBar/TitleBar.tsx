@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useEditorStore, useSettingsStore } from '../../stores';
+import { useEditorStore, useSettingsStore, useUpdateStore } from '../../stores';
 import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus } from 'lucide-react';
+import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle } from 'lucide-react';
 import { useFileOperations } from '../../hooks/useFileOperations';
+import { UpdateNotification } from '../Update/UpdateNotification';
 
 declare global {
   interface Window {
@@ -34,7 +35,9 @@ export const TitleBar: React.FC = () => {
   const saveToFile = useSaveToFile();
   const { theme, toggleTheme } = useSettingsStore();
   const { handleNewFile } = useFileOperations();
+  const { hasUpdate, latestVersion } = useUpdateStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -181,6 +184,17 @@ export const TitleBar: React.FC = () => {
             onClick={toggleTheme}
           />
 
+          {hasUpdate && (
+            <button
+              className="relative w-9 h-9 flex items-center justify-center text-green-500 hover:bg-[var(--toolbar-hover)] transition-colors rounded-md mx-0.5"
+              onClick={() => setShowUpdateDialog(true)}
+              title={`发现新版本 ${latestVersion}`}
+            >
+              <ArrowUpCircle size={16} />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />
+            </button>
+          )}
+
           <TitleBarButton
             icon={Settings}
             title="设置"
@@ -217,6 +231,10 @@ export const TitleBar: React.FC = () => {
 
       {showShortcuts && (
         <ShortcutsDialog onClose={() => setShowShortcuts(false)} />
+      )}
+
+      {showUpdateDialog && (
+        <UpdateNotification onClose={() => setShowUpdateDialog(false)} />
       )}
     </>
   );
