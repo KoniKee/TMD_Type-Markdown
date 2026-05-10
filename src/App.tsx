@@ -22,6 +22,11 @@ function App() {
   
   useEffect(() => {
     const handleGlobalDrop = async (e: DragEvent) => {
+      if (isTauriCached()) {
+        e.preventDefault();
+        return;
+      }
+      
       const target = e.target as HTMLElement;
       if (target.closest('.pane-leaf')) {
         return;
@@ -43,12 +48,7 @@ function App() {
     };
     
     const handleDragOver = (e: DragEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.pane-leaf')) {
-        return;
-      }
       e.preventDefault();
-      e.stopPropagation();
     };
     
     document.addEventListener('drop', handleGlobalDrop);
@@ -76,16 +76,25 @@ function App() {
             const x = position.x;
             const y = position.y;
             
-            const element = document.elementFromPoint(x, y);
-            const paneLeaf = element?.closest('.pane-leaf') as HTMLElement | null;
+            const allPanes = document.querySelectorAll('.pane-leaf');
+            let targetPane: HTMLElement | null = null;
             
-            if (paneLeaf) {
-              const paneId = paneLeaf.getAttribute('data-pane-id');
-              const tabPath = paneLeaf.getAttribute('data-tab-path');
+            for (const pane of Array.from(allPanes)) {
+              const rect = pane.getBoundingClientRect();
+              if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                targetPane = pane as HTMLElement;
+                break;
+              }
+            }
+            
+            if (targetPane) {
+              const paneId = targetPane.getAttribute('data-pane-id');
+              const tabPath = targetPane.getAttribute('data-tab-path');
               
               if (paneId && tabPath) {
                 const { ensureDocument } = useEditorStore.getState();
-                const { setPaneDocument, setActivePane, getDocumentsInPanes } = await import('./stores').then(m => m.useSplitStore.getState());
+                const splitStore = await import('./stores').then(m => m.useSplitStore.getState());
+                const { setPaneDocument, setActivePane, getDocumentsInPanes } = splitStore;
                 
                 const existingDocs = getDocumentsInPanes(tabPath);
                 
