@@ -1,0 +1,97 @@
+.pane-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pane-container.horizontal {
+  flex-direction: column;
+}
+
+.pane-container.vertical {
+  flex-direction: row;
+}
+
+.pane-leaf {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.pane-leaf.active {
+  border-color: var(--accent-500);
+}
+
+.pane-leaf.drag-over {
+  background-color: rgba(var(--accent-500-rgb, 59, 130, 246), 0.1);
+  border-color: var(--accent-500);
+}
+
+.pane-divider {
+  flex-shrink: 0;
+  background-color: var(--editor-border);
+  transition: background-color 0.15s ease;
+  position: relative;
+}
+
+.pane-divider.vertical {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.pane-divider.horizontal {
+  height: 4px;
+  cursor: row-resize;
+}
+
+.pane-divider.active {
+  background-color: var(--accent-500);
+}
+
+.pane-divider:hover {
+  background-color: var(--accent-500);
+}
+
+.pane-divider::after {
+  content: '';
+  position: absolute;
+  background-color: transparent;
+}
+
+.pane-divider.vertical::after {
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+}
+
+.pane-divider.horizontal::after {
+  left: 0;
+  right: 0;
+  top: -4px;
+  bottom: -4px;
+}
+
+.pane-divider.dragging {
+  background-color: var(--accent-500);
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.1s ease-out;
+}

@@ -2,23 +2,20 @@ import { useCallback } from 'react';
 import { useFileStore, useEditorStore, TreeNode } from '../stores';
 import { isTauriCached } from '../utils/platform';
 
-/**
- * 文件操作 Hook
- * 提供新建文档、打开文件、打开文件夹等操作
- */
 export const useFileOperations = () => {
   const { fileTree, rootPath, setRootPath, setFileTree, setFileHandle, setDirHandle, setRootHandle, dirHandles, rootHandle, clearAll } = useFileStore();
-  const { openDocument } = useEditorStore();
+  const { openDocument, ensureDocument } = useEditorStore();
 
-  // 新建文档
   const handleNewFile = useCallback(() => {
     const fileName = `新建文档-${Date.now()}.md`;
     const content = `# 新建文档\n\n在这里开始写作...\n`;
     openDocument(fileName, content, true);
   }, [openDocument]);
 
-  // 打开本地文件
-  const handleOpenFile = useCallback(async () => {
+  const handleOpenFile = useCallback(async (onFileOpened?: (docPath: string) => void) => {
+    const isInPane = !!onFileOpened;
+    const docOpener = isInPane ? ensureDocument : openDocument;
+    
     if (isTauriCached()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const { readTextFile } = await import('@tauri-apps/plugin-fs');
@@ -30,14 +27,19 @@ export const useFileOperations = () => {
       
       if (selected) {
         const files = Array.isArray(selected) ? selected : [selected];
+        let lastOpenedPath: string | null = null;
         for (const filePath of files) {
           try {
             const content = await readTextFile(filePath as string);
-            const fileName = (filePath as string).split(/[/\\]/).pop() || 'untitled.md';
-            openDocument(`file://${filePath}`, content, false);
+            const docPath = `file://${filePath}`;
+            docOpener(docPath, content, false);
+            lastOpenedPath = docPath;
           } catch (err) {
             console.error('读取文件失败:', err);
           }
+        }
+        if (lastOpenedPath && onFileOpened) {
+          onFileOpened(lastOpenedPath);
         }
       }
     } else {
@@ -50,17 +52,21 @@ export const useFileOperations = () => {
         const files = (e.target as HTMLInputElement).files;
         if (!files) return;
         
+        let lastOpenedPath: string | null = null;
         for (const file of files) {
           const content = await file.text();
-          const fileName = file.name;
-          const docPath = `file://${fileName}`;
-          openDocument(docPath, content, false);
+          const docPath = `file://${file.name}`;
+          docOpener(docPath, content, false);
+          lastOpenedPath = docPath;
+        }
+        if (lastOpenedPath && onFileOpened) {
+          onFileOpened(lastOpenedPath);
         }
       };
       
       input.click();
     }
-  }, [openDocument]);
+  }, [openDocument, ensureDocument]);
 
   // 读取目录（浏览器环境，只读取一级，不递归）
   const readDirectoryRecursive = useCallback(async (dirHandle: FileSystemDirectoryHandle, basePath: string): Promise<TreeNode[]> => {

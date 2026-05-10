@@ -22,6 +22,11 @@ function App() {
   
   useEffect(() => {
     const handleGlobalDrop = async (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.pane-leaf')) {
+        return;
+      }
+      
       e.preventDefault();
       e.stopPropagation();
       const files = e.dataTransfer?.files;
@@ -37,6 +42,10 @@ function App() {
     };
     
     const handleDragOver = (e: DragEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.pane-leaf')) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
     };

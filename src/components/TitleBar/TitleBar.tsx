@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useEditorStore, useSettingsStore, useUpdateStore } from '../../stores';
+import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
 import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle } from 'lucide-react';
+import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows } from 'lucide-react';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
+import { CloseTabConfirm } from '../Editor/CloseTabConfirm';
 
 declare global {
   interface Window {
@@ -36,9 +37,18 @@ export const TitleBar: React.FC = () => {
   const { theme, toggleTheme } = useSettingsStore();
   const { handleNewFile } = useFileOperations();
   const { hasUpdate, latestVersion } = useUpdateStore();
+  const canSplit = useSplitStore((state) => activeDocPath ? state.canSplit(activeDocPath) : false);
+  const splitPane = useSplitStore((state) => state.splitPane);
+  const getCurrentState = useSplitStore((state) => state.getCurrentState);
+  const getDocumentsInPanes = useSplitStore((state) => state.getDocumentsInPanes);
+  const cleanupTabSplitState = useSplitStore((state) => state.cleanupTabSplitState);
+  const getPaneCount = useSplitStore((state) => state.getPaneCount);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [pendingCloseTab, setPendingCloseTab] = useState<string | null>(null);
+  const [pendingCloseDocuments, setPendingCloseDocuments] = useState<string[]>([]);
 
   useEffect(() => {
     const win = getTauriWindow();
@@ -68,6 +78,51 @@ export const TitleBar: React.FC = () => {
 
   const handleClose = () => {
     getTauriWindow()?.close();
+  };
+
+  const handleSplitVertical = () => {
+    if (!activeDocPath) return;
+    const splitState = getCurrentState(activeDocPath);
+    if (splitState && canSplit) {
+      splitPane(activeDocPath, splitState.activePaneId, 'vertical');
+    }
+  };
+
+  const handleSplitHorizontal = () => {
+    if (!activeDocPath) return;
+    const splitState = getCurrentState(activeDocPath);
+    if (splitState && canSplit) {
+      splitPane(activeDocPath, splitState.activePaneId, 'horizontal');
+    }
+  };
+
+  const handleCloseTab = (tabPath: string) => {
+    const paneCount = getPaneCount(tabPath);
+    if (paneCount > 1) {
+      const docs = getDocumentsInPanes(tabPath);
+      setPendingCloseTab(tabPath);
+      setPendingCloseDocuments(docs);
+      setShowCloseConfirm(true);
+    } else {
+      closeDocument(tabPath);
+      cleanupTabSplitState(tabPath);
+    }
+  };
+
+  const confirmCloseTab = () => {
+    if (pendingCloseTab) {
+      closeDocument(pendingCloseTab);
+      cleanupTabSplitState(pendingCloseTab);
+    }
+    setShowCloseConfirm(false);
+    setPendingCloseTab(null);
+    setPendingCloseDocuments([]);
+  };
+
+  const cancelCloseTab = () => {
+    setShowCloseConfirm(false);
+    setPendingCloseTab(null);
+    setPendingCloseDocuments([]);
   };
 
   return (
@@ -134,7 +189,7 @@ export const TitleBar: React.FC = () => {
                       `}
                       onClick={(e) => {
                         e.stopPropagation();
-                        closeDocument(tabPath);
+                        handleCloseTab(tabPath);
                       }}
                     >
                       <X size={12} />
@@ -142,7 +197,6 @@ export const TitleBar: React.FC = () => {
                   </div>
                 );
               })}
-              {/* Plus按钮放在tabs右侧（Win11记事本风格） */}
               <button
                 className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
                 onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
@@ -170,6 +224,23 @@ export const TitleBar: React.FC = () => {
             >
               <Save size={16} />
             </button>
+          )}
+
+          {activeDocPath && (
+            <>
+              <TitleBarButton
+                icon={Columns}
+                title={canSplit ? "垂直分栏 (Alt+Shift++)" : "已达最大窗格数"}
+                onClick={handleSplitVertical}
+                disabled={!canSplit}
+              />
+              <TitleBarButton
+                icon={Rows}
+                title={canSplit ? "水平分栏 (Alt+Shift+-)" : "已达最大窗格数"}
+                onClick={handleSplitHorizontal}
+                disabled={!canSplit}
+              />
+            </>
           )}
 
           <TitleBarButton
@@ -236,6 +307,14 @@ export const TitleBar: React.FC = () => {
       {showUpdateDialog && (
         <UpdateNotification onClose={() => setShowUpdateDialog(false)} />
       )}
+
+      {showCloseConfirm && (
+        <CloseTabConfirm
+          documents={pendingCloseDocuments}
+          onConfirm={confirmCloseTab}
+          onCancel={cancelCloseTab}
+        />
+      )}
     </>
   );
 };
@@ -247,6 +326,7 @@ interface TitleBarButtonProps {
   isWindowControl?: boolean;
   isClose?: boolean;
   isActive?: boolean;
+  disabled?: boolean;
 }
 
 const TitleBarButton: React.FC<TitleBarButtonProps> = ({
@@ -256,6 +336,7 @@ const TitleBarButton: React.FC<TitleBarButtonProps> = ({
   isWindowControl = false,
   isClose = false,
   isActive = false,
+  disabled = false,
 }) => {
   return (
     <button
@@ -263,24 +344,27 @@ const TitleBarButton: React.FC<TitleBarButtonProps> = ({
         flex items-center justify-center
         ${isWindowControl ? 'w-11 h-10' : 'w-8 h-8 rounded-md mx-0.5'}
         transition-all duration-[var(--transition-fast)]
-        ${isClose
-          ? 'hover:bg-[var(--error-500)] hover:text-white'
-          : isActive
-            ? 'bg-[var(--sidebar-active)]'
-            : 'hover:bg-[var(--toolbar-hover)]'
+        ${disabled
+          ? 'opacity-40 cursor-not-allowed'
+          : isClose
+            ? 'hover:bg-[var(--error-500)] hover:text-white'
+            : isActive
+              ? 'bg-[var(--sidebar-active)]'
+              : 'hover:bg-[var(--toolbar-hover)]'
         }
         text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)]
       `}
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
-        onClick();
+        if (!disabled) onClick();
       }}
       onMouseDown={(e) => {
         e.stopPropagation();
         e.preventDefault();
       }}
       title={title}
+      disabled={disabled}
     >
       <Icon size={16} />
     </button>
@@ -302,6 +386,12 @@ const ShortcutsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       { key: 'Ctrl + 1', action: '一级标题' },
       { key: 'Ctrl + 2', action: '二级标题' },
       { key: 'Ctrl + 3', action: '三级标题' },
+    ]},
+    { category: '分栏操作', items: [
+      { key: 'Alt + Shift + +', action: '垂直分栏' },
+      { key: 'Alt + Shift + -', action: '水平分栏' },
+      { key: 'Alt + 方向键', action: '切换窗格' },
+      { key: 'Alt + Shift + W', action: '关闭当前窗格' },
     ]},
     { category: '其他', items: [
       { key: 'Ctrl + M', action: '插入表格' },

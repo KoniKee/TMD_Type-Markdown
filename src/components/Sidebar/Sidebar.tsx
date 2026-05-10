@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useFileStore, useEditorStore, TreeNode } from '../../stores';
+import { useFileStore, useEditorStore, useSplitStore, TreeNode } from '../../stores';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { isTauriCached } from '../../utils/platform';
 import { useRecentFilesStore, formatTime } from '../../stores/recentFilesStore';
@@ -22,7 +22,9 @@ import {
   FilePlus,
   Clock,
   Pin,
-  PinOff
+  PinOff,
+  ExternalLink,
+  Columns
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -31,6 +33,7 @@ interface ContextMenuState {
   x: number;
   y: number;
   node: TreeNode | null;
+  recentFile: { path: string; name: string } | null;
 }
 
 interface RenameState {
@@ -55,9 +58,16 @@ interface DeleteState {
 
 export const Sidebar: React.FC = () => {
   const { fileTree, rootPath, setFileTree, setFileHandle, setDirHandle, rootHandle, dirHandles } = useFileStore();
-  const { openDocument, renameDocument, documents } = useEditorStore();
+  const { openDocument, renameDocument, documents, activeTabPath, ensureDocument } = useEditorStore();
   const { readDirectoryRecursive, readDirectoryTauri, handleNewFile, handleOpenFile, handleOpenFolder } = useFileOperations();
   const { recentFiles, addFile, removeFile, clearAll, pinFile, unpinFile } = useRecentFilesStore();
+  const getPaneCount = useSplitStore((state) => state.getPaneCount);
+  const getCurrentState = useSplitStore((state) => state.getCurrentState);
+  const setPaneDocument = useSplitStore((state) => state.setPaneDocument);
+  const setActivePane = useSplitStore((state) => state.setActivePane);
+  const getDocumentsInPanes = useSplitStore((state) => state.getDocumentsInPanes);
+  
+  const hasSplitPanes = activeTabPath ? getPaneCount(activeTabPath) > 1 : false;
 
   // 视图切换：'files' | 'recent'
   const [viewMode, setViewMode] = useState<'files' | 'recent'>('files');
@@ -109,7 +119,8 @@ export const Sidebar: React.FC = () => {
     visible: false,
     x: 0,
     y: 0,
-    node: null
+    node: null,
+    recentFile: null
   });
   const [renameState, setRenameState] = useState<RenameState | null>(null);
   const [newFileState, setNewFileState] = useState<NewFileState | null>(null);
@@ -179,6 +190,42 @@ export const Sidebar: React.FC = () => {
     }
   };
 
+  const openFileInPane = async (node: TreeNode) => {
+    if (!activeTabPath) return;
+    
+    const splitState = getCurrentState(activeTabPath);
+    if (!splitState) return;
+    
+    const docPath = `file://${node.path}`;
+    
+    const existingDocs = getDocumentsInPanes(activeTabPath);
+    if (existingDocs.includes(docPath)) {
+      return;
+    }
+    
+    try {
+      let content: string;
+      if (isTauriCached()) {
+        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+        content = await readTextFile(node.path);
+      } else {
+        if (node.handle && node.handle.kind === 'file') {
+          const file = await node.handle.getFile();
+          content = await file.text();
+        } else {
+          return;
+        }
+      }
+      
+      ensureDocument(docPath, content, false);
+      setPaneDocument(activeTabPath, splitState.activePaneId, docPath);
+      setActivePane(activeTabPath, splitState.activePaneId);
+      addFile(docPath, node.name);
+    } catch (err) {
+      console.error('在窗格中打开文件失败:', err);
+    }
+  };
+
   const toggleDir = async (path: string, node?: TreeNode) => {
     const newExpanded = new Set(expandedDirs);
     
@@ -233,12 +280,24 @@ export const Sidebar: React.FC = () => {
       visible: true,
       x: e.clientX,
       y: e.clientY,
-      node
+      node,
+      recentFile: null
+    });
+  };
+
+  const handleRecentFileContextMenu = (e: React.MouseEvent, file: { path: string; name: string }) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      node: null,
+      recentFile: file
     });
   };
 
   const closeContextMenu = () => {
-    setContextMenu({ visible: false, x: 0, y: 0, node: null });
+    setContextMenu({ visible: false, x: 0, y: 0, node: null, recentFile: null });
   };
 
   // 开始重命名
@@ -651,6 +710,20 @@ export const Sidebar: React.FC = () => {
               ${renameState?.path === node.path ? 'bg-[var(--sidebar-hover)]' : ''}
             `}
             style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: '8px' }}
+            draggable={!node.isDir}
+            onDragStart={(e) => {
+              if (node.isDir) return;
+              
+              if (node.handle && node.handle.kind === 'file') {
+                setFileHandle(node.path, node.handle as FileSystemFileHandle);
+              }
+              
+              const docPath = `file://${node.path}`;
+              e.dataTransfer.clearData();
+              e.dataTransfer.setData('text/plain', docPath);
+              e.dataTransfer.setData('application/x-file-path', docPath);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
             onClick={() => {
               if (node.isDir) {
                 setSelectedDir(node.path);
@@ -781,7 +854,7 @@ export const Sidebar: React.FC = () => {
             </button>
             <button
               className="p-1.5 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)] transition-colors"
-              onClick={handleOpenFile}
+              onClick={() => handleOpenFile()}
               title="打开文件"
             >
               <FileText size={14} />
@@ -887,6 +960,7 @@ export const Sidebar: React.FC = () => {
                   className="group flex items-center py-1.5 px-2 cursor-pointer rounded-md hover:bg-[var(--sidebar-hover)] transition-all"
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
+                  onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
                   onClick={async () => {
                     try {
                       if (isTauriCached()) {
@@ -988,7 +1062,86 @@ export const Sidebar: React.FC = () => {
           className="fixed bg-[var(--sidebar-surface)] border border-[var(--sidebar-border)] rounded-lg shadow-lg py-1 z-50 min-w-[160px] animate-scale-in"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          {contextMenu.node?.isDir ? (
+          {contextMenu.recentFile ? (
+            <>
+              <ContextMenuItem
+                icon={ExternalLink}
+                label="在新Tab中打开"
+                onClick={async () => {
+                  const file = contextMenu.recentFile;
+                  if (!file) return;
+                  closeContextMenu();
+                  try {
+                    if (isTauriCached()) {
+                      const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                      const realPath = file.path.replace(/^file:\/\//, '');
+                      const content = await readTextFile(realPath);
+                      openDocument(file.path, content, false);
+                      addFile(file.path, file.name);
+                    } else {
+                      const { getFileHandle } = useFileStore.getState();
+                      const realPath = file.path.replace(/^file:\/\//, '');
+                      const normalizedPath = realPath.replace(/\\/g, '/');
+                      const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
+                      if (handle && handle.kind === 'file') {
+                        const fileObj = await handle.getFile();
+                        const content = await fileObj.text();
+                        openDocument(file.path, content, false);
+                        addFile(file.path, file.name);
+                      }
+                    }
+                  } catch (err) {
+                    console.error('打开最近文件失败:', err);
+                  }
+                }}
+              />
+              {hasSplitPanes && (
+                <ContextMenuItem
+                  icon={Columns}
+                  label="在当前窗格中打开"
+                  onClick={async () => {
+                    const file = contextMenu.recentFile;
+                    if (!file || !activeTabPath) return;
+                    closeContextMenu();
+                    
+                    const existingDocs = getDocumentsInPanes(activeTabPath);
+                    if (existingDocs.includes(file.path)) {
+                      return;
+                    }
+                    
+                    try {
+                      let content: string;
+                      if (isTauriCached()) {
+                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        content = await readTextFile(realPath);
+                      } else {
+                        const { getFileHandle } = useFileStore.getState();
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const normalizedPath = realPath.replace(/\\/g, '/');
+                        const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
+                        if (handle && handle.kind === 'file') {
+                          const fileObj = await handle.getFile();
+                          content = await fileObj.text();
+                        } else {
+                          return;
+                        }
+                      }
+                      const splitState = getCurrentState(activeTabPath);
+                      if (splitState) {
+                        ensureDocument(file.path, content, false);
+                        setPaneDocument(activeTabPath, splitState.activePaneId, file.path);
+                        setActivePane(activeTabPath, splitState.activePaneId);
+                        addFile(file.path, file.name);
+                      }
+                    } catch (err) {
+                      console.error('在窗格中打开最近文件失败:', err);
+                    }
+                  }}
+                />
+              )}
+            </>
+          ) : contextMenu.node?.isDir ? (
             <>
               <ContextMenuItem
                 icon={RefreshCw}
@@ -1024,8 +1177,46 @@ export const Sidebar: React.FC = () => {
                 />
               )}
             </>
-          ) : (
+          ) : contextMenu.node ? (
             <>
+              <ContextMenuItem
+                icon={ExternalLink}
+                label="在新Tab中打开"
+                onClick={async () => {
+                  const node = contextMenu.node;
+                  if (!node) return;
+                  closeContextMenu();
+                  const docPath = `file://${node.path}`;
+                  try {
+                    if (isTauriCached()) {
+                      const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                      const content = await readTextFile(node.path);
+                      openDocument(docPath, content, false);
+                    } else if (node.handle && node.handle.kind === 'file') {
+                      setFileHandle(node.path, node.handle);
+                      const file = await node.handle.getFile();
+                      const content = await file.text();
+                      openDocument(docPath, content, false);
+                    }
+                    addFile(docPath, node.name);
+                  } catch (err) {
+                    console.error('打开文件失败:', err);
+                  }
+                }}
+              />
+              {hasSplitPanes && (
+                <ContextMenuItem
+                  icon={Columns}
+                  label="在当前窗格中打开"
+                  onClick={async () => {
+                    const node = contextMenu.node;
+                    if (!node || !activeTabPath) return;
+                    closeContextMenu();
+                    await openFileInPane(node);
+                  }}
+                />
+              )}
+              <div className="h-px bg-[var(--sidebar-border)] my-1" />
               <ContextMenuItem
                 icon={RefreshCw}
                 label="刷新"
@@ -1049,7 +1240,7 @@ export const Sidebar: React.FC = () => {
                 />
               )}
             </>
-          )}
+          ) : null}
         </div>
       )}
 

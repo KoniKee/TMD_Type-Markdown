@@ -1,10 +1,9 @@
 import React from 'react';
 import { useEditorStore } from '../../stores';
-import { VditorEditor } from './VditorEditor';
+import { PaneContainer } from './PaneContainer';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { FilePlus, FileText, FolderOpen } from 'lucide-react';
 
-// 新建文档的处理函数
 const handleNewFile = (openDocument: any) => {
   const fileName = `新建文档-${Date.now()}.md`;
   const content = `# 新建文档\n\n在这里开始写作...\n`;
@@ -12,17 +11,14 @@ const handleNewFile = (openDocument: any) => {
 };
 
 export const EditorContainer: React.FC = () => {
-  // 只订阅 activeDocPath 和 openDocument，不订阅 documents
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const openDocument = useEditorStore((state) => state.openDocument);
   const { handleOpenFolder, handleOpenFile } = useFileOperations();
   
-  // 没有文档时显示欢迎界面
   if (!activeDocPath) {
     return (
       <div className="h-full flex items-center justify-center bg-[var(--editor-bg)]">
         <div className="text-center max-w-lg px-8">
-          {/* Logo */}
           <div className="mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[var(--editor-link)] bg-opacity-10 mb-4">
               <span className="text-4xl">📝</span>
@@ -35,7 +31,6 @@ export const EditorContainer: React.FC = () => {
             </p>
           </div>
 
-          {/* 快速操作 */}
           <div className="flex gap-3 justify-center mb-8 flex-wrap">
             <button
               onClick={() => handleNewFile(openDocument)}
@@ -45,7 +40,7 @@ export const EditorContainer: React.FC = () => {
               <span>新建文档</span>
             </button>
             <button
-              onClick={handleOpenFile}
+              onClick={() => handleOpenFile()}
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--sidebar-bg)] border border-[var(--editor-border)] hover:bg-[var(--sidebar-hover)] transition-colors"
             >
               <FileText size={18} />
@@ -60,7 +55,6 @@ export const EditorContainer: React.FC = () => {
             </button>
           </div>
 
-          {/* 特性 */}
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div className="p-4 rounded-lg bg-[var(--sidebar-bg)]">
               <div className="text-2xl mb-2">✨</div>
@@ -79,7 +73,6 @@ export const EditorContainer: React.FC = () => {
             </div>
           </div>
 
-          {/* 快捷键提示 */}
           <div className="mt-8 text-xs text-[var(--editor-text)] opacity-50">
             <div className="mb-1">快捷键：Ctrl+B 加粗 | Ctrl+I 斜体 | Ctrl+S 保存</div>
             <div>支持拖放 .md 文件到编辑器</div>
@@ -89,24 +82,9 @@ export const EditorContainer: React.FC = () => {
     );
   }
 
-  // 检查文档是否存在（使用 getState 避免订阅）
-  const documents = useEditorStore.getState().documents;
-  const doc = documents[activeDocPath];
-  if (!doc) {
-    return (
-      <div className="h-full flex items-center justify-center bg-[var(--editor-bg)]">
-        <div className="text-center">
-          <div className="text-4xl mb-4">❌</div>
-          <h2 className="text-xl font-medium mb-2">文档未找到</h2>
-          <p className="text-[var(--editor-text)] opacity-60">路径: {activeDocPath}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full overflow-hidden bg-[var(--editor-bg)]">
-      <VditorEditor key={activeDocPath} path={activeDocPath} />
+      <PaneContainer key={activeDocPath} tabPath={activeDocPath} />
     </div>
   );
 };

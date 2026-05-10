@@ -4,3 +4,5 @@ export { useEditorStore, getSavedContent } from './editorStore';
 export type { DocumentState, EditorMode, PreviewMode } from './editorStore';
 export { useSettingsStore } from './settingsStore';
 export { useUpdateStore } from './updateStore';
+export { useSplitStore } from './splitStore';
+export type { Pane, PaneLeaf, PaneSplit, SplitDirection, TabSplitState } from './splitStore';

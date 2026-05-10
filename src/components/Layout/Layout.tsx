@@ -4,17 +4,17 @@ import { TitleBar } from '../TitleBar/TitleBar';
 import { EditorContainer } from '../Editor/EditorContainer';
 import { SettingsPanel } from '../Settings/SettingsPanel';
 import { useEditorStore } from '../../stores';
-import { useAutoSave, useTheme, useFileChangeDetection } from '../../hooks';
+import { useAutoSave, useTheme, useFileChangeDetection, useSplitShortcuts } from '../../hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // 使用hooks
   useAutoSave();
   useTheme();
   useFileChangeDetection();
+  useSplitShortcuts();
 
   const handleSidebarResize = (e: React.MouseEvent) => {
     const startX = e.clientX;

@@ -62,16 +62,19 @@ const initialState = loadFromStorage();
 interface EditorStateStore {
   documents: Record<string, DocumentState>;
   activeDocPath: string | null;
+  activeTabPath: string | null;
   tabs: string[];
   saveStatus: SaveStatus;
   wordCount: number;
   markdownLength: number;
 
   openDocument: (path: string, content?: string, isNew?: boolean) => void;
+  ensureDocument: (path: string, content?: string, isNew?: boolean) => void;
   closeDocument: (path: string) => void;
   updateDocument: (path: string, content: string) => void;
   saveDocument: (path: string, content?: string) => void;
   setActiveDocument: (path: string | null) => void;
+  setActiveTab: (path: string | null) => void;
   renameDocument: (oldPath: string, newPath: string) => void;
   setWordCount: (count: number) => void;
   setMarkdownLength: (length: number) => void;
@@ -85,6 +88,7 @@ interface EditorStateStore {
 export const useEditorStore = create<EditorStateStore>((set, get) => ({
   documents: initialState.documents,
   activeDocPath: initialState.activeDocPath,
+  activeTabPath: initialState.activeDocPath,
   tabs: initialState.tabs,
   saveStatus: 'saved',
   wordCount: 0,
@@ -133,6 +137,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
     set({
       tabs: newTabs,
       activeDocPath: path,
+      activeTabPath: path,
       saveStatus: isNew ? 'unsaved' : 'saved',
     });
     
@@ -142,12 +147,54 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
     addFile(path, fileName);
   },
 
+  ensureDocument: (path: string, content?: string, isNew?: boolean) => {
+    const { documents } = get();
+
+    if (!documents[path]) {
+      set({
+        documents: {
+          ...documents,
+          [path]: {
+            content: content || '',
+            isModified: isNew || false,
+            isNewFile: isNew || false,
+            lastSaved: isNew ? null : Date.now(),
+            outlineVisible: true,
+            editorMode: 'ir',
+            scrollPosition: 0,
+            previewMode: 'editor',
+            filePath: isNew ? undefined : path.replace(/^file:\/\//, ''),
+          },
+        },
+      });
+    } else if (content !== undefined) {
+      set({
+        documents: {
+          ...documents,
+          [path]: {
+            ...documents[path],
+            content,
+            isModified: isNew || false,
+            isNewFile: isNew || false,
+            filePath: isNew ? undefined : path.replace(/^file:\/\//, ''),
+          },
+        },
+      });
+    }
+    
+    // 记录到最近文件
+    const { addFile } = useRecentFilesStore.getState();
+    const fileName = path.split('/').pop()?.split('\\').pop() || path;
+    addFile(path, fileName);
+  },
+
   closeDocument: (path: string) => {
-    const { documents, tabs, activeDocPath } = get();
+    const { documents, tabs, activeDocPath, activeTabPath } = get();
     const newTabs = tabs.filter((t) => t !== path);
     const { [path]: _, ...restDocs } = documents;
 
     let newActivePath = activeDocPath;
+    let newActiveTabPath = activeTabPath;
     if (activeDocPath === path) {
       const currentIndex = tabs.indexOf(path);
       if (newTabs.length > 0) {
@@ -156,11 +203,15 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
         newActivePath = null;
       }
     }
+    if (activeTabPath === path) {
+      newActiveTabPath = newActivePath;
+    }
 
     set({
       documents: restDocs,
       tabs: newTabs,
       activeDocPath: newActivePath,
+      activeTabPath: newActiveTabPath,
     });
   },
 
@@ -202,7 +253,9 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
     }
   },
 
-  setActiveDocument: (path: string | null) => set({ activeDocPath: path }),
+  setActiveDocument: (path: string | null) => set({ activeDocPath: path, activeTabPath: path }),
+  
+  setActiveTab: (path: string | null) => set({ activeTabPath: path }),
 
   renameDocument: (oldPath: string, newPath: string) => {
     const { documents, tabs, activeDocPath } = get();
