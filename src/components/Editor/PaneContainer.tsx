@@ -154,44 +154,47 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
     e.stopPropagation();
     setDragState({ isOver: false, paneId: '' });
     
-    const types = e.dataTransfer.types;
-    let internalDragData: string | null = null;
-    if (types.includes('application/x-file-path')) {
-      internalDragData = e.dataTransfer.getData('application/x-file-path');
-    } else if (types.includes('text/plain')) {
-      internalDragData = e.dataTransfer.getData('text/plain');
-    }
-    
     let docPath: string | null = null;
     let content: string | null = null;
     
-    if (internalDragData && internalDragData.startsWith('file://')) {
-      docPath = internalDragData;
-      const realPath = internalDragData.replace(/^file:\/\//, '');
-      try {
-        if (isTauriCached()) {
-          const { readTextFile } = await import('@tauri-apps/plugin-fs');
-          content = await readTextFile(realPath);
-        } else {
-          const handle = getFileHandle(realPath) || getFileHandle(realPath.replace(/\\/g, '/'));
-          if (handle && handle.kind === 'file') {
-            const file = await handle.getFile();
-            content = await file.text();
+    const types = e.dataTransfer.types;
+    if (types.includes('application/x-file-path')) {
+      const internalDragData = e.dataTransfer.getData('application/x-file-path');
+      if (internalDragData && internalDragData.startsWith('file://')) {
+        docPath = internalDragData;
+        const realPath = internalDragData.replace(/^file:\/\//, '');
+        try {
+          if (isTauriCached()) {
+            const { readTextFile } = await import('@tauri-apps/plugin-fs');
+            content = await readTextFile(realPath);
+          } else {
+            const handle = getFileHandle(realPath) || getFileHandle(realPath.replace(/\\/g, '/'));
+            if (handle && handle.kind === 'file') {
+              const file = await handle.getFile();
+              content = await file.text();
+            }
           }
+        } catch (err) {
+          console.error('从文件树拖放打开文件失败:', err);
+          return;
         }
-      } catch (err) {
-        console.error('从文件树拖放打开文件失败:', err);
-        return;
       }
-    } else {
+    }
+    
+    if (!docPath) {
       const files = Array.from(e.dataTransfer.files).filter(f => 
         f.name.endsWith('.md') || f.name.endsWith('.markdown') || f.name.endsWith('.txt')
       );
       if (files.length > 0) {
         const file = files[0];
-        const filePath = (file as any).path || file.name;
-        docPath = `file://${filePath}`;
-        content = await file.text();
+        const filePath = (file as any).path;
+        if (filePath) {
+          docPath = `file://${filePath}`;
+          content = await file.text();
+        } else {
+          docPath = `file://${file.name}`;
+          content = await file.text();
+        }
       }
     }
     

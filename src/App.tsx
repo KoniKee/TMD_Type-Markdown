@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { useTheme } from './hooks';
 import { waitForTauri, isTauriCached } from './utils/platform';
-import { useEditorStore, useUpdateStore, peekInternalDragData, getInternalDragData } from './stores';
+import { useEditorStore, useUpdateStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
@@ -24,30 +24,18 @@ function App() {
     const handleGlobalDrop = async (e: DragEvent) => {
       const target = e.target as HTMLElement;
       
-      if (isTauriCached()) {
-        if (target.closest('.pane-leaf')) {
-          return;
-        }
-        
-        const types = e.dataTransfer?.types || [];
-        if (types.includes('application/x-file-path') || types.includes('text/plain')) {
-          return;
-        }
-        
-        e.preventDefault();
-        return;
-      }
-      
       if (target.closest('.pane-leaf')) {
         return;
       }
       
       e.preventDefault();
       e.stopPropagation();
+      
       const files = e.dataTransfer?.files;
-      if (!files) return;
+      if (!files || files.length === 0) return;
       
       const { openDocument } = useEditorStore.getState();
+      
       for (const file of Array.from(files)) {
         if (file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')) {
           const content = await file.text();
@@ -67,143 +55,6 @@ function App() {
     return () => {
       document.removeEventListener('drop', handleGlobalDrop);
       document.removeEventListener('dragover', handleDragOver);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isTauriCached()) return;
-    
-    let unlisten: (() => void) | null = null;
-    
-    const setupTauriDragDrop = async () => {
-      try {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        const unlistenFn = await getCurrentWindow().onDragDropEvent(async (event) => {
-          if (event.payload.type === 'drop') {
-            const position = event.payload.position;
-            
-            const x = position.x;
-            const y = position.y;
-            
-            const allPanes = document.querySelectorAll('.pane-leaf');
-            let targetPane: HTMLElement | null = null;
-            
-            for (const pane of Array.from(allPanes)) {
-              const rect = pane.getBoundingClientRect();
-              if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                targetPane = pane as HTMLElement;
-                break;
-              }
-            }
-            
-            const internalDragPath = getInternalDragData();
-            
-            if (internalDragPath && internalDragPath.startsWith('file://')) {
-              if (targetPane) {
-                const paneId = targetPane.getAttribute('data-pane-id');
-                const tabPath = targetPane.getAttribute('data-tab-path');
-                
-                if (paneId && tabPath) {
-                  const splitStore = await import('./stores').then(m => m.useSplitStore.getState());
-                  const paneCount = splitStore.getPaneCount(tabPath);
-                  
-                  if (paneCount > 1) {
-                    const { ensureDocument } = useEditorStore.getState();
-                    const { setPaneDocument, setActivePane, getDocumentsInPanes } = splitStore;
-                    
-                    const existingDocs = getDocumentsInPanes(tabPath);
-                    
-                    if (!existingDocs.includes(internalDragPath)) {
-                      const realPath = internalDragPath.replace(/^file:\/\//, '');
-                      try {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                        const content = await readTextFile(realPath);
-                        ensureDocument(internalDragPath, content, false);
-                        setPaneDocument(tabPath, paneId, internalDragPath);
-                        setActivePane(tabPath, paneId);
-                      } catch (err) {
-                        console.error('在窗格中打开拖放文件失败:', err);
-                      }
-                    }
-                    return;
-                  }
-                }
-              }
-              
-              const { openDocument } = useEditorStore.getState();
-              const realPath = internalDragPath.replace(/^file:\/\//, '');
-              try {
-                const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                const content = await readTextFile(realPath);
-                openDocument(internalDragPath, content, false);
-              } catch (err) {
-                console.error('读取拖放文件失败:', err);
-              }
-              return;
-            }
-            
-            const paths = event.payload.paths;
-            
-            if (targetPane) {
-              const paneId = targetPane.getAttribute('data-pane-id');
-              const tabPath = targetPane.getAttribute('data-tab-path');
-              
-              if (paneId && tabPath) {
-                const splitStore = await import('./stores').then(m => m.useSplitStore.getState());
-                const paneCount = splitStore.getPaneCount(tabPath);
-                
-                if (paneCount > 1) {
-                  const { ensureDocument } = useEditorStore.getState();
-                  const { setPaneDocument, setActivePane, getDocumentsInPanes } = splitStore;
-                  
-                  const existingDocs = getDocumentsInPanes(tabPath);
-                  
-                  for (const path of paths) {
-                    if (path.endsWith('.md') || path.endsWith('.markdown') || path.endsWith('.txt')) {
-                      const docPath = `file://${path}`;
-                      
-                      if (existingDocs.includes(docPath)) continue;
-                      
-                      try {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                        const content = await readTextFile(path);
-                        ensureDocument(docPath, content, false);
-                        setPaneDocument(tabPath, paneId, docPath);
-                        setActivePane(tabPath, paneId);
-                      } catch (err) {
-                        console.error('在窗格中打开拖放文件失败:', err);
-                      }
-                    }
-                  }
-                  return;
-                }
-              }
-            }
-            
-            const { openDocument } = useEditorStore.getState();
-            for (const path of paths) {
-              if (path.endsWith('.md') || path.endsWith('.markdown') || path.endsWith('.txt')) {
-                try {
-                  const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                  const content = await readTextFile(path);
-                  openDocument(`file://${path}`, content, false);
-                } catch (err) {
-                  console.error('读取拖放文件失败:', err);
-                }
-              }
-            }
-          }
-        });
-        unlisten = unlistenFn;
-      } catch (err) {
-        console.error('设置Tauri拖放监听失败:', err);
-      }
-    };
-    
-    setupTauriDragDrop();
-    
-    return () => {
-      if (unlisten) unlisten();
     };
   }, []);
 
