@@ -5,8 +5,11 @@
 
 mod commands;
 
+use std::sync::Mutex;
 use tauri::Manager;
 use tauri::Emitter;
+
+struct PendingFile(Mutex<Option<String>>);
 
 fn handle_file_open(app: &tauri::AppHandle, path: String) {
     let _ = app.emit("file-open", path);
@@ -33,16 +36,13 @@ fn main() {
                 let _ = window.set_focus();
             }
         }))
+        .manage(PendingFile(Mutex::new(initial_file)))
         .invoke_handler(tauri::generate_handler![
             commands::read_directory,
             commands::get_file_info,
+            commands::get_pending_file,
+            commands::clear_pending_file,
         ])
-        .setup(move |app| {
-            if let Some(path) = initial_file {
-                handle_file_open(app.handle(), path);
-            }
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

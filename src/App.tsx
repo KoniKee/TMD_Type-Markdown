@@ -7,7 +7,6 @@ import { useEditorStore, useUpdateStore } from './stores';
 function App() {
   const [isReady, setIsReady] = useState(false);
   const checkForUpdate = useUpdateStore((state) => state.checkForUpdate);
-  const openDocument = useEditorStore((state) => state.openDocument);
 
   useTheme();
   
@@ -82,19 +81,28 @@ function App() {
     const setupFileOpenListener = async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event');
+        const { invoke } = await import('@tauri-apps/api/core');
         const { readTextFile } = await import('@tauri-apps/plugin-fs');
         
-        unlisten = await listen<string>('file-open', async (event) => {
-          const filePath = event.payload;
+        const openFile = async (filePath: string) => {
           try {
             const content = await readTextFile(filePath);
-            const fileName = filePath.split(/[/\\]/).pop() || 'untitled.md';
             const { openDocument } = useEditorStore.getState();
             openDocument(`file://${filePath}`, content, false);
           } catch (err) {
             console.error('打开文件失败:', err);
           }
+        };
+
+        unlisten = await listen<string>('file-open', async (event) => {
+          await openFile(event.payload);
         });
+
+        const pendingFile = await invoke<string | null>('get_pending_file');
+        if (pendingFile) {
+          await openFile(pendingFile);
+          await invoke('clear_pending_file');
+        }
       } catch (err) {
         console.error('设置文件打开监听失败:', err);
       }

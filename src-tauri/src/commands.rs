@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use crate::PendingFile;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DirEntry {
@@ -53,7 +54,6 @@ pub fn read_directory(path: String) -> Result<Vec<DirEntry>, String> {
         }
     }
 
-    // Sort: directories first, then files
     entries.sort_by(|a, b| {
         if a.is_dir && !b.is_dir {
             std::cmp::Ordering::Less
@@ -91,4 +91,15 @@ pub fn get_file_info(path: String) -> Result<FileInfo, String> {
                 .as_secs()
         }),
     })
+}
+
+#[tauri::command]
+pub fn get_pending_file(pending: tauri::State<PendingFile>) -> Option<String> {
+    let file = pending.0.lock().unwrap().clone();
+    file
+}
+
+#[tauri::command]
+pub fn clear_pending_file(pending: tauri::State<PendingFile>) {
+    *pending.0.lock().unwrap() = None;
 }
