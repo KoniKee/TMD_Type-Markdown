@@ -1063,6 +1063,104 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           });
           outlineObserver.observe(outlineElement, { attributes: true, attributeFilter: ['style', 'class'] });
           (vditorRef.current as any)._outlineObserver = outlineObserver;
+          
+          // 大纲增强功能：tooltip + 可调整宽度
+          const setupOutlineEnhancements = () => {
+            const OUTLINE_WIDTH_KEY = 'md-editor-outline-width';
+            const MIN_WIDTH = 180;
+            
+            const getContentContainer = () => {
+              return outlineElement.closest('.vditor-content') as HTMLElement;
+            };
+            
+            const getMaxWidth = () => {
+              const content = getContentContainer();
+              if (!content) return 400;
+              return Math.floor(content.offsetWidth * 0.5);
+            };
+            
+            const applyWidth = (width: number) => {
+              const maxWidth = getMaxWidth();
+              const finalWidth = Math.max(MIN_WIDTH, Math.min(maxWidth, width));
+              outlineElement.style.width = `${finalWidth}px`;
+              outlineElement.style.flexBasis = `${finalWidth}px`;
+            };
+            
+            const savedWidth = localStorage.getItem(OUTLINE_WIDTH_KEY);
+            if (savedWidth) {
+              const width = parseInt(savedWidth, 10);
+              if (!isNaN(width)) {
+                applyWidth(width);
+              }
+            }
+            
+            const handleOutlineMouseOver = (e: MouseEvent) => {
+              const target = (e.target as HTMLElement).closest('li > span > span') as HTMLElement | null;
+              if (target && target.textContent) {
+                target.setAttribute('title', target.textContent);
+              }
+            };
+            outlineElement.addEventListener('mouseover', handleOutlineMouseOver);
+            (vditorRef.current as any)._outlineMouseOverHandler = handleOutlineMouseOver;
+            (vditorRef.current as any)._outlineMouseOverTarget = outlineElement;
+            
+            let isDragging = false;
+            let startX = 0;
+            let startWidth = 0;
+            
+            const handleMouseDown = (e: MouseEvent) => {
+              if (e.button !== 0) return;
+              const rect = outlineElement.getBoundingClientRect();
+              const edgeWidth = 6;
+              if (e.clientX < rect.left || e.clientX > rect.left + edgeWidth) return;
+              if (e.clientY < rect.top || e.clientY > rect.bottom) return;
+              
+              isDragging = true;
+              startX = e.clientX;
+              startWidth = outlineElement.offsetWidth;
+              document.body.style.cursor = 'col-resize';
+              document.body.style.userSelect = 'none';
+              outlineElement.classList.add('outline-resizing');
+              e.preventDefault();
+            };
+            
+            const handleMouseMove = (e: MouseEvent) => {
+              if (isDragging) {
+                const diff = startX - e.clientX;
+                const newWidth = startWidth + diff;
+                applyWidth(newWidth);
+              } else {
+                const rect = outlineElement.getBoundingClientRect();
+                const edgeWidth = 6;
+                if (e.clientX >= rect.left && e.clientX <= rect.left + edgeWidth &&
+                    e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                  outlineElement.style.cursor = 'col-resize';
+                } else {
+                  outlineElement.style.cursor = '';
+                }
+              }
+            };
+            
+            const handleMouseUp = () => {
+              if (!isDragging) return;
+              isDragging = false;
+              document.body.style.cursor = '';
+              document.body.style.userSelect = '';
+              outlineElement.classList.remove('outline-resizing');
+              const currentWidth = outlineElement.offsetWidth;
+              localStorage.setItem(OUTLINE_WIDTH_KEY, currentWidth.toString());
+            };
+            
+            document.addEventListener('mousedown', handleMouseDown);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            
+            (vditorRef.current as any)._outlineResizeMouseDown = handleMouseDown;
+            (vditorRef.current as any)._outlineResizeMouseMove = handleMouseMove;
+            (vditorRef.current as any)._outlineResizeMouseUp = handleMouseUp;
+          };
+          
+          setupOutlineEnhancements();
         }
         
         // 监听编辑模式切换 - 监听三个编辑区域的display变化
@@ -1747,12 +1845,29 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         const linkClickPreview = (vditorRef.current as any)._linkClickPreview;
         const previewObserver = (vditorRef.current as any)._previewObserver;
         const outlineObserver = (vditorRef.current as any)._outlineObserver;
+        const outlineMouseOverHandler = (vditorRef.current as any)._outlineMouseOverHandler;
+        const outlineMouseOverTarget = (vditorRef.current as any)._outlineMouseOverTarget;
+        const outlineResizeMouseDown = (vditorRef.current as any)._outlineResizeMouseDown;
+        const outlineResizeMouseMove = (vditorRef.current as any)._outlineResizeMouseMove;
+        const outlineResizeMouseUp = (vditorRef.current as any)._outlineResizeMouseUp;
         const modeObserver = (vditorRef.current as any)._modeObserver;
         const previewModeObserver = (vditorRef.current as any)._previewModeObserver;
         
         if (imageObserver) imageObserver.disconnect();
         if (previewObserver) previewObserver.disconnect();
         if (outlineObserver) outlineObserver.disconnect();
+        if (outlineMouseOverHandler && outlineMouseOverTarget) {
+          outlineMouseOverTarget.removeEventListener('mouseover', outlineMouseOverHandler);
+        }
+        if (outlineResizeMouseDown) {
+          document.removeEventListener('mousedown', outlineResizeMouseDown);
+        }
+        if (outlineResizeMouseMove) {
+          document.removeEventListener('mousemove', outlineResizeMouseMove);
+        }
+        if (outlineResizeMouseUp) {
+          document.removeEventListener('mouseup', outlineResizeMouseUp);
+        }
         if (modeObserver) modeObserver.disconnect();
         if (previewModeObserver) previewModeObserver.disconnect();
         

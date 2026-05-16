@@ -439,6 +439,31 @@
   background-color: var(--editor-code-bg, #1e293b) !important;
 }
 
+/* 大纲栏宽度调整 */
+.vditor .vditor-outline {
+  position: relative !important;
+  min-width: 180px !important;
+  max-width: 50% !important;
+}
+
+/* 大纲栏左边缘拖拽热区提示 */
+.vditor .vditor-outline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  pointer-events: none;
+}
+
+.vditor .vditor-outline:hover::before,
+.vditor .vditor-outline.outline-resizing::before {
+  background: var(--accent-500, #3b82f6);
+}
+
 /* 代码字体大小统一 - 强制与正文一致 */
 .vditor .vditor-ir pre.vditor-reset code,
 .vditor .vditor-sv pre.vditor-reset code,
