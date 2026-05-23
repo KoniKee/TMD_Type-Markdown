@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { checkForUpdate, getAppVersion } from '../utils/updateChecker';
+import { checkForUpdate } from '../utils/updateChecker';
 
 interface UpdateState {
   hasUpdate: boolean;
@@ -8,9 +8,7 @@ interface UpdateState {
   releaseNotes: string;
   downloadUrl: string;
   publishedAt: string;
-  lastCheckTime: number;
   checking: boolean;
-  checkedVersion: string;
 
   checkForUpdate: () => Promise<void>;
   clearUpdate: () => void;
@@ -24,23 +22,13 @@ export const useUpdateStore = create<UpdateState>()(
       releaseNotes: '',
       downloadUrl: '',
       publishedAt: '',
-      lastCheckTime: 0,
       checking: false,
-      checkedVersion: '',
 
       checkForUpdate: async () => {
-        const { checking, checkedVersion } = get();
-        const currentVersion = getAppVersion();
-
-        const versionChanged = checkedVersion && checkedVersion !== currentVersion;
+        const { checking } = get();
 
         if (checking) {
           return;
-        }
-
-        if (versionChanged) {
-          const { clearUpdateCache } = await import('../utils/updateChecker');
-          clearUpdateCache();
         }
 
         set({ checking: true });
@@ -53,9 +41,7 @@ export const useUpdateStore = create<UpdateState>()(
             releaseNotes: info?.releaseNotes || '',
             downloadUrl: info?.downloadUrl || '',
             publishedAt: info?.publishedAt || '',
-            lastCheckTime: Date.now(),
             checking: false,
-            checkedVersion: currentVersion,
           });
         } catch (error) {
           console.error('Update check failed:', error);
