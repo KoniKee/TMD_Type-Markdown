@@ -126,7 +126,8 @@ async function loadLocalImage(imageSrc: string, docPath: string): Promise<string
         }
       }
       
-      const imagePath = `${docDir}\\${cleanSrc}`;
+      const normalizedSrc = cleanSrc.replace(/\//g, '\\');
+      const imagePath = `${docDir}\\${normalizedSrc}`;
       const imageData = await readFile(imagePath);
       const blob = new Blob([imageData]);
       const blobUrl = URL.createObjectURL(blob);
