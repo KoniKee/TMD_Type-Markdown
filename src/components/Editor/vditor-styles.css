@@ -672,3 +672,412 @@
 .editor-width-normal .vditor-sv pre.vditor-reset {
   max-width: 750px !important;
 }
+
+/* ============================================
+   GitHub Alerts 样式
+   统一策略: ::before(图标) + ::after(标题@data-alert-title)
+   预览/WYSIWYG: 首段隐藏
+   IR: 首段默认隐藏，hover时显示（类似语法标记行为）
+   ============================================ */
+
+/* ---- 基础：所有 blockquote.alert ---- */
+.vditor .vditor-reset blockquote.alert,
+.vditor .vditor-preview blockquote.alert,
+.vditor .vditor-ir__preview blockquote.alert,
+.vditor .vditor-sv__preview blockquote.alert {
+  border-radius: 6px !important;
+  margin: 16px 0 !important;
+  padding: 8px 16px !important;
+  position: relative !important;
+}
+
+/* ---- 预览区 + WYSIWYG：标题区撑开 ---- */
+.vditor .vditor-preview blockquote.alert,
+.vditor .vditor-ir__preview blockquote.alert,
+.vditor .vditor-sv__preview blockquote.alert,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert {
+  padding-top: 36px !important;
+}
+
+/* ---- WYSIWYG：隐藏 [!!NOTE] 标记首段 ---- */
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert > p:first-child {
+  display: none !important;
+}
+
+/* ---- 图标 ::before（预览/WYSIWYG 共用） ---- */
+.vditor .vditor-preview blockquote.alert::before,
+.vditor .vditor-ir__preview blockquote.alert::before,
+.vditor .vditor-sv__preview blockquote.alert::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert::before {
+  content: "";
+  position: absolute;
+  top: 8px; left: 16px;
+  width: 16px; height: 16px;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+
+/* ---- 标题 ::after（预览/WYSIWYG 共用） ---- */
+.vditor .vditor-preview blockquote.alert::after,
+.vditor .vditor-ir__preview blockquote.alert::after,
+.vditor .vditor-sv__preview blockquote.alert::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert::after {
+  content: attr(data-alert-title);
+  position: absolute;
+  top: 8px; left: 40px;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
+/* ============================================
+   IR 模式专属：首段显示 markdown 源码
+   ::before 覆盖显示漂亮标题，原始文本隐藏
+   类似 # 标题的交互效果
+   ============================================ */
+
+/* 恢复默认 padding + 圆角 */
+.vditor .vditor-ir .vditor-reset blockquote.alert {
+  padding-top: 8px !important;
+  border-radius: 6px !important;
+}
+
+/* 首段：图标背景 + 文本透明（标题由 ::before 显示） */
+.vditor .vditor-ir .vditor-reset blockquote.alert > p:first-child {
+  position: relative !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  margin: 0 0 8px 0 !important;
+  padding: 0 0 0 24px !important;
+  color: transparent !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px 16px !important;
+  background-position: 0 2px !important;
+}
+
+/* 光标在标题行时显示原始文本（可编辑） */
+.vditor .vditor-ir .vditor-reset blockquote.alert.alert--editing > p:first-child {
+  color: inherit !important;
+  opacity: 0.6 !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert.alert--editing > p:first-child::before {
+  opacity: 0 !important;
+}
+
+/* ::before 显示标题 */
+.vditor .vditor-ir .vditor-reset blockquote.alert > p:first-child::before {
+  content: attr(data-alert-title);
+  position: absolute;
+  left: 24px;
+  top: 0;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  pointer-events: none;
+}
+
+/* ============================================
+   NOTE (蓝色 - info 图标)
+   ============================================ */
+
+/* 通用：边框 + 背景（含 IR） */
+.vditor .vditor-reset blockquote.alert-note,
+.vditor .vditor-preview blockquote.alert-note,
+.vditor .vditor-ir__preview blockquote.alert-note,
+.vditor .vditor-sv__preview blockquote.alert-note,
+.vditor .vditor-ir .vditor-reset blockquote.alert-note {
+  border-left: 4px solid #0969DA !important;
+  background-color: rgba(9,105,218,0.1) !important;
+}
+
+/* 图标（预览/WYSIWYG） */
+.vditor .vditor-preview blockquote.alert-note::before,
+.vditor .vditor-ir__preview blockquote.alert-note::before,
+.vditor .vditor-sv__preview blockquote.alert-note::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%230969DA' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+
+/* 标题（预览/WYSIWYG） */
+.vditor .vditor-preview blockquote.alert-note::after,
+.vditor .vditor-ir__preview blockquote.alert-note::after,
+.vditor .vditor-sv__preview blockquote.alert-note::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::after { color: #0969DA; }
+
+/* IR 首段：图标背景 + ::before 标题色 */
+.vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%230969DA' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child::before {
+  color: #0969DA;
+}
+
+/* ============================================
+   TIP (绿色 - light-bulb 图标)
+   ============================================ */
+
+.vditor .vditor-reset blockquote.alert-tip,
+.vditor .vditor-preview blockquote.alert-tip,
+.vditor .vditor-ir__preview blockquote.alert-tip,
+.vditor .vditor-sv__preview blockquote.alert-tip,
+.vditor .vditor-ir .vditor-reset blockquote.alert-tip {
+  border-left: 4px solid #1A7F37 !important;
+  background-color: rgba(26,127,55,0.1) !important;
+}
+
+.vditor .vditor-preview blockquote.alert-tip::before,
+.vditor .vditor-ir__preview blockquote.alert-tip::before,
+.vditor .vditor-sv__preview blockquote.alert-tip::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231A7F37' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E");
+}
+
+.vditor .vditor-preview blockquote.alert-tip::after,
+.vditor .vditor-ir__preview blockquote.alert-tip::after,
+.vditor .vditor-sv__preview blockquote.alert-tip::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::after { color: #1A7F37; }
+
+.vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231A7F37' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E") !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child::before {
+  color: #1A7F37;
+}
+
+/* ============================================
+   IMPORTANT (紫色 - report 图标)
+   ============================================ */
+
+.vditor .vditor-reset blockquote.alert-important,
+.vditor .vditor-preview blockquote.alert-important,
+.vditor .vditor-ir__preview blockquote.alert-important,
+.vditor .vditor-sv__preview blockquote.alert-important,
+.vditor .vditor-ir .vditor-reset blockquote.alert-important {
+  border-left: 4px solid #8250DF !important;
+  background-color: rgba(130,80,223,0.1) !important;
+}
+
+.vditor .vditor-preview blockquote.alert-important::before,
+.vditor .vditor-ir__preview blockquote.alert-important::before,
+.vditor .vditor-sv__preview blockquote.alert-important::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%238250DF' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+
+.vditor .vditor-preview blockquote.alert-important::after,
+.vditor .vditor-ir__preview blockquote.alert-important::after,
+.vditor .vditor-sv__preview blockquote.alert-important::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::after { color: #8250DF; }
+
+.vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%238250DF' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child::before {
+  color: #8250DF;
+}
+
+/* ============================================
+   WARNING (橙色 - alert 图标)
+   ============================================ */
+
+.vditor .vditor-reset blockquote.alert-warning,
+.vditor .vditor-preview blockquote.alert-warning,
+.vditor .vditor-ir__preview blockquote.alert-warning,
+.vditor .vditor-sv__preview blockquote.alert-warning,
+.vditor .vditor-ir .vditor-reset blockquote.alert-warning {
+  border-left: 4px solid #9A6700 !important;
+  background-color: rgba(154,103,0,0.1) !important;
+}
+
+.vditor .vditor-preview blockquote.alert-warning::before,
+.vditor .vditor-ir__preview blockquote.alert-warning::before,
+.vditor .vditor-sv__preview blockquote.alert-warning::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%239A6700' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+
+.vditor .vditor-preview blockquote.alert-warning::after,
+.vditor .vditor-ir__preview blockquote.alert-warning::after,
+.vditor .vditor-sv__preview blockquote.alert-warning::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::after { color: #9A6700; }
+
+.vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%239A6700' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child::before {
+  color: #9A6700;
+}
+
+/* ============================================
+   CAUTION (红色 - stop 图标)
+   ============================================ */
+
+.vditor .vditor-reset blockquote.alert-caution,
+.vditor .vditor-preview blockquote.alert-caution,
+.vditor .vditor-ir__preview blockquote.alert-caution,
+.vditor .vditor-sv__preview blockquote.alert-caution,
+.vditor .vditor-ir .vditor-reset blockquote.alert-caution {
+  border-left: 4px solid #CF222E !important;
+  background-color: rgba(207,34,46,0.1) !important;
+}
+
+.vditor .vditor-preview blockquote.alert-caution::before,
+.vditor .vditor-ir__preview blockquote.alert-caution::before,
+.vditor .vditor-sv__preview blockquote.alert-caution::before,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23CF222E' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+
+.vditor .vditor-preview blockquote.alert-caution::after,
+.vditor .vditor-ir__preview blockquote.alert-caution::after,
+.vditor .vditor-sv__preview blockquote.alert-caution::after,
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::after { color: #CF222E; }
+
+.vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23CF222E' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
+}
+.vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child::before {
+  color: #CF222E;
+}
+
+/* ============================================
+   暗色主题 - NOTE
+   ============================================ */
+
+.dark .vditor .vditor-reset blockquote.alert-note,
+.dark .vditor .vditor-preview blockquote.alert-note,
+.dark .vditor .vditor-ir__preview blockquote.alert-note,
+.dark .vditor .vditor-sv__preview blockquote.alert-note,
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note {
+  border-left-color: #58A6FF !important;
+  background-color: rgba(88,166,255,0.1) !important;
+}
+.dark .vditor .vditor-preview blockquote.alert-note::before,
+.dark .vditor .vditor-ir__preview blockquote.alert-note::before,
+.dark .vditor .vditor-sv__preview blockquote.alert-note::before,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%2358A6FF' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+.dark .vditor .vditor-preview blockquote.alert-note::after,
+.dark .vditor .vditor-ir__preview blockquote.alert-note::after,
+.dark .vditor .vditor-sv__preview blockquote.alert-note::after,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::after { color: #58A6FF; }
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%2358A6FF' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
+}
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child::before { color: #58A6FF; }
+
+/* ============================================
+   暗色主题 - TIP
+   ============================================ */
+
+.dark .vditor .vditor-reset blockquote.alert-tip,
+.dark .vditor .vditor-preview blockquote.alert-tip,
+.dark .vditor .vditor-ir__preview blockquote.alert-tip,
+.dark .vditor .vditor-sv__preview blockquote.alert-tip,
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip {
+  border-left-color: #3FB950 !important;
+  background-color: rgba(63,185,80,0.1) !important;
+}
+.dark .vditor .vditor-preview blockquote.alert-tip::before,
+.dark .vditor .vditor-ir__preview blockquote.alert-tip::before,
+.dark .vditor .vditor-sv__preview blockquote.alert-tip::before,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%233FB950' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E");
+}
+.dark .vditor .vditor-preview blockquote.alert-tip::after,
+.dark .vditor .vditor-ir__preview blockquote.alert-tip::after,
+.dark .vditor .vditor-sv__preview blockquote.alert-tip::after,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::after { color: #3FB950; }
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%233FB950' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E") !important;
+}
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child::before { color: #3FB950; }
+
+/* ============================================
+   暗色主题 - IMPORTANT
+   ============================================ */
+
+.dark .vditor .vditor-reset blockquote.alert-important,
+.dark .vditor .vditor-preview blockquote.alert-important,
+.dark .vditor .vditor-ir__preview blockquote.alert-important,
+.dark .vditor .vditor-sv__preview blockquote.alert-important,
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important {
+  border-left-color: #A371F7 !important;
+  background-color: rgba(163,113,247,0.1) !important;
+}
+.dark .vditor .vditor-preview blockquote.alert-important::before,
+.dark .vditor .vditor-ir__preview blockquote.alert-important::before,
+.dark .vditor .vditor-sv__preview blockquote.alert-important::before,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23A371F7' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+.dark .vditor .vditor-preview blockquote.alert-important::after,
+.dark .vditor .vditor-ir__preview blockquote.alert-important::after,
+.dark .vditor .vditor-sv__preview blockquote.alert-important::after,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::after { color: #A371F7; }
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23A371F7' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
+}
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child::before { color: #A371F7; }
+
+/* WARNING */
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23D29922' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
+}
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child::before { color: #D29922; }
+
+/* CAUTION */
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23F85149' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
+}
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child::before { color: #F85149; }
+
+/* ============================================
+   暗色主题 - WARNING
+   ============================================ */
+
+.dark .vditor .vditor-reset blockquote.alert-warning,
+.dark .vditor .vditor-preview blockquote.alert-warning,
+.dark .vditor .vditor-ir__preview blockquote.alert-warning,
+.dark .vditor .vditor-sv__preview blockquote.alert-warning,
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning {
+  border-left-color: #D29922 !important;
+  background-color: rgba(210,153,34,0.1) !important;
+}
+.dark .vditor .vditor-preview blockquote.alert-warning::before,
+.dark .vditor .vditor-ir__preview blockquote.alert-warning::before,
+.dark .vditor .vditor-sv__preview blockquote.alert-warning::before,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23D29922' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
+}
+.dark .vditor .vditor-preview blockquote.alert-warning::after,
+.dark .vditor .vditor-ir__preview blockquote.alert-warning::after,
+.dark .vditor .vditor-sv__preview blockquote.alert-warning::after,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::after { color: #D29922; }
+
+/* ============================================
+   暗色主题 - CAUTION
+   ============================================ */
+
+.dark .vditor .vditor-reset blockquote.alert-caution,
+.dark .vditor .vditor-preview blockquote.alert-caution,
+.dark .vditor .vditor-ir__preview blockquote.alert-caution,
+.dark .vditor .vditor-sv__preview blockquote.alert-caution,
+.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution {
+  border-left-color: #F85149 !important;
+  background-color: rgba(248,81,73,0.1) !important;
+}
+.dark .vditor .vditor-preview blockquote.alert-caution::before,
+.dark .vditor .vditor-ir__preview blockquote.alert-caution::before,
+.dark .vditor .vditor-sv__preview blockquote.alert-caution::before,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23F85149' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
+}
+.dark .vditor .vditor-preview blockquote.alert-caution::after,
+.dark .vditor .vditor-ir__preview blockquote.alert-caution::after,
+.dark .vditor .vditor-sv__preview blockquote.alert-caution::after,
+.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::after { color: #F85149; }
+

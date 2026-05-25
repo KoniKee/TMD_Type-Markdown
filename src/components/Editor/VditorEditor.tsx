@@ -10,6 +10,7 @@ import { isLocalMdFile, resolveDocPath, readMdFileContent, getFileDisplayName, n
 import { shouldRenderEmbed, processEmbedsInMarkdown, createEmbedContainer, createEmbedWarning, EmbedContext } from '../../utils/embedUtils';
 import EmojiPicker from './EmojiPicker';
 import ReplaceDialog from './ReplaceDialog';
+import AlertsPicker from './AlertsPicker';
 
 // 本地化 Vditor CDN 路径
 const VDITOR_CDN = './vditor';
@@ -304,6 +305,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const processedEmbedsRef = useRef<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
+  const [showAlertsPicker, setShowAlertsPicker] = useState(false);
   
   // 字数统计节流 - 使用ref保存debounce函数
   const wordCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -401,6 +403,20 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     
     window.addEventListener('keydown', handleFindReplace, true);
     return () => window.removeEventListener('keydown', handleFindReplace, true);
+  }, []);
+  
+  // Ctrl+Shift+A 快捷键 - 打开 Alerts 选择器
+  useEffect(() => {
+    const handleAlertsShortcut = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowAlertsPicker(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleAlertsShortcut, true);
+    return () => window.removeEventListener('keydown', handleAlertsShortcut, true);
   }, []);
   
   // Ctrl+S 快捷键 - 智能保存
@@ -531,8 +547,9 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           doc.content !== prevDoc.content && 
           !doc.isModified && 
           doc.content !== vditorRef.current?.getValue()) {
-        vditorRef.current?.setValue(doc.content);
-        contentRef.current = doc.content;
+        const normalized = doc.content.replace(/^》\s/gm, '> ');
+        vditorRef.current?.setValue(normalized);
+        contentRef.current = normalized;
       }
     });
     
@@ -559,7 +576,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     }
 
     currentPathRef.current = path;
-    contentRef.current = doc.content || '';
+    contentRef.current = (doc.content || '').replace(/^》\s/gm, '> ');
     isInitializedRef.current = false;
 
     // 获取保存的状态 - 从当前store获取最新状态
@@ -568,6 +585,70 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     const savedEditorMode = currentDocState?.editorMode ?? 'ir';
     const savedScrollPosition = currentDocState?.scrollPosition ?? 0;
     const savedPreviewMode = currentDocState?.previewMode ?? 'editor';
+    
+    const processAlerts = (container: HTMLElement) => {
+      // IR 模式下 Vditor 在首段插入 .vditor-ir__marker (内容 ">")，
+      // 导致 textContent 为 "> [!NOTE] text"，需要灵活匹配
+      const ALERT_RE = /^(?:>\s*)?\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i;
+      
+      const blockquotes = container.querySelectorAll('blockquote:not(.alert)');
+      
+      blockquotes.forEach((bq) => {
+        const firstP = bq.querySelector('p:first-child');
+        if (!firstP) return;
+        
+        const text = firstP.textContent || '';
+        const match = text.match(ALERT_RE);
+        
+        if (match) {
+          const typeUpper = match[1].toUpperCase();
+          const typeLower = match[1].toLowerCase();
+          const remaining = text.substring(match[0].length).trim();
+          
+          bq.classList.add('alert', `alert-${typeLower}`);
+          bq.setAttribute('data-alert-title', typeUpper);
+          firstP.setAttribute('data-alert-title', typeUpper);
+          
+          // 预览区（不可编辑）安全移除 [!NOTE] 文本
+          const isInPreview = !!(bq.closest('.vditor-preview') ||
+                                 bq.closest('.vditor-ir__preview') ||
+                                 bq.closest('.vditor-sv__preview'));
+          
+          if (isInPreview) {
+            if (remaining) {
+              firstP.textContent = remaining;
+            } else {
+              firstP.textContent = '';
+              (firstP as HTMLElement).style.display = 'none';
+            }
+          }
+        }
+      });
+
+      // 清理：仅对 IR 编辑区的 blockquote
+      container.querySelectorAll('blockquote.alert[data-alert-title]').forEach((bq) => {
+        const isInPreview = !!(bq.closest('.vditor-preview') ||
+                               bq.closest('.vditor-ir__preview') ||
+                               bq.closest('.vditor-sv__preview'));
+        if (isInPreview) return;
+        
+        const isInWysiwyg = !!bq.closest('.vditor-wysiwyg');
+        if (isInWysiwyg) return;
+        
+        const firstP = bq.querySelector('p:first-child');
+        if (!firstP) {
+          bq.classList.remove('alert', 'alert-note', 'alert-tip', 'alert-important', 'alert-warning', 'alert-caution');
+          bq.removeAttribute('data-alert-title');
+          return;
+        }
+        const text = firstP.textContent || '';
+        if (!text.match(ALERT_RE)) {
+          bq.classList.remove('alert', 'alert-note', 'alert-tip', 'alert-important', 'alert-warning', 'alert-caution');
+          bq.removeAttribute('data-alert-title');
+          return;
+        }
+      });
+    };
     
     const vditor = new Vditor(containerRef.current, {
       mode: savedEditorMode,
@@ -691,6 +772,12 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           name: 'quote',
           tip: '引用',
           tipPosition: 's',
+        },
+        {
+          name: 'alerts',
+          tip: 'Alerts | Ctrl+Shift+A',
+          tipPosition: 's',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zM7 5.5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM8 7a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 7z"/></svg>',
         },
         {
           name: 'line',
@@ -926,8 +1013,13 @@ const relativePath = `${imageDirectory}/${fileName}`;
       tab: '',
       value: contentRef.current,
       input: (value: string) => {
-        updateDocument(path, value);
+        // 中文》归一化为标准 > blockquote 语法
+        const normalized = value.replace(/^》\s/gm, '> ');
+        updateDocument(path, normalized);
         updateWordCountDebounced();
+        if (containerRef.current) {
+          processAlerts(containerRef.current);
+        }
       },
       after: () => {
         vditorRef.current = vditor;
@@ -957,6 +1049,44 @@ const relativePath = `${imageDirectory}/${fileName}`;
         
         // 处理本地图片加载
         processLocalImages(containerRef.current!, path);
+        
+        processAlerts(containerRef.current!);
+        
+        // 光标在 alert 标题行时才显示原始语法
+        const handleAlertEditingSelection = () => {
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) return;
+          const container = selection.getRangeAt(0).startContainer;
+          const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container as Element;
+          if (!element) return;
+          const alertFirstP = element.closest('blockquote.alert > p:first-child');
+          
+          const irEl = containerRef.current?.querySelector('.vditor-ir .vditor-reset');
+          if (irEl) {
+            irEl.querySelectorAll('blockquote.alert.alert--editing').forEach(bq => {
+              bq.classList.remove('alert--editing');
+            });
+          }
+          
+          if (alertFirstP) {
+            const bq = alertFirstP.closest('blockquote.alert');
+            if (bq) bq.classList.add('alert--editing');
+          }
+        };
+        document.addEventListener('selectionchange', handleAlertEditingSelection);
+        (vditorRef.current as any)._alertEditingHandler = handleAlertEditingSelection;
+        
+        // 拦截 alerts 按钮点击
+        const alertsBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="alerts"]');
+        if (alertsBtn) {
+          const handleAlertsClick = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowAlertsPicker(true);
+          };
+          alertsBtn.addEventListener('click', handleAlertsClick, true);
+          (vditorRef.current as any)._alertsClickHandler = handleAlertsClick;
+        }
         
         // 拦截原版emoji按钮点击，使用自定义表情选择器
         const emojiBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="emoji"]');
@@ -1819,10 +1949,53 @@ const relativePath = `${imageDirectory}/${fileName}`;
                       vditorRef.current?.insertValue('　　');
                     }
                 }
+                
+                // 处理 Alerts
+                if (node.nodeName === 'BLOCKQUOTE' || node.querySelector?.('blockquote')) {
+                  processAlerts(containerRef.current!);
+                }
               }
             }
           }
         };
+        
+        // 中文》引用：当用户在行首输入 》 后按空格，替换为 > 并触发 Vditor 渲染
+        const irPreEl = containerRef.current?.querySelector('.vditor-ir .vditor-reset') as HTMLElement;
+        if (irPreEl) {
+          const handleCnQuoteKeydown = (e: KeyboardEvent) => {
+            if (e.key !== ' ') return;
+            
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            if (!range.collapsed) return;
+            
+            const textNode = range.startContainer;
+            if (textNode.nodeType !== Node.TEXT_NODE) return;
+            
+            const text = textNode.textContent || '';
+            const pos = range.startOffset;
+            
+            if (pos < 1 || text[pos - 1] !== '》') return;
+            
+            const beforeCnQuote = text.slice(0, pos - 1).trim();
+            if (beforeCnQuote !== '') return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            textNode.textContent = text.slice(0, pos - 1) + text.slice(pos);
+            range.setStart(textNode, pos - 1);
+            range.collapse(true);
+            
+            vditorRef.current?.insertValue('> ');
+          };
+          
+          irPreEl.addEventListener('keydown', handleCnQuoteKeydown, true);
+          (vditorRef.current as any)._cnQuoteBeforeInput = handleCnQuoteKeydown;
+          (vditorRef.current as any)._cnQuotePreEl = irPreEl;
+        }
         
         // 监听DOM变化，处理新插入的图片和代码块
         const imageObserver = new MutationObserver(handleMutationCallback);
@@ -1956,6 +2129,20 @@ const relativePath = `${imageDirectory}/${fileName}`;
           }
         }
         processedEmbedsRef.current.clear();
+        
+        // 移除 alert 编辑状态监听（在 destroy 前，vditor 仍存在）
+        const alertEditingHandler = (vditorRef.current as any)?._alertEditingHandler;
+        if (alertEditingHandler) {
+          document.removeEventListener('selectionchange', alertEditingHandler);
+        }
+        
+        // 移除中文》引用拦截
+        const cnQuoteBeforeInput = (vditorRef.current as any)?._cnQuoteBeforeInput;
+        const cnQuotePreEl = (vditorRef.current as any)?._cnQuotePreEl;
+        if (cnQuoteBeforeInput && cnQuotePreEl) {
+          cnQuotePreEl.removeEventListener('keydown', cnQuoteBeforeInput, true);
+        }
+        
         vditorRef.current.destroy();
         vditorRef.current = null;
         isInitializedRef.current = false;
@@ -2006,6 +2193,36 @@ const relativePath = `${imageDirectory}/${fileName}`;
           isOpen={showReplaceDialog}
           onClose={() => setShowReplaceDialog(false)}
           vditor={vditorRef.current}
+        />
+      )}
+      {/* Alerts 选择器弹窗 */}
+      {showAlertsPicker && (
+        <AlertsPicker
+          onSelect={(type) => {
+            if (vditorRef.current) {
+              const markdown = `> [!${type}]\n> `;
+              vditorRef.current.insertValue(markdown);
+              // 插入后将光标移到第二行（框内）
+              setTimeout(() => {
+                const preEl = containerRef.current?.querySelector('.vditor-ir .vditor-reset');
+                if (!preEl) return;
+                const bqs = preEl.querySelectorAll('blockquote.alert');
+                const bq = bqs[bqs.length - 1];
+                if (!bq) return;
+                const lastP = bq.querySelector('p:last-child');
+                if (!lastP) return;
+                const range = document.createRange();
+                range.selectNodeContents(lastP);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel?.removeAllRanges();
+                sel?.addRange(range);
+                // 触发 Vditor input 处理
+                preEl.dispatchEvent(new InputEvent('input', { bubbles: true }));
+              }, 80);
+            }
+          }}
+          onClose={() => setShowAlertsPicker(false)}
         />
       )}
     </div>
