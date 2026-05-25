@@ -174,7 +174,8 @@ md_editor/
 - 代码（行内和代码块）
 - 链接、图片
 - 列表（有序、无序、任务列表）
-- 引用
+- 引用（支持中文 `》` 作为引用标记）
+- GitHub Alerts（NOTE、TIP、IMPORTANT、WARNING、CAUTION）
 - 分割线
 - 表格
 - 脚注
