@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { useTheme } from './hooks';
 import { waitForTauri, isTauriCached } from './utils/platform';
-import { useEditorStore, useUpdateStore } from './stores';
+import { useEditorStore, useUpdateStore, useSettingsStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
@@ -135,6 +135,32 @@ function App() {
     
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
+  // 全局行高设置
+  useEffect(() => {
+    const lineHeight = useSettingsStore.getState().lineHeight;
+    
+    // 创建全局样式元素
+    let styleEl = document.getElementById('global-line-height-style') as HTMLStyleElement;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'global-line-height-style';
+      document.head.appendChild(styleEl);
+    }
+    
+    // 更新样式
+    styleEl.textContent = `.vditor-reset { line-height: ${lineHeight} !important; }`;
+    
+    // 监听行高变化
+    const unsubscribe = useSettingsStore.subscribe((state) => {
+      const newLineHeight = state.lineHeight;
+      styleEl.textContent = `.vditor-reset { line-height: ${newLineHeight} !important; }`;
+    });
+    
+    return () => {
+      unsubscribe();
     };
   }, []);
 
