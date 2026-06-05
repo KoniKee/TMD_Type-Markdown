@@ -141,10 +141,12 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
       saveStatus: isNew ? 'unsaved' : 'saved',
     });
     
-    // 记录到最近文件
-    const { addFile } = useRecentFilesStore.getState();
-    const fileName = path.split('/').pop()?.split('\\').pop() || path;
-    addFile(path, fileName);
+    // 记录到最近文件（新建文档不记录）
+    if (!isNew) {
+      const { addFile } = useRecentFilesStore.getState();
+      const fileName = path.split('/').pop()?.split('\\').pop() || path;
+      addFile(path, fileName);
+    }
   },
 
   ensureDocument: (path: string, content?: string, isNew?: boolean) => {
@@ -182,10 +184,12 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
       });
     }
     
-    // 记录到最近文件
-    const { addFile } = useRecentFilesStore.getState();
-    const fileName = path.split('/').pop()?.split('\\').pop() || path;
-    addFile(path, fileName);
+    // 记录到最近文件（新建文档不记录）
+    if (!isNew) {
+      const { addFile } = useRecentFilesStore.getState();
+      const fileName = path.split('/').pop()?.split('\\').pop() || path;
+      addFile(path, fileName);
+    }
   },
 
   closeDocument: (path: string) => {

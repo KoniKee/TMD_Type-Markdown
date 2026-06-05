@@ -115,6 +115,29 @@ function App() {
     };
   }, [isReady]);
 
+  // 禁用默认右键菜单（仅桌面版）
+  useEffect(() => {
+    if (!isTauriCached()) return;
+    
+    const handleContextMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // 如果点击的是自定义菜单项，不阻止
+      if (target.closest('.context-menu') || target.closest('[data-context-menu]')) {
+        return;
+      }
+      
+      // 阻止默认的浏览器右键菜单
+      e.preventDefault();
+    };
+    
+    document.addEventListener('contextmenu', handleContextMenu);
+    
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
   if (!isReady) {
     return (
       <div style={{ 

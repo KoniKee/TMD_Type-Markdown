@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSettingsStore, EMBED_MAX_DEPTH_MIN, EMBED_MAX_DEPTH_MAX, EMBED_MAX_COUNT_MIN, EMBED_MAX_COUNT_MAX, EditorWidth } from '../../stores/settingsStore';
-import { X, Sun, Moon, Monitor, Image, Save, Info, FileText, Columns } from 'lucide-react';
+import { useSettingsStore, EMBED_MAX_DEPTH_MIN, EMBED_MAX_DEPTH_MAX, EMBED_MAX_COUNT_MIN, EMBED_MAX_COUNT_MAX, EditorWidth, LineHeight } from '../../stores/settingsStore';
+import { X, Sun, Moon, Monitor, Image, Save, Info, FileText, Columns, AlignLeft, ExternalLink } from 'lucide-react';
 import { version } from '../../../package.json';
 
 export const SettingsPanel: React.FC = () => {
@@ -19,6 +19,7 @@ export const SettingsPanel: React.FC = () => {
     embedMaxDepth,
     embedMaxCount,
     editorWidth,
+    lineHeight,
     setTheme,
     setImageDirectory,
     setAutoSave,
@@ -26,6 +27,7 @@ export const SettingsPanel: React.FC = () => {
     setEmbedMaxDepth,
     setEmbedMaxCount,
     setEditorWidth,
+    setLineHeight,
   } = useSettingsStore();
 
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -63,6 +65,10 @@ export const SettingsPanel: React.FC = () => {
 
   const handleEditorWidthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setEditorWidth(e.target.value as EditorWidth);
+  };
+
+  const handleLineHeightChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLineHeight(parseFloat(e.target.value) as LineHeight);
   };
 
   return (
@@ -143,6 +149,36 @@ export const SettingsPanel: React.FC = () => {
                 </div>
                 <p className="text-xs text-[var(--editor-text-muted)]">
                   调整编辑区域的最大宽度，适合不同阅读习惯
+                </p>
+              </div>
+            </div>
+
+            {/* Line height settings */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <AlignLeft size={16} className="text-[var(--accent-400)]" />
+                <h3 className="text-sm font-medium text-[var(--editor-text)]">行高设置</h3>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm text-[var(--editor-text-secondary)] mb-2">
+                    行高倍数
+                  </label>
+                  <select
+                    value={lineHeight}
+                    onChange={handleLineHeightChange}
+                    className="w-full px-3 py-2.5 bg-[var(--editor-surface)] border border-[var(--editor-border)] rounded-lg text-[var(--editor-text)] focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-500)]/20 transition-all cursor-pointer"
+                  >
+                    <option value="1">1.0 倍</option>
+                    <option value="1.15">1.15 倍</option>
+                    <option value="1.5">1.5 倍（默认）</option>
+                    <option value="2">2.0 倍</option>
+                    <option value="2.5">2.5 倍</option>
+                    <option value="3">3.0 倍</option>
+                  </select>
+                </div>
+                <p className="text-xs text-[var(--editor-text-muted)]">
+                  调整编辑器的行高，影响阅读舒适度
                 </p>
               </div>
             </div>
@@ -296,6 +332,17 @@ export const SettingsPanel: React.FC = () => {
                           {tech}
                         </span>
                       ))}
+                    </div>
+                    <div className="pt-2">
+                      <a
+                        href="https://github.com/KoniKee/TMD_Type-Markdown"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[var(--accent-500)] hover:text-[var(--accent-600)] transition-colors"
+                      >
+                        <ExternalLink size={14} />
+                        <span>GitHub 仓库</span>
+                      </a>
                     </div>
                   </div>
                 </div>

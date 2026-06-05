@@ -297,6 +297,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const embedMaxDepth = useSettingsStore((state) => state.embedMaxDepth);
   const embedMaxCount = useSettingsStore((state) => state.embedMaxCount);
   const editorWidth = useSettingsStore((state) => state.editorWidth);
+  const lineHeight = useSettingsStore((state) => state.lineHeight);
   const rootHandle = useFileStore((state) => state.rootHandle);
   const isInitializedRef = useRef(false);
   const currentPathRef = useRef<string>('');
@@ -777,7 +778,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           name: 'alerts',
           tip: 'Alerts | Ctrl+Shift+A',
           tipPosition: 's',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zM7 5.5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM8 7a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 7z"/></svg>',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm1 12H7v-2h2v2zm0-3H7V4h2v5z"/></svg>',
         },
         {
           name: 'line',
@@ -829,11 +830,26 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         {
           name: 'more',
           toolbar: [
-            'export',
-            'fullscreen',
-            'devtools',
-            'info',
-            'help',
+            {
+              name: 'export',
+              tip: '导出',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+            },
+            {
+              name: 'fullscreen',
+              tip: '全屏',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
+            },
+            {
+              name: 'info',
+              tip: '关于',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+            },
+            {
+              name: 'help',
+              tip: '帮助',
+              icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            },
           ],
         },
       ],
@@ -1046,11 +1062,11 @@ const relativePath = `${imageDirectory}/${fileName}`;
         } catch (e) {
           console.warn('[Lute] 启用上标/下标失败:', e);
         }
-        
-        // 处理本地图片加载
-        processLocalImages(containerRef.current!, path);
-        
-        processAlerts(containerRef.current!);
+         
+         // 处理本地图片加载
+         processLocalImages(containerRef.current!, path);
+         
+         processAlerts(containerRef.current!);
         
         // 光标在 alert 标题行时才显示原始语法
         const handleAlertEditingSelection = () => {
@@ -1111,12 +1127,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const indentBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="indent"]');
         if (indentBtn) {
           const handleIndentClick = (e: Event) => {
-            // 在缩进执行后，检测并修复任务列表
             setTimeout(() => {
               const vditor = vditorRef.current;
               if (!vditor) return;
               
-              // 获取当前光标位置
               const selection = window.getSelection();
               if (!selection || selection.rangeCount === 0) return;
               
@@ -1127,12 +1141,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
                 : (container as Element).closest('li');
               
               if (li) {
-                // 检查这个li是否包含任务列表的文本格式（[ ] 或 [x]）
                 const text = li.textContent || '';
                 const hasTaskFormat = /\[([ xX])\]/.test(text);
                 
                 if (hasTaskFormat && !li.querySelector('input[type="checkbox"]')) {
-                  // 找到li内最后一个文本节点
                   const walker = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, null);
                   let lastTextNode: Text | null = null;
                   let node;
@@ -1141,22 +1153,18 @@ const relativePath = `${imageDirectory}/${fileName}`;
                   }
                   
                   if (lastTextNode) {
-                    // 将光标移动到行尾
                     const newRange = document.createRange();
                     newRange.setStart(lastTextNode, lastTextNode.length);
                     newRange.setEnd(lastTextNode, lastTextNode.length);
                     selection.removeAllRanges();
                     selection.addRange(newRange);
                     
-                    // 在行尾插入空格
                     vditor.insertValue(' ');
                     
-                    // 延迟删除空格
                     setTimeout(() => {
                       const sel = window.getSelection();
                       if (sel && sel.rangeCount > 0) {
                         const r = sel.getRangeAt(0);
-                        // 删除最后一个字符（刚插入的空格）
                         r.setStart(r.startContainer, Math.max(0, r.startOffset - 1));
                         r.deleteContents();
                       }
@@ -1169,6 +1177,73 @@ const relativePath = `${imageDirectory}/${fileName}`;
           indentBtn.addEventListener('click', handleIndentClick, true);
           (vditorRef.current as any)._indentClickHandler = handleIndentClick;
         }
+         
+         // 为"更多"菜单的子项添加图标 - 使用 MutationObserver 监听面板出现
+         const moreBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="more"]');
+         if (moreBtn) {
+           const addIconsToPanel = (panel: Element) => {
+             const targetButtons = panel.querySelectorAll('button');
+             
+             targetButtons.forEach((btn) => {
+               const dataType = btn.getAttribute('data-type');
+               
+               if ((btn as any)._iconAdded) return;
+               
+               let icon = '';
+               switch (dataType) {
+                 case 'export':
+                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+                   break;
+                 case 'fullscreen':
+                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+                   break;
+                 case 'info':
+                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 16V12M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+                   break;
+                 case 'help':
+                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M9 9C9 7.34 10.34 6 12 6C13.66 6 15 7.34 15 9C15 11 12 12 12 12M12 17H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+                   break;
+               }
+               if (icon && btn.textContent) {
+                 btn.innerHTML = icon + btn.textContent;
+                 (btn as any)._iconAdded = true;
+               }
+             });
+           };
+           
+           // 监听容器内的 DOM 变化
+           const moreObserver = new MutationObserver((mutations) => {
+             for (const mutation of mutations) {
+               for (const node of Array.from(mutation.addedNodes)) {
+                 if (node instanceof HTMLElement) {
+                   // 检查是否是面板
+                   if (node.classList.contains('vditor-panel') || node.classList.contains('vditor-hint')) {
+                     // 检查是否包含目标按钮
+                     const hasTarget = node.querySelector('button[data-type="export"], button[data-type="fullscreen"], button[data-type="info"], button[data-type="help"]');
+                     if (hasTarget) {
+                       addIconsToPanel(node);
+                     }
+                   }
+                   // 检查子元素
+                   const panels = node.querySelectorAll('.vditor-panel, .vditor-hint');
+                   panels.forEach(panel => {
+                     const hasTarget = panel.querySelector('button[data-type="export"], button[data-type="fullscreen"], button[data-type="info"], button[data-type="help"]');
+                     if (hasTarget) {
+                       addIconsToPanel(panel);
+                     }
+                   });
+                 }
+               }
+             }
+           });
+           
+           moreObserver.observe(containerRef.current!, {
+             childList: true,
+             subtree: true,
+           });
+           
+           (vditorRef.current as any)._moreObserver = moreObserver;
+         }
         
         // 恢复预览模式
         const currentVditor = vditor;
@@ -2172,6 +2247,18 @@ const relativePath = `${imageDirectory}/${fileName}`;
 
     return () => observer.disconnect();
   }, []);
+
+  // 应用行高设置
+  useEffect(() => {
+    if (vditorRef.current && containerRef.current) {
+      const vditorResets = containerRef.current.querySelectorAll('.vditor-reset');
+      if (vditorResets) {
+        vditorResets.forEach((el) => {
+          (el as HTMLElement).style.lineHeight = `${lineHeight}`;
+        });
+      }
+    }
+  }, [lineHeight]);
 
   return (
     <div className={`vditor-container editor-width-${editorWidth}`} style={{ position: 'relative' }}>
