@@ -1178,72 +1178,57 @@ const relativePath = `${imageDirectory}/${fileName}`;
           (vditorRef.current as any)._indentClickHandler = handleIndentClick;
         }
          
-         // 为"更多"菜单的子项添加图标 - 使用 MutationObserver 监听面板出现
-         const moreBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="more"]');
-         if (moreBtn) {
-           const addIconsToPanel = (panel: Element) => {
-             const targetButtons = panel.querySelectorAll('button');
-             
-             targetButtons.forEach((btn) => {
-               const dataType = btn.getAttribute('data-type');
-               
-               if ((btn as any)._iconAdded) return;
-               
-               let icon = '';
-               switch (dataType) {
-                 case 'export':
-                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-                   break;
-                 case 'fullscreen':
-                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
-                   break;
-                 case 'info':
-                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 16V12M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
-                   break;
-                 case 'help':
-                   icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M9 9C9 7.34 10.34 6 12 6C13.66 6 15 7.34 15 9C15 11 12 12 12 12M12 17H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
-                   break;
-               }
-               if (icon && btn.textContent) {
-                 btn.innerHTML = icon + btn.textContent;
-                 (btn as any)._iconAdded = true;
-               }
-             });
-           };
-           
-           // 监听容器内的 DOM 变化
-           const moreObserver = new MutationObserver((mutations) => {
-             for (const mutation of mutations) {
-               for (const node of Array.from(mutation.addedNodes)) {
-                 if (node instanceof HTMLElement) {
-                   // 检查是否是面板
-                   if (node.classList.contains('vditor-panel') || node.classList.contains('vditor-hint')) {
-                     // 检查是否包含目标按钮
-                     const hasTarget = node.querySelector('button[data-type="export"], button[data-type="fullscreen"], button[data-type="info"], button[data-type="help"]');
-                     if (hasTarget) {
-                       addIconsToPanel(node);
-                     }
-                   }
-                   // 检查子元素
-                   const panels = node.querySelectorAll('.vditor-panel, .vditor-hint');
-                   panels.forEach(panel => {
-                     const hasTarget = panel.querySelector('button[data-type="export"], button[data-type="fullscreen"], button[data-type="info"], button[data-type="help"]');
-                     if (hasTarget) {
-                       addIconsToPanel(panel);
-                     }
-                   });
-                 }
-               }
-             }
-           });
-           
-           moreObserver.observe(containerRef.current!, {
-             childList: true,
-             subtree: true,
-           });
-           
-           (vditorRef.current as any)._moreObserver = moreObserver;
-         }
+          // 为"更多"菜单的子项添加图标
+          const moreBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="more"]');
+          if (moreBtn) {
+            const addIconsToPanel = () => {
+              // 查找所有面板（Vditor 的更多菜单面板可能使用不同的 class）
+              const panels = containerRef.current?.querySelectorAll('.vditor-panel, .vditor-hint, .vditor-toolbar__popup');
+              
+              if (panels) {
+                panels.forEach((panel) => {
+                  const targetButtons = panel.querySelectorAll('button');
+                  
+                  targetButtons.forEach((btn) => {
+                    const dataType = btn.getAttribute('data-type');
+                    
+                    if ((btn as any)._iconAdded) return;
+                    
+                    let icon = '';
+                    switch (dataType) {
+                      case 'export':
+                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+                        break;
+                      case 'fullscreen':
+                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+                        break;
+                      case 'info':
+                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 16V12M12 8H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+                        break;
+                      case 'help':
+                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px; vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M9 9C9 7.34 10.34 6 12 6C13.66 6 15 7.34 15 9C15 11 12 12 12 12M12 17H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>';
+                        break;
+                    }
+                    if (icon && btn.textContent) {
+                      btn.innerHTML = icon + btn.textContent;
+                      (btn as any)._iconAdded = true;
+                    }
+                  });
+                });
+              }
+            };
+            
+            // 监听"更多"按钮点击
+            const handleMoreClick = () => {
+              // 延迟执行，等待面板出现
+              setTimeout(addIconsToPanel, 10);
+              setTimeout(addIconsToPanel, 100);
+              setTimeout(addIconsToPanel, 300);
+            };
+            
+            moreBtn.addEventListener('click', handleMoreClick);
+            (vditorRef.current as any)._moreClickHandler = handleMoreClick;
+          }
         
         // 恢复预览模式
         const currentVditor = vditor;
@@ -2247,18 +2232,6 @@ const relativePath = `${imageDirectory}/${fileName}`;
 
     return () => observer.disconnect();
   }, []);
-
-  // 应用行高设置
-  useEffect(() => {
-    if (vditorRef.current && containerRef.current) {
-      const vditorResets = containerRef.current.querySelectorAll('.vditor-reset');
-      if (vditorResets) {
-        vditorResets.forEach((el) => {
-          (el as HTMLElement).style.lineHeight = `${lineHeight}`;
-        });
-      }
-    }
-  }, [lineHeight]);
 
   return (
     <div className={`vditor-container editor-width-${editorWidth}`} style={{ position: 'relative' }}>
