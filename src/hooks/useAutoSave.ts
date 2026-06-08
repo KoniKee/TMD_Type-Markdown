@@ -124,6 +124,9 @@ export function useAutoSave(): void {
     const { documents, tabs, saveDocument, updateFilePath } = useEditorStore.getState();
     const doc = documents[activeDocPath];
     if (!doc) return;
+    
+    // 如果文档未修改，不保存
+    if (!doc.isModified) return;
 
     try {
       if (activeDocPath.startsWith('file://')) {
@@ -139,8 +142,8 @@ export function useAutoSave(): void {
         }
         
         saveDocument(activeDocPath);
-      } else if (doc.isNewFile) {
-        // 新建文档，保存到临时目录
+      } else if (doc.isNewFile && doc.hasBeenModified) {
+        // 新建文档且有修改，保存到临时目录
         const tempDir = await fileOps.getTempDir();
         
         if (tempDir && isTauriCached()) {
@@ -161,11 +164,9 @@ export function useAutoSave(): void {
           delete savedDocs[activeDocPath];
           localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
           
-          // 只有修改过的文档才加入最近文件列表
-          if (doc.hasBeenModified) {
-            const { addFile } = useRecentFilesStore.getState();
-            addFile(`file://${tempFilePath}`, fileName);
-          }
+          // 加入最近文件列表
+          const { addFile } = useRecentFilesStore.getState();
+          addFile(`file://${tempFilePath}`, fileName);
         } else {
           // 无法保存到临时目录，保存到localStorage
           saveToStorage(activeDocPath, tabs, documents);
@@ -219,11 +220,15 @@ export function useAutoSave(): void {
     const handleBeforeUnload = () => {
       const { documents, tabs, activeDocPath } = useEditorStore.getState();
       
-      // 只保存tabs中存在的文档
+      // 只保存tabs中存在且符合以下条件的文档：
+      // 1. 有 filePath（已在文件系统）
+      // 2. 或 新建文档 + hasBeenModified（已修改的新建文档，会自动保存到临时目录）
+      // 3. 或 isModified（当前未保存的修改）
       const docsToSave: Record<string, any> = {};
       for (const tabPath of tabs) {
-        if (documents[tabPath]) {
-          docsToSave[tabPath] = documents[tabPath];
+        const doc = documents[tabPath];
+        if (doc && (doc.filePath || doc.hasBeenModified || doc.isModified)) {
+          docsToSave[tabPath] = doc;
         }
       }
       

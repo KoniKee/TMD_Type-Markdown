@@ -37,7 +37,7 @@ function loadFromStorage(): { documents: Record<string, DocumentState>; tabs: st
       const docState = doc as any;
       
       const shouldRestore = docState.filePath || 
-                           (docState.isNewFile && docState.hasBeenModified && !docState.isModified);
+                           (docState.isNewFile && docState.hasBeenModified);
       
       if (shouldRestore) {
         documents[path] = {
