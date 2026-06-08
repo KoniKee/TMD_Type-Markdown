@@ -138,4 +138,34 @@ export const fileOps = {
       throw new Error('Browser environment requires file handle');
     }
   },
+
+  // 获取临时文件目录路径
+  async getTempDir(): Promise<string | null> {
+    if (isTauriCached()) {
+      try {
+        const { documentDir } = await import('@tauri-apps/api/path');
+        const docDir = await documentDir();
+        if (!docDir) return null;
+        
+        const tempDir = `${docDir}.md-editor${window.navigator.platform.toLowerCase().includes('win') ? '\\' : '/'}temp`;
+        
+        // 确保目录存在
+        const { mkdir } = await import('@tauri-apps/plugin-fs');
+        try {
+          await mkdir(tempDir, { recursive: true });
+        } catch (e: any) {
+          // 目录可能已存在，忽略错误
+          if (!e.message?.includes('already exists')) {
+            console.error('[TempDir] 创建临时目录失败:', e);
+          }
+        }
+        
+        return tempDir;
+      } catch (e) {
+        console.error('[TempDir] 获取临时目录失败:', e);
+        return null;
+      }
+    }
+    return null;
+  },
 };

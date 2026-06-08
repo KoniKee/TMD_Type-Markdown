@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useFileStore } from '../stores';
-import { isTauriCached } from '../utils/platform';
+import { isTauriCached, fileOps } from '../utils/platform';
 
 const STORAGE_KEY_DOCS = 'md-editor-docs';
 const STORAGE_KEY_TABS = 'md-editor-tabs';
@@ -120,12 +120,13 @@ export function useAutoSave(): void {
   const performSave = useCallback(async () => {
     if (!activeDocPath) return;
     
-    const { documents, tabs, saveDocument } = useEditorStore.getState();
+    const { documents, tabs, saveDocument, updateFilePath } = useEditorStore.getState();
     const doc = documents[activeDocPath];
     if (!doc) return;
 
     try {
       if (activeDocPath.startsWith('file://')) {
+        // 已保存到文件系统的文档，直接写入
         const written = await writeToFileSystem(activeDocPath, doc.content);
         
         if (written) {
@@ -135,11 +136,39 @@ export function useAutoSave(): void {
         } else {
           saveToStorage(activeDocPath, tabs, documents);
         }
+        
+        saveDocument(activeDocPath);
+      } else if (doc.isNewFile && doc.hasBeenModified) {
+        // 新建文档且有修改，保存到临时目录
+        const tempDir = await fileOps.getTempDir();
+        
+        if (tempDir && isTauriCached()) {
+          // 生成临时文件路径
+          const separator = tempDir.includes('\\') ? '\\' : '/';
+          const fileName = activeDocPath.split('/').pop()?.split('\\').pop() || 'untitled.md';
+          const tempFilePath = `${tempDir}${separator}${fileName}`;
+          
+          // 写入文件
+          const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+          await writeTextFile(tempFilePath, doc.content);
+          
+          // 更新文档路径
+          updateFilePath(activeDocPath, tempFilePath);
+          
+          // 从localStorage中移除
+          const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
+          delete savedDocs[activeDocPath];
+          localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
+        } else {
+          // 无法保存到临时目录，保存到localStorage
+          saveToStorage(activeDocPath, tabs, documents);
+          saveDocument(activeDocPath);
+        }
       } else {
+        // 其他情况，保存到localStorage
         saveToStorage(activeDocPath, tabs, documents);
+        saveDocument(activeDocPath);
       }
-      
-      saveDocument(activeDocPath);
     } catch (error) {
       console.error('[AutoSave] 保存失败:', error);
     }
@@ -181,8 +210,9 @@ export function useAutoSave(): void {
   
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const { documents, tabs } = useEditorStore.getState();
-      if (activeDocPath && documents[activeDocPath]?.isModified) {
+      const { documents, tabs, activeDocPath } = useEditorStore.getState();
+      // 保存所有文档的状态
+      if (Object.keys(documents).length > 0) {
         saveToStorage(activeDocPath, tabs, documents);
       }
     };
