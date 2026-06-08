@@ -8,6 +8,7 @@ export interface DocumentState {
   content: string;
   isModified: boolean;
   isNewFile: boolean;
+  hasBeenModified: boolean;
   lastSaved: number | null;
   outlineVisible: boolean;
   editorMode: EditorMode;
@@ -30,14 +31,37 @@ function loadFromStorage(): { documents: Record<string, DocumentState>; tabs: st
     const savedActivePath = localStorage.getItem(STORAGE_KEY_ACTIVE_PATH);
     
     const documents: Record<string, DocumentState> = {};
+    const validTabs: string[] = [];
     
-    // 不再自动恢复任何文档，让用户手动打开文件
-    // 清理所有旧数据
-    localStorage.removeItem(STORAGE_KEY_DOCS);
-    localStorage.removeItem(STORAGE_KEY_TABS);
-    localStorage.removeItem(STORAGE_KEY_ACTIVE_PATH);
+    for (const [path, doc] of Object.entries(savedDocs)) {
+      const docState = doc as any;
+      
+      const shouldRestore = docState.filePath || 
+                           (docState.isNewFile && docState.hasBeenModified && !docState.isModified);
+      
+      if (shouldRestore) {
+        documents[path] = {
+          content: docState.content || '',
+          isModified: false,
+          isNewFile: docState.isNewFile || false,
+          hasBeenModified: docState.hasBeenModified || false,
+          lastSaved: docState.timestamp || Date.now(),
+          outlineVisible: true,
+          editorMode: 'ir',
+          scrollPosition: 0,
+          previewMode: 'editor',
+          filePath: docState.filePath,
+        };
+        
+        if (savedTabs.includes(path)) {
+          validTabs.push(path);
+        }
+      }
+    }
     
-    return { documents, tabs: [], activeDocPath: null };
+    const activeDocPath = validTabs.includes(savedActivePath || '') ? savedActivePath : null;
+    
+    return { documents, tabs: validTabs, activeDocPath };
   } catch (e) {
     console.error('[EditorStore] 恢复数据失败:', e);
     localStorage.removeItem(STORAGE_KEY_DOCS);
@@ -106,6 +130,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             content: content || '',
             isModified: isNew || false,
             isNewFile: isNew || false,
+            hasBeenModified: false,
             lastSaved: isNew ? null : Date.now(),
             outlineVisible: true,
             editorMode: 'ir',
@@ -124,6 +149,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             content,
             isModified: isNew || false,
             isNewFile: isNew || false,
+            hasBeenModified: false,
             filePath: isNew ? undefined : path.replace(/^file:\/\//, ''),
           },
         },
@@ -141,7 +167,6 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
       saveStatus: isNew ? 'unsaved' : 'saved',
     });
     
-    // 记录到最近文件（新建文档不记录）
     if (!isNew) {
       const { addFile } = useRecentFilesStore.getState();
       const fileName = path.split('/').pop()?.split('\\').pop() || path;
@@ -160,6 +185,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             content: content || '',
             isModified: isNew || false,
             isNewFile: isNew || false,
+            hasBeenModified: false,
             lastSaved: isNew ? null : Date.now(),
             outlineVisible: true,
             editorMode: 'ir',
@@ -178,13 +204,13 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             content,
             isModified: isNew || false,
             isNewFile: isNew || false,
+            hasBeenModified: false,
             filePath: isNew ? undefined : path.replace(/^file:\/\//, ''),
           },
         },
       });
     }
     
-    // 记录到最近文件（新建文档不记录）
     if (!isNew) {
       const { addFile } = useRecentFilesStore.getState();
       const fileName = path.split('/').pop()?.split('\\').pop() || path;
@@ -230,6 +256,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             ...doc,
             content,
             isModified: true,
+            hasBeenModified: true,
           },
         },
         saveStatus: 'unsaved',
@@ -249,11 +276,18 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             content: content ?? doc.content,
             isModified: false,
             isNewFile: false,
+            hasBeenModified: doc.hasBeenModified,
             lastSaved: Date.now(),
           },
         },
         saveStatus: 'saved',
       });
+      
+      if (doc.isNewFile && doc.hasBeenModified) {
+        const { addFile } = useRecentFilesStore.getState();
+        const fileName = path.split('/').pop()?.split('\\').pop() || path;
+        addFile(path, fileName);
+      }
     }
   },
 
@@ -348,16 +382,38 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
   },
   
   updateFilePath: (docPath: string, filePath: string) => {
-    const { documents } = get();
-    set({
-      documents: {
-        ...documents,
-        [docPath]: {
-          ...documents[docPath],
-          filePath,
-          isNewFile: false,
-        },
+    const { documents, tabs, activeDocPath } = get();
+    const doc = documents[docPath];
+    if (!doc) return;
+    
+    const newDocPath = filePath.startsWith('file://') ? filePath : `file://${filePath}`;
+    
+    const { [docPath]: _, ...restDocs } = documents;
+    const newDocuments = {
+      ...restDocs,
+      [newDocPath]: {
+        ...doc,
+        filePath,
+        isNewFile: false,
+        hasBeenModified: false,
+        isModified: false,
+        lastSaved: Date.now(),
       },
+    };
+    
+    const newTabs = tabs.map(t => t === docPath ? newDocPath : t);
+    
+    const newActiveDocPath = activeDocPath === docPath ? newDocPath : activeDocPath;
+    
+    set({
+      documents: newDocuments,
+      tabs: newTabs,
+      activeDocPath: newActiveDocPath,
+      activeTabPath: newActiveDocPath,
     });
+    
+    const { addFile } = useRecentFilesStore.getState();
+    const fileName = filePath.split('/').pop()?.split('\\').pop() || filePath;
+    addFile(newDocPath, fileName);
   },
 }));

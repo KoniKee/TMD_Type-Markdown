@@ -67,17 +67,33 @@ async function writeToFileSystem(docPath: string, content: string): Promise<bool
 /**
  * 保存所有数据到 localStorage
  */
-function saveToStorage(activeDocPath: string | null, tabs: string[], documents: Record<string, { content: string; isModified: boolean }>): void {
+function saveToStorage(
+  activeDocPath: string | null, 
+  tabs: string[], 
+  documents: Record<string, { content: string; isModified: boolean; isNewFile?: boolean; hasBeenModified?: boolean; filePath?: string }>
+): void {
   try {
-    const savedDocs: Record<string, { content: string; timestamp: number }> = {};
+    const savedDocs: Record<string, { 
+      content: string; 
+      timestamp: number; 
+      isNewFile?: boolean; 
+      hasBeenModified?: boolean; 
+      filePath?: string;
+      isModified?: boolean;
+    }> = {};
+    
     for (const [path, doc] of Object.entries(documents)) {
       savedDocs[path] = {
         content: doc.content,
         timestamp: Date.now(),
+        isNewFile: doc.isNewFile,
+        hasBeenModified: doc.hasBeenModified,
+        filePath: doc.filePath,
+        isModified: doc.isModified,
       };
     }
-    localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
     
+    localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
     localStorage.setItem(STORAGE_KEY_TABS, JSON.stringify(tabs));
     
     if (activeDocPath) {
@@ -104,13 +120,11 @@ export function useAutoSave(): void {
   const performSave = useCallback(async () => {
     if (!activeDocPath) return;
     
-    // 使用 getState() 避免订阅
-    const { documents, tabs } = useEditorStore.getState();
+    const { documents, tabs, saveDocument } = useEditorStore.getState();
     const doc = documents[activeDocPath];
     if (!doc) return;
 
     try {
-      // 如果是file://开头的文档，尝试写入文件系统
       if (activeDocPath.startsWith('file://')) {
         const written = await writeToFileSystem(activeDocPath, doc.content);
         
@@ -129,7 +143,7 @@ export function useAutoSave(): void {
     } catch (error) {
       console.error('[AutoSave] 保存失败:', error);
     }
-  }, [activeDocPath, saveDocument]);
+  }, [activeDocPath]);
 
   const scheduleSave = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -183,7 +197,7 @@ export function useAutoSave(): void {
  */
 export function useSaveAsFile() {
   return useCallback(async () => {
-    const { activeDocPath, documents, updateFilePath, saveDocument } = useEditorStore.getState();
+    const { activeDocPath, documents, updateFilePath } = useEditorStore.getState();
     if (!activeDocPath) return;
     const doc = documents[activeDocPath];
     if (!doc) return;
@@ -202,8 +216,8 @@ export function useSaveAsFile() {
         if (filePath) {
           const { writeTextFile } = await import('@tauri-apps/plugin-fs');
           await writeTextFile(filePath, doc.content);
+          
           updateFilePath(activeDocPath, filePath);
-          saveDocument(activeDocPath);
         }
       } catch (e) {
         console.error('Save as failed:', e);
@@ -220,10 +234,13 @@ export function useSaveAsFile() {
           await writable.write(doc.content);
           await writable.close();
           
+          const fileHandles = useFileStore.getState().fileHandles;
+          fileHandles.set(handle.name, handle);
+          
           updateFilePath(activeDocPath, handle.name);
-          saveDocument(activeDocPath);
         } else {
           saveFileToLocal(fileName, doc.content);
+          const { saveDocument } = useEditorStore.getState();
           saveDocument(activeDocPath);
         }
       } catch (e) {
