@@ -128,7 +128,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
           ...documents,
           [path]: {
             content: content || '',
-            isModified: isNew || false,
+            isModified: false,  // 新建文档初始状态为已保存，不触发自动保存
             isNewFile: isNew || false,
             hasBeenModified: false,
             lastSaved: isNew ? null : Date.now(),
