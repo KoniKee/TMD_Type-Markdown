@@ -211,9 +211,23 @@ export function useAutoSave(): void {
   useEffect(() => {
     const handleBeforeUnload = () => {
       const { documents, tabs, activeDocPath } = useEditorStore.getState();
-      // 保存所有文档的状态
-      if (Object.keys(documents).length > 0) {
-        saveToStorage(activeDocPath, tabs, documents);
+      
+      // 只保存tabs中存在的文档
+      const docsToSave: Record<string, any> = {};
+      for (const tabPath of tabs) {
+        if (documents[tabPath]) {
+          docsToSave[tabPath] = documents[tabPath];
+        }
+      }
+      
+      // 只保存tabs中包含的文档状态
+      if (Object.keys(docsToSave).length > 0) {
+        saveToStorage(activeDocPath, tabs, docsToSave);
+      } else {
+        // 如果没有打开的tab，清空localStorage
+        localStorage.removeItem(STORAGE_KEY_DOCS);
+        localStorage.removeItem(STORAGE_KEY_TABS);
+        localStorage.removeItem(STORAGE_KEY_ACTIVE_PATH);
       }
     };
     
