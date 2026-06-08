@@ -275,7 +275,8 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             ...doc,
             content: content ?? doc.content,
             isModified: false,
-            isNewFile: false,
+            // 新建文档只有在路径变为file://后才算已保存
+            isNewFile: doc.isNewFile && !path.startsWith('file://'),
             hasBeenModified: doc.hasBeenModified,
             lastSaved: Date.now(),
           },
@@ -283,7 +284,8 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
         saveStatus: 'saved',
       });
       
-      if (doc.isNewFile && doc.hasBeenModified) {
+      // 新建文档且有修改，且已保存到文件系统，才加入最近文件列表
+      if (doc.isNewFile && doc.hasBeenModified && path.startsWith('file://')) {
         const { addFile } = useRecentFilesStore.getState();
         const fileName = path.split('/').pop()?.split('\\').pop() || path;
         addFile(path, fileName);

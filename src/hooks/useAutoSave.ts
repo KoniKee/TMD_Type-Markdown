@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useFileStore } from '../stores';
+import { useRecentFilesStore } from '../stores/recentFilesStore';
 import { isTauriCached, fileOps } from '../utils/platform';
 
 const STORAGE_KEY_DOCS = 'md-editor-docs';
@@ -138,8 +139,8 @@ export function useAutoSave(): void {
         }
         
         saveDocument(activeDocPath);
-      } else if (doc.isNewFile && doc.hasBeenModified) {
-        // 新建文档且有修改，保存到临时目录
+      } else if (doc.isNewFile) {
+        // 新建文档，保存到临时目录
         const tempDir = await fileOps.getTempDir();
         
         if (tempDir && isTauriCached()) {
@@ -159,6 +160,12 @@ export function useAutoSave(): void {
           const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
           delete savedDocs[activeDocPath];
           localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
+          
+          // 只有修改过的文档才加入最近文件列表
+          if (doc.hasBeenModified) {
+            const { addFile } = useRecentFilesStore.getState();
+            addFile(`file://${tempFilePath}`, fileName);
+          }
         } else {
           // 无法保存到临时目录，保存到localStorage
           saveToStorage(activeDocPath, tabs, documents);
