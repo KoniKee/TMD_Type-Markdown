@@ -109,9 +109,15 @@ function saveToStorage(
  * 自动保存 Hook
  */
 export function useAutoSave(): void {
-  const saveStatus = useEditorStore((state) => state.saveStatus);
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const saveDocument = useEditorStore((state) => state.saveDocument);
+  
+  // 订阅当前文档的 isModified 状态
+  const isCurrentDocModified = useEditorStore((state) => {
+    if (!state.activeDocPath) return false;
+    const doc = state.documents[state.activeDocPath];
+    return doc?.isModified || false;
+  });
   
   const autoSaveEnabled = useSettingsStore((state) => state.autoSave);
   const autoSaveDelay = useSettingsStore((state) => state.autoSaveDelay);
@@ -119,29 +125,30 @@ export function useAutoSave(): void {
   const timeoutRef = useRef<number | null>(null);
 
   const performSave = useCallback(async () => {
-    if (!activeDocPath) return;
+    const currentPath = useEditorStore.getState().activeDocPath;
+    if (!currentPath) return;
     
     const { documents, tabs, saveDocument, updateFilePath } = useEditorStore.getState();
-    const doc = documents[activeDocPath];
+    const doc = documents[currentPath];
     if (!doc) return;
     
     // 如果文档未修改，不保存
     if (!doc.isModified) return;
 
     try {
-      if (activeDocPath.startsWith('file://')) {
+      if (currentPath.startsWith('file://')) {
         // 已保存到文件系统的文档，直接写入
-        const written = await writeToFileSystem(activeDocPath, doc.content);
+        const written = await writeToFileSystem(currentPath, doc.content);
         
         if (written) {
           const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
-          delete savedDocs[activeDocPath];
+          delete savedDocs[currentPath];
           localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
         } else {
-          saveToStorage(activeDocPath, tabs, documents);
+          saveToStorage(currentPath, tabs, documents);
         }
         
-        saveDocument(activeDocPath);
+        saveDocument(currentPath);
       } else if (doc.isNewFile && doc.hasBeenModified) {
         // 新建文档且有修改，保存到临时目录
         const tempDir = await fileOps.getTempDir();
@@ -149,7 +156,7 @@ export function useAutoSave(): void {
         if (tempDir && isTauriCached()) {
           // 生成临时文件路径
           const separator = tempDir.includes('\\') ? '\\' : '/';
-          const fileName = activeDocPath.split('/').pop()?.split('\\').pop() || 'untitled.md';
+          const fileName = currentPath.split('/').pop()?.split('\\').pop() || 'untitled.md';
           const tempFilePath = `${tempDir}${separator}${fileName}`;
           
           // 写入文件
@@ -157,11 +164,11 @@ export function useAutoSave(): void {
           await writeTextFile(tempFilePath, doc.content);
           
           // 更新文档路径
-          updateFilePath(activeDocPath, tempFilePath);
+          updateFilePath(currentPath, tempFilePath);
           
           // 从localStorage中移除
           const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
-          delete savedDocs[activeDocPath];
+          delete savedDocs[currentPath];
           localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
           
           // 加入最近文件列表
@@ -169,35 +176,45 @@ export function useAutoSave(): void {
           addFile(`file://${tempFilePath}`, fileName);
         } else {
           // 无法保存到临时目录，保存到localStorage
-          saveToStorage(activeDocPath, tabs, documents);
-          saveDocument(activeDocPath);
+          saveToStorage(currentPath, tabs, documents);
+          saveDocument(currentPath);
         }
       } else {
         // 其他情况，保存到localStorage
-        saveToStorage(activeDocPath, tabs, documents);
-        saveDocument(activeDocPath);
+        saveToStorage(currentPath, tabs, documents);
+        saveDocument(currentPath);
       }
     } catch (error) {
       console.error('[AutoSave] 保存失败:', error);
     }
-  }, [activeDocPath]);
+  }, []);
 
   const scheduleSave = useCallback(() => {
+    // 清除之前的定时器
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
     }
     
-    timeoutRef.current = window.setTimeout(() => {
-      performSave();
+    timeoutRef.current = window.setTimeout(async () => {
+      await performSave();
       timeoutRef.current = null;
     }, autoSaveDelay);
   }, [performSave, autoSaveDelay]);
 
+  // 监听文档修改状态变化
   useEffect(() => {
     if (!autoSaveEnabled) return;
-    if (saveStatus !== 'unsaved') return;
     
-    scheduleSave();
+    if (isCurrentDocModified) {
+      // 文档修改了，调度保存
+      scheduleSave();
+    } else {
+      // 文档已保存，清除定时器
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
     
     return () => {
       if (timeoutRef.current !== null) {
@@ -205,7 +222,7 @@ export function useAutoSave(): void {
         timeoutRef.current = null;
       }
     };
-  }, [autoSaveEnabled, saveStatus, scheduleSave, autoSaveDelay]);
+  }, [autoSaveEnabled, isCurrentDocModified, scheduleSave]);
 
   useEffect(() => {
     return () => {
