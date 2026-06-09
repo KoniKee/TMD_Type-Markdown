@@ -412,6 +412,7 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
       tabs: newTabs,
       activeDocPath: newActiveDocPath,
       activeTabPath: newActiveDocPath,
+      saveStatus: 'saved',
     });
     
     // 如果是新建文档另存为，移除旧的最近文件记录
