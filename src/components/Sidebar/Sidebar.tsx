@@ -1009,7 +1009,7 @@ export const Sidebar: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-[var(--sidebar-text)] truncate">{file.name}</div>
+                    <div className="text-sm text-[var(--sidebar-text)] truncate" title={file.path.replace(/^file:\/\//, '')}>{file.name}</div>
                     <div className="text-xs text-[var(--sidebar-text-muted)]">{formatTime(file.lastOpened)}</div>
                   </div>
                   {hoveredPath === file.path && (
