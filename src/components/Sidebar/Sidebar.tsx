@@ -24,7 +24,8 @@ import {
   Pin,
   PinOff,
   ExternalLink,
-  Columns
+  Columns,
+  FolderSearch
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -1138,6 +1139,31 @@ export const Sidebar: React.FC = () => {
                     }
                   }}
                 />
+              )}
+              {isTauriCached() && contextMenu.recentFile && (
+                <>
+                  <div className="h-px bg-[var(--sidebar-border)] my-1" />
+                  <ContextMenuItem
+                    icon={FolderSearch}
+                    label="在文件管理器中打开"
+                    onClick={async () => {
+                      const file = contextMenu.recentFile;
+                      if (!file) return;
+                      closeContextMenu();
+                      
+                      try {
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const lastSlash = Math.max(realPath.lastIndexOf('/'), realPath.lastIndexOf('\\'));
+                        const dirPath = lastSlash > 0 ? realPath.substring(0, lastSlash) : realPath;
+                        
+                        const { open } = await import('@tauri-apps/plugin-shell');
+                        await open(dirPath);
+                      } catch (err) {
+                        console.error('打开文件管理器失败:', err);
+                      }
+                    }}
+                  />
+                </>
               )}
             </>
           ) : contextMenu.node?.isDir ? (

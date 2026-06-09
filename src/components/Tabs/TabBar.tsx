@@ -68,7 +68,7 @@ export const TabBar: React.FC = () => {
               )}
 
               {/* 文件名 */}
-              <span className="text-sm truncate flex-1 font-medium" title={fileName}>
+              <span className="text-sm truncate flex-1 font-medium" title={tabPath}>
                 {fileName}
               </span>
 
