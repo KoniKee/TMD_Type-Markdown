@@ -24,7 +24,8 @@ import {
   Pin,
   PinOff,
   ExternalLink,
-  Columns
+  Columns,
+  FolderSearch
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -1138,6 +1139,52 @@ export const Sidebar: React.FC = () => {
                     }
                   }}
                 />
+              )}
+              {isTauriCached() && contextMenu.recentFile && (
+                <>
+                  <div className="h-px bg-[var(--sidebar-border)] my-1" />
+                  <ContextMenuItem
+                    icon={FolderSearch}
+                    label="在文件管理器中打开"
+                    onClick={async () => {
+                      const file = contextMenu.recentFile;
+                      if (!file) return;
+                      closeContextMenu();
+                      
+                      try {
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const platform = navigator.platform.toLowerCase();
+                        
+                        const { Command } = await import('@tauri-apps/plugin-shell');
+                        
+                        if (platform.includes('win')) {
+                          // Windows: 使用 explorer /select 打开并选中文件
+                          const command = Command.create('explorer', ['/select,', realPath]);
+                          await command.execute();
+                        } else if (platform.includes('mac')) {
+                          // macOS: 使用 open -R 打开并选中文件
+                          const command = Command.create('open', ['-R', realPath]);
+                          await command.execute();
+                        } else {
+                          // Linux: 使用 dbus 调用文件管理器
+                          const command = Command.create('dbus-send', [
+                            '--session',
+                            '--dest=org.freedesktop.FileManager1',
+                            '--type=method_call',
+                            '/org/freedesktop/FileManager1',
+                            'org.freedesktop.FileManager1.ShowItems',
+                            `array:string:file://${realPath}`,
+                            'string:'
+                          ]);
+                          await command.execute();
+                        }
+                      } catch (err) {
+                        console.error('打开文件管理器失败:', err);
+                        alert('打开文件管理器失败: ' + (err instanceof Error ? err.message : String(err)));
+                      }
+                    }}
+                  />
+                </>
               )}
             </>
           ) : contextMenu.node?.isDir ? (

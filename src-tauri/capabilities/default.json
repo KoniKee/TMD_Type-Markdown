@@ -60,7 +60,46 @@
     "clipboard-manager:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
-    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "explorer",
+          "cmd": "explorer",
+          "args": true
+        },
+        {
+          "name": "open",
+          "cmd": "open",
+          "args": true
+        },
+        {
+          "name": "dbus-send",
+          "cmd": "dbus-send",
+          "args": true
+        },
+        {
+          "name": "powershell",
+          "cmd": "powershell",
+          "args": true
+        },
+        {
+          "name": "osascript",
+          "cmd": "osascript",
+          "args": true
+        },
+        {
+          "name": "gio",
+          "cmd": "gio",
+          "args": true
+        },
+        {
+          "name": "kioclient",
+          "cmd": "kioclient",
+          "args": true
+        }
+      ]
+    },
     "shell:allow-open"
   ]
 }

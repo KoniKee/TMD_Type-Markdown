@@ -243,7 +243,7 @@ export const TitleBar: React.FC = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] mr-1.5 flex-shrink-0" />
                     )}
 
-                    <span className="text-sm truncate flex-1" title={displayFileName}>
+                    <span className="text-sm truncate flex-1" title={displayDocPath.replace(/^file:\/\//, '')}>
                       {displayFileName}
                     </span>
 

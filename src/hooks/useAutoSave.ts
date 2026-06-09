@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useFileStore } from '../stores';
-import { isTauriCached } from '../utils/platform';
+import { useRecentFilesStore } from '../stores/recentFilesStore';
+import { isTauriCached, fileOps } from '../utils/platform';
 
 const STORAGE_KEY_DOCS = 'md-editor-docs';
 const STORAGE_KEY_TABS = 'md-editor-tabs';
@@ -67,17 +68,33 @@ async function writeToFileSystem(docPath: string, content: string): Promise<bool
 /**
  * 保存所有数据到 localStorage
  */
-function saveToStorage(activeDocPath: string | null, tabs: string[], documents: Record<string, { content: string; isModified: boolean }>): void {
+function saveToStorage(
+  activeDocPath: string | null, 
+  tabs: string[], 
+  documents: Record<string, { content: string; isModified: boolean; isNewFile?: boolean; hasBeenModified?: boolean; filePath?: string }>
+): void {
   try {
-    const savedDocs: Record<string, { content: string; timestamp: number }> = {};
+    const savedDocs: Record<string, { 
+      content: string; 
+      timestamp: number; 
+      isNewFile?: boolean; 
+      hasBeenModified?: boolean; 
+      filePath?: string;
+      isModified?: boolean;
+    }> = {};
+    
     for (const [path, doc] of Object.entries(documents)) {
       savedDocs[path] = {
         content: doc.content,
         timestamp: Date.now(),
+        isNewFile: doc.isNewFile,
+        hasBeenModified: doc.hasBeenModified,
+        filePath: doc.filePath,
+        isModified: doc.isModified,
       };
     }
-    localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
     
+    localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
     localStorage.setItem(STORAGE_KEY_TABS, JSON.stringify(tabs));
     
     if (activeDocPath) {
@@ -92,9 +109,15 @@ function saveToStorage(activeDocPath: string | null, tabs: string[], documents: 
  * 自动保存 Hook
  */
 export function useAutoSave(): void {
-  const saveStatus = useEditorStore((state) => state.saveStatus);
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const saveDocument = useEditorStore((state) => state.saveDocument);
+  
+  // 订阅当前文档的 isModified 状态
+  const isCurrentDocModified = useEditorStore((state) => {
+    if (!state.activeDocPath) return false;
+    const doc = state.documents[state.activeDocPath];
+    return doc?.isModified || false;
+  });
   
   const autoSaveEnabled = useSettingsStore((state) => state.autoSave);
   const autoSaveDelay = useSettingsStore((state) => state.autoSaveDelay);
@@ -102,51 +125,96 @@ export function useAutoSave(): void {
   const timeoutRef = useRef<number | null>(null);
 
   const performSave = useCallback(async () => {
-    if (!activeDocPath) return;
+    const currentPath = useEditorStore.getState().activeDocPath;
+    if (!currentPath) return;
     
-    // 使用 getState() 避免订阅
-    const { documents, tabs } = useEditorStore.getState();
-    const doc = documents[activeDocPath];
+    const { documents, tabs, saveDocument, updateFilePath } = useEditorStore.getState();
+    const doc = documents[currentPath];
     if (!doc) return;
+    
+    // 如果文档未修改，不保存
+    if (!doc.isModified) return;
 
     try {
-      // 如果是file://开头的文档，尝试写入文件系统
-      if (activeDocPath.startsWith('file://')) {
-        const written = await writeToFileSystem(activeDocPath, doc.content);
+      if (currentPath.startsWith('file://')) {
+        // 已保存到文件系统的文档，直接写入
+        const written = await writeToFileSystem(currentPath, doc.content);
         
         if (written) {
           const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
-          delete savedDocs[activeDocPath];
+          delete savedDocs[currentPath];
           localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
         } else {
-          saveToStorage(activeDocPath, tabs, documents);
+          saveToStorage(currentPath, tabs, documents);
+        }
+        
+        saveDocument(currentPath);
+      } else if (doc.isNewFile && doc.hasBeenModified) {
+        // 新建文档且有修改，保存到临时目录
+        const tempDir = await fileOps.getTempDir();
+        
+        if (tempDir && isTauriCached()) {
+          // 生成临时文件路径
+          const separator = tempDir.includes('\\') ? '\\' : '/';
+          const fileName = currentPath.split('/').pop()?.split('\\').pop() || 'untitled.md';
+          const tempFilePath = `${tempDir}${separator}${fileName}`;
+          
+          // 写入文件
+          const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+          await writeTextFile(tempFilePath, doc.content);
+          
+          // 更新文档路径
+          updateFilePath(currentPath, tempFilePath);
+          
+          // 从localStorage中移除
+          const savedDocs = JSON.parse(localStorage.getItem(STORAGE_KEY_DOCS) || '{}');
+          delete savedDocs[currentPath];
+          localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(savedDocs));
+          
+          // 加入最近文件列表
+          const { addFile } = useRecentFilesStore.getState();
+          addFile(`file://${tempFilePath}`, fileName);
+        } else {
+          // 无法保存到临时目录，保存到localStorage
+          saveToStorage(currentPath, tabs, documents);
+          saveDocument(currentPath);
         }
       } else {
-        saveToStorage(activeDocPath, tabs, documents);
+        // 其他情况，保存到localStorage
+        saveToStorage(currentPath, tabs, documents);
+        saveDocument(currentPath);
       }
-      
-      saveDocument(activeDocPath);
     } catch (error) {
       console.error('[AutoSave] 保存失败:', error);
     }
-  }, [activeDocPath, saveDocument]);
+  }, []);
 
   const scheduleSave = useCallback(() => {
+    // 清除之前的定时器
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
     }
     
-    timeoutRef.current = window.setTimeout(() => {
-      performSave();
+    timeoutRef.current = window.setTimeout(async () => {
+      await performSave();
       timeoutRef.current = null;
     }, autoSaveDelay);
   }, [performSave, autoSaveDelay]);
 
+  // 监听文档修改状态变化
   useEffect(() => {
     if (!autoSaveEnabled) return;
-    if (saveStatus !== 'unsaved') return;
     
-    scheduleSave();
+    if (isCurrentDocModified) {
+      // 文档修改了，调度保存
+      scheduleSave();
+    } else {
+      // 文档已保存，清除定时器
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    }
     
     return () => {
       if (timeoutRef.current !== null) {
@@ -154,7 +222,7 @@ export function useAutoSave(): void {
         timeoutRef.current = null;
       }
     };
-  }, [autoSaveEnabled, saveStatus, scheduleSave, autoSaveDelay]);
+  }, [autoSaveEnabled, isCurrentDocModified, scheduleSave]);
 
   useEffect(() => {
     return () => {
@@ -167,9 +235,28 @@ export function useAutoSave(): void {
   
   useEffect(() => {
     const handleBeforeUnload = () => {
-      const { documents, tabs } = useEditorStore.getState();
-      if (activeDocPath && documents[activeDocPath]?.isModified) {
-        saveToStorage(activeDocPath, tabs, documents);
+      const { documents, tabs, activeDocPath } = useEditorStore.getState();
+      
+      // 只保存tabs中存在且符合以下条件的文档：
+      // 1. 有 filePath（已在文件系统）
+      // 2. 或 新建文档 + hasBeenModified（已修改的新建文档，会自动保存到临时目录）
+      // 3. 或 isModified（当前未保存的修改）
+      const docsToSave: Record<string, any> = {};
+      for (const tabPath of tabs) {
+        const doc = documents[tabPath];
+        if (doc && (doc.filePath || doc.hasBeenModified || doc.isModified)) {
+          docsToSave[tabPath] = doc;
+        }
+      }
+      
+      // 只保存tabs中包含的文档状态
+      if (Object.keys(docsToSave).length > 0) {
+        saveToStorage(activeDocPath, tabs, docsToSave);
+      } else {
+        // 如果没有打开的tab，清空localStorage
+        localStorage.removeItem(STORAGE_KEY_DOCS);
+        localStorage.removeItem(STORAGE_KEY_TABS);
+        localStorage.removeItem(STORAGE_KEY_ACTIVE_PATH);
       }
     };
     
@@ -183,7 +270,7 @@ export function useAutoSave(): void {
  */
 export function useSaveAsFile() {
   return useCallback(async () => {
-    const { activeDocPath, documents, updateFilePath, saveDocument } = useEditorStore.getState();
+    const { activeDocPath, documents, updateFilePath } = useEditorStore.getState();
     if (!activeDocPath) return;
     const doc = documents[activeDocPath];
     if (!doc) return;
@@ -202,8 +289,8 @@ export function useSaveAsFile() {
         if (filePath) {
           const { writeTextFile } = await import('@tauri-apps/plugin-fs');
           await writeTextFile(filePath, doc.content);
+          
           updateFilePath(activeDocPath, filePath);
-          saveDocument(activeDocPath);
         }
       } catch (e) {
         console.error('Save as failed:', e);
@@ -220,10 +307,13 @@ export function useSaveAsFile() {
           await writable.write(doc.content);
           await writable.close();
           
+          const fileHandles = useFileStore.getState().fileHandles;
+          fileHandles.set(handle.name, handle);
+          
           updateFilePath(activeDocPath, handle.name);
-          saveDocument(activeDocPath);
         } else {
           saveFileToLocal(fileName, doc.content);
+          const { saveDocument } = useEditorStore.getState();
           saveDocument(activeDocPath);
         }
       } catch (e) {
