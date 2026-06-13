@@ -33,13 +33,30 @@ function App() {
       e.preventDefault();
       e.stopPropagation();
       
-      if (!isTauriCached() && e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
         const items = Array.from(e.dataTransfer.items);
         for (const item of items) {
           if (item.kind === 'file') {
             const entry = (item as any).webkitGetAsEntry?.();
             if (entry && entry.isDirectory) {
               const dirEntry = entry as FileSystemDirectoryEntry;
+              
+              if (isTauriCached()) {
+                const allFiles = e.dataTransfer.files;
+                if (allFiles && allFiles.length > 0) {
+                  const firstFilePath = (allFiles[0] as any).path;
+                  if (firstFilePath) {
+                    const lastSlash = Math.max(firstFilePath.lastIndexOf('/'), firstFilePath.lastIndexOf('\\'));
+                    const folderPath = lastSlash > 0 ? firstFilePath.substring(0, lastSlash) : firstFilePath;
+                    
+                    setRootPath(entry.name);
+                    setRootHandle(folderPath as any);
+                    const tree = await readDirectoryTauri(folderPath);
+                    setFileTree(tree);
+                    return;
+                  }
+                }
+              }
               
               try {
                 const dirHandle = await (entry as any).getDirectoryHandle?.();
@@ -155,23 +172,6 @@ function App() {
       
       for (const file of Array.from(files)) {
         const filePath = (file as any).path || file.name;
-        
-        if (isTauriCached() && (file.type === '' || file.name.includes('.') === false)) {
-          try {
-            const { readDir } = await import('@tauri-apps/plugin-fs');
-            const entries = await readDir(filePath);
-            
-            if (entries.length > 0) {
-              setRootPath(filePath);
-              setRootHandle(filePath as any);
-              const tree = await readDirectoryTauri(filePath);
-              setFileTree(tree);
-              return;
-            }
-          } catch (err) {
-            console.log('不是文件夹，尝试作为文件打开');
-          }
-        }
         
         if (file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')) {
           const content = await file.text();
