@@ -44,11 +44,25 @@ function App() {
               if (isTauriCached()) {
                 const allFiles = e.dataTransfer.files;
                 if (allFiles && allFiles.length > 0) {
-                  const firstFilePath = (allFiles[0] as any).path;
-                  if (firstFilePath) {
+                  let folderPath = '';
+                  for (let i = 0; i < allFiles.length; i++) {
+                    const fp = (allFiles[i] as any).path;
+                    if (fp) {
+                      const sep = fp.includes('\\') ? '\\' : '/';
+                      const idx = fp.lastIndexOf(`${sep}${entry.name}${sep}`);
+                      if (idx >= 0) {
+                        folderPath = fp.substring(0, idx + entry.name.length + 2);
+                        break;
+                      }
+                    }
+                  }
+                  if (!folderPath && (allFiles[0] as any).path) {
+                    const firstFilePath = (allFiles[0] as any).path;
                     const lastSlash = Math.max(firstFilePath.lastIndexOf('/'), firstFilePath.lastIndexOf('\\'));
-                    const folderPath = lastSlash > 0 ? firstFilePath.substring(0, lastSlash) : firstFilePath;
-                    
+                    folderPath = lastSlash > 0 ? firstFilePath.substring(0, lastSlash) : firstFilePath;
+                  }
+                  
+                  if (folderPath) {
                     setRootPath(entry.name);
                     setRootHandle(folderPath as any);
                     const tree = await readDirectoryTauri(folderPath);
