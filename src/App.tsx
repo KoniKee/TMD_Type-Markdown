@@ -64,8 +64,7 @@ function App() {
                   
                   if (folderPath) {
                     clearAll();
-              clearAll();
-              setRootPath(entry.name);
+                    setRootPath(entry.name);
                     setRootHandle(folderPath as any);
                     const tree = await readDirectoryTauri(folderPath);
                     setFileTree(tree);
