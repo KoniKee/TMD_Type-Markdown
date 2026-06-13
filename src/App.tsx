@@ -48,6 +48,7 @@ function App() {
                   for (let i = 0; i < allFiles.length; i++) {
                     const fp = (allFiles[i] as any).path;
                     if (fp) {
+                      alert(`[DEBUG Tauri] file[${i}].path=${fp}\nentry.name=${entry.name}`);
                       const sep = fp.includes('\\') ? '\\' : '/';
                       const idx = fp.lastIndexOf(`${sep}${entry.name}${sep}`);
                       if (idx >= 0) {
@@ -61,6 +62,8 @@ function App() {
                     const lastSlash = Math.max(firstFilePath.lastIndexOf('/'), firstFilePath.lastIndexOf('\\'));
                     folderPath = lastSlash > 0 ? firstFilePath.substring(0, lastSlash) : firstFilePath;
                   }
+                  
+                  alert(`[DEBUG Tauri] folderPath=${folderPath}`);
                   
                   if (folderPath) {
                     clearAll();
