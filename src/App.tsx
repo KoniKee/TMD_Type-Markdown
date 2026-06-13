@@ -33,7 +33,7 @@ function App() {
       e.preventDefault();
       e.stopPropagation();
       
-      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+      if (!isTauriCached() && e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
         const items = Array.from(e.dataTransfer.items);
         for (const item of items) {
           if (item.kind === 'file') {
