@@ -8,7 +8,7 @@ function App() {
   const [isReady, setIsReady] = useState(false);
   const checkForUpdate = useUpdateStore((state) => state.checkForUpdate);
   const { readDirectoryTauri } = useFileOperations();
-  const { setRootPath, setFileTree, setRootHandle } = useFileStore();
+  const { setRootPath, setFileTree, setRootHandle, clearAll } = useFileStore();
 
   useTheme();
   
@@ -63,7 +63,9 @@ function App() {
                   }
                   
                   if (folderPath) {
-                    setRootPath(entry.name);
+                    clearAll();
+              clearAll();
+              setRootPath(entry.name);
                     setRootHandle(folderPath as any);
                     const tree = await readDirectoryTauri(folderPath);
                     setFileTree(tree);
@@ -75,6 +77,7 @@ function App() {
               try {
                 const dirHandle = await (entry as any).getDirectoryHandle?.();
                 if (dirHandle) {
+                  clearAll();
                   setRootPath(entry.name);
                   setRootHandle(dirHandle);
                   

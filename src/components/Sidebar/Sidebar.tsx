@@ -171,10 +171,8 @@ export const Sidebar: React.FC = () => {
 
       try {
         if (isTauriCached()) {
-          console.log('[handleFileClick Tauri] 尝试读取:', node.path);
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
           const content = await readTextFile(node.path);
-          console.log('[handleFileClick Tauri] 读取成功，内容长度:', content?.length);
           openDocument(docPath, content, false);
         } else {
           if (node.handle) {
