@@ -158,7 +158,6 @@ export const Sidebar: React.FC = () => {
 
   // 点击文件打开
   const handleFileClick = async (node: TreeNode) => {
-    // 设置选中的目录（用于新建文件/文件夹的基准目录）
     if (node.isDir) {
       setSelectedDir(node.path);
     } else {
@@ -172,17 +171,27 @@ export const Sidebar: React.FC = () => {
 
       try {
         if (isTauriCached()) {
-          // Tauri 环境
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
           const content = await readTextFile(node.path);
           openDocument(docPath, content, false);
         } else {
-          // 浏览器环境
-          if (node.handle && node.handle.kind === 'file') {
-            setFileHandle(node.path, node.handle);
-            const file = await node.handle.getFile();
-            const content = await file.text();
+          if (node.handle) {
+            let content: string;
+            
+            if ('kind' in node.handle && node.handle.kind === 'file') {
+              setFileHandle(node.path, node.handle as FileSystemFileHandle);
+              const file = await (node.handle as FileSystemFileHandle).getFile();
+              content = await file.text();
+            } else if ('text' in (node.handle as any)) {
+              content = await (node.handle as any).text();
+            } else {
+              console.error('[handleFileClick] 无法识别的 handle 类型:', node.handle);
+              return;
+            }
+            
             openDocument(docPath, content, false);
+          } else {
+            console.error('[handleFileClick] 节点没有 handle:', node.path);
           }
         }
       } catch (err) {
@@ -210,9 +219,15 @@ export const Sidebar: React.FC = () => {
         const { readTextFile } = await import('@tauri-apps/plugin-fs');
         content = await readTextFile(node.path);
       } else {
-        if (node.handle && node.handle.kind === 'file') {
-          const file = await node.handle.getFile();
-          content = await file.text();
+        if (node.handle) {
+          if ('kind' in node.handle && node.handle.kind === 'file') {
+            const file = await (node.handle as FileSystemFileHandle).getFile();
+            content = await file.text();
+          } else if ('text' in (node.handle as any)) {
+            content = await (node.handle as any).text();
+          } else {
+            return;
+          }
         } else {
           return;
         }
@@ -715,8 +730,8 @@ export const Sidebar: React.FC = () => {
             onDragStart={(e) => {
               if (node.isDir) return;
               
-              if (node.handle && node.handle.kind === 'file') {
-                setFileHandle(node.path, node.handle as FileSystemFileHandle);
+              if (node.handle) {
+                setFileHandle(node.path, node.handle as any);
               }
               
               const docPath = `file://${node.path}`;
@@ -958,6 +973,12 @@ export const Sidebar: React.FC = () => {
                 <div
                   key={file.path}
                   className="group flex items-center py-1.5 px-2 cursor-pointer rounded-md hover:bg-[var(--sidebar-hover)] transition-all"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/x-file-path', file.path);
+                    e.dataTransfer.setData('text/plain', file.path);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
@@ -1238,11 +1259,16 @@ export const Sidebar: React.FC = () => {
                       const { readTextFile } = await import('@tauri-apps/plugin-fs');
                       const content = await readTextFile(node.path);
                       openDocument(docPath, content, false);
-                    } else if (node.handle && node.handle.kind === 'file') {
-                      setFileHandle(node.path, node.handle);
-                      const file = await node.handle.getFile();
-                      const content = await file.text();
-                      openDocument(docPath, content, false);
+                    } else if (node.handle) {
+                      if ('kind' in node.handle && node.handle.kind === 'file') {
+                        setFileHandle(node.path, node.handle as FileSystemFileHandle);
+                        const file = await (node.handle as FileSystemFileHandle).getFile();
+                        const content = await file.text();
+                        openDocument(docPath, content, false);
+                      } else if ('text' in (node.handle as any)) {
+                        const content = await (node.handle as any).text();
+                        openDocument(docPath, content, false);
+                      }
                     }
                     addFile(docPath, node.name);
                   } catch (err) {

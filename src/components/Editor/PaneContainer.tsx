@@ -139,10 +139,19 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
   }, [tabPath, contextMenu.paneId, closePane]);
   
   const handleDragOver = useCallback((e: React.DragEvent, paneId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = 'copy';
-    setDragState({ isOver: true, paneId });
+    const types = e.dataTransfer.types;
+    const files = e.dataTransfer.files;
+    const hasMdTarget = types.includes('application/x-file-path');
+    const hasMdFile = files && Array.from(files).some(
+      f => f.name.endsWith('.md') || f.name.endsWith('.markdown') || f.name.endsWith('.txt')
+    );
+    
+    if (hasMdTarget || hasMdFile) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'copy';
+      setDragState({ isOver: true, paneId });
+    }
   }, []);
   
   const handleDragLeave = useCallback(() => {
@@ -150,8 +159,6 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
   }, []);
   
   const handleDrop = useCallback(async (e: React.DragEvent, paneId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
     setDragState({ isOver: false, paneId: '' });
     
     let docPath: string | null = null;
@@ -159,6 +166,9 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
     
     const types = e.dataTransfer.types;
     if (types.includes('application/x-file-path')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const internalDragData = e.dataTransfer.getData('application/x-file-path');
       if (internalDragData && internalDragData.startsWith('file://')) {
         docPath = internalDragData;
@@ -169,9 +179,13 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
             content = await readTextFile(realPath);
           } else {
             const handle = getFileHandle(realPath) || getFileHandle(realPath.replace(/\\/g, '/'));
-            if (handle && handle.kind === 'file') {
-              const file = await handle.getFile();
-              content = await file.text();
+            if (handle) {
+              if (handle.kind === 'file') {
+                const file = await handle.getFile();
+                content = await file.text();
+              } else if ('text' in (handle as any)) {
+                content = await (handle as any).text();
+              }
             }
           }
         } catch (err) {
@@ -186,6 +200,9 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
         f.name.endsWith('.md') || f.name.endsWith('.markdown') || f.name.endsWith('.txt')
       );
       if (files.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const file = files[0];
         const filePath = (file as any).path;
         if (filePath) {
@@ -286,9 +303,9 @@ export const PaneContainer: React.FC<PaneContainerProps> = ({ tabPath }) => {
           data-tab-path={tabPath}
           onClick={() => handlePaneClick(pane.id, pane.docPath)}
           onContextMenu={(e) => handleContextMenu(e, pane.id, pane.docPath)}
-          onDragOver={(e) => handleDragOver(e, pane.id)}
+          onDragOverCapture={(e) => handleDragOver(e, pane.id)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, pane.id)}
+          onDropCapture={(e) => handleDrop(e, pane.id)}
         >
           {pane.docPath ? (
             <VditorEditor key={pane.docPath} path={pane.docPath} isInPane={paneCount > 1} />

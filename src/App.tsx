@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
-import { useTheme } from './hooks';
+import { useTheme, useFileOperations } from './hooks';
 import { waitForTauri, isTauriCached } from './utils/platform';
-import { useEditorStore, useUpdateStore, useSettingsStore } from './stores';
+import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
   const checkForUpdate = useUpdateStore((state) => state.checkForUpdate);
+  const { readDirectoryTauri } = useFileOperations();
+  const { setRootPath, setFileTree, setRootHandle } = useFileStore();
 
   useTheme();
   
@@ -24,12 +26,127 @@ function App() {
     const handleGlobalDrop = async (e: DragEvent) => {
       const target = e.target as HTMLElement;
       
-      if (target.closest('.pane-leaf')) {
+      if (target.closest('.pane-leaf') || target.closest('[data-pane-id]')) {
         return;
       }
       
       e.preventDefault();
       e.stopPropagation();
+      
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        const items = Array.from(e.dataTransfer.items);
+        for (const item of items) {
+          if (item.kind === 'file') {
+            const entry = (item as any).webkitGetAsEntry?.();
+            if (entry && entry.isDirectory) {
+              const dirEntry = entry as FileSystemDirectoryEntry;
+              
+              try {
+                const dirHandle = await (entry as any).getDirectoryHandle?.();
+                if (dirHandle) {
+                  setRootPath(entry.name);
+                  setRootHandle(dirHandle);
+                  
+                  const readDirectoryRecursive = async (
+                    dirHandle: FileSystemDirectoryHandle, 
+                    basePath: string
+                  ): Promise<any[]> => {
+                    const nodes: any[] = [];
+                    
+                    for await (const entry of (dirHandle as any).values()) {
+                      const nodePath = `${basePath}/${entry.name}`;
+                      
+                      if (entry.kind === 'file' && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
+                        nodes.push({
+                          name: entry.name,
+                          path: nodePath,
+                          isDir: false,
+                          handle: entry
+                        });
+                      } else if (entry.kind === 'directory') {
+                        nodes.push({
+                          name: entry.name,
+                          path: nodePath,
+                          isDir: true,
+                          handle: entry,
+                          children: []
+                        });
+                      }
+                    }
+                    
+                    nodes.sort((a, b) => {
+                      if (a.isDir && !b.isDir) return -1;
+                      if (!a.isDir && b.isDir) return 1;
+                      return a.name.localeCompare(b.name);
+                    });
+                    
+                    return nodes;
+                  };
+                  
+                  const tree = await readDirectoryRecursive(dirHandle, entry.name);
+                  setFileTree(tree);
+                  return;
+                }
+              } catch (err) {
+                console.log('无法获取目录句柄，使用备用方法');
+              }
+              
+              setRootPath(entry.name);
+              
+              const readDirectoryFromEntry = async (dirEntry: FileSystemDirectoryEntry, basePath: string): Promise<any[]> => {
+                const reader = dirEntry.createReader();
+                const entries: any[] = [];
+                
+                const readAllEntries = async (): Promise<any[]> => {
+                  const batch = await new Promise<any[]>((resolve) => {
+                    reader.readEntries(resolve, () => resolve([]));
+                  });
+                  if (batch.length === 0) return [];
+                  return [...batch, ...(await readAllEntries())];
+                };
+                
+                const allEntries = await readAllEntries();
+                
+                for (const ent of allEntries) {
+                  if (ent.isFile && (ent.name.endsWith('.md') || ent.name.endsWith('.markdown'))) {
+                    const fileEntry = ent as FileSystemFileEntry;
+                    const file = await new Promise<File>((resolve) => {
+                      fileEntry.file(resolve, () => resolve(null as any));
+                    });
+                    if (file) {
+                      entries.push({
+                        name: ent.name,
+                        path: `${basePath}/${ent.name}`,
+                        isDir: false,
+                        handle: file,
+                      });
+                    }
+                  } else if (ent.isDirectory) {
+                    entries.push({
+                      name: ent.name,
+                      path: `${basePath}/${ent.name}`,
+                      isDir: true,
+                      children: [],
+                    });
+                  }
+                }
+                
+                entries.sort((a, b) => {
+                  if (a.isDir && !b.isDir) return -1;
+                  if (!a.isDir && b.isDir) return 1;
+                  return a.name.localeCompare(b.name);
+                });
+                
+                return entries;
+              };
+              
+              const tree = await readDirectoryFromEntry(dirEntry, entry.name);
+              setFileTree(tree);
+              return;
+            }
+          }
+        }
+      }
       
       const files = e.dataTransfer?.files;
       if (!files || files.length === 0) return;
@@ -37,9 +154,27 @@ function App() {
       const { openDocument } = useEditorStore.getState();
       
       for (const file of Array.from(files)) {
+        const filePath = (file as any).path || file.name;
+        
+        if (isTauriCached() && (file.type === '' || file.name.includes('.') === false)) {
+          try {
+            const { readDir } = await import('@tauri-apps/plugin-fs');
+            const entries = await readDir(filePath);
+            
+            if (entries.length > 0) {
+              setRootPath(filePath);
+              setRootHandle(filePath as any);
+              const tree = await readDirectoryTauri(filePath);
+              setFileTree(tree);
+              return;
+            }
+          } catch (err) {
+            console.log('不是文件夹，尝试作为文件打开');
+          }
+        }
+        
         if (file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')) {
           const content = await file.text();
-          const filePath = (file as any).path || file.name;
           openDocument(`file://${filePath}`, content, false);
         }
       }
@@ -56,7 +191,7 @@ function App() {
       document.removeEventListener('drop', handleGlobalDrop);
       document.removeEventListener('dragover', handleDragOver);
     };
-  }, []);
+  }, [readDirectoryTauri, setRootPath, setFileTree, setRootHandle]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
