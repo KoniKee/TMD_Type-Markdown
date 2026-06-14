@@ -34,10 +34,42 @@ function App() {
         const { readTextFile, stat } = await import('@tauri-apps/plugin-fs');
         
         unlisten = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
+          // 处理 over 事件：显示窗格焦点效果
+          if (event.payload.type === 'over') {
+            const { x, y } = event.payload.position;
+            const targetElement = document.elementFromPoint(x, y);
+            const paneLeaf = targetElement?.closest('.pane-leaf');
+            const paneId = paneLeaf?.getAttribute('data-pane-id');
+            
+            // 更新所有窗格的拖拽状态
+            document.querySelectorAll('.pane-leaf').forEach((pane) => {
+              if (paneId && pane.getAttribute('data-pane-id') === paneId) {
+                pane.classList.add('drag-over');
+              } else {
+                pane.classList.remove('drag-over');
+              }
+            });
+            return;
+          }
+          
+          // 处理 leave 事件：清除窗格焦点效果
+          if (event.payload.type === 'leave') {
+            document.querySelectorAll('.pane-leaf').forEach((pane) => {
+              pane.classList.remove('drag-over');
+            });
+            return;
+          }
+          
+          // 处理 drop 事件
           if (event.payload.type !== 'drop') return;
           
           const { x, y } = event.payload.position;
           const paths = event.payload.paths;
+          
+          // 清除窗格焦点效果
+          document.querySelectorAll('.pane-leaf').forEach((pane) => {
+            pane.classList.remove('drag-over');
+          });
           
           // 检查是否是内部拖拽（paths 为空但 __internalDragPath__ 存在）
           const internalDragPath = (window as any).__internalDragPath__;
