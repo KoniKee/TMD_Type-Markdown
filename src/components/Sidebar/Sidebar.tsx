@@ -3,6 +3,7 @@ import { useFileStore, useEditorStore, useSplitStore, TreeNode } from '../../sto
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { isTauriCached } from '../../utils/platform';
 import { useRecentFilesStore, formatTime } from '../../stores/recentFilesStore';
+import { useInternalDrag } from '../../hooks/useInternalDrag';
 import {
   Folder,
   FolderOpen,
@@ -67,6 +68,9 @@ export const Sidebar: React.FC = () => {
   const setPaneDocument = useSplitStore((state) => state.setPaneDocument);
   const setActivePane = useSplitStore((state) => state.setActivePane);
   const getDocumentsInPanes = useSplitStore((state) => state.getDocumentsInPanes);
+  
+  // 内部拖拽 hook（Tauri 环境使用 pointer events）
+  const { startDrag, isTauri } = useInternalDrag();
   
   const hasSplitPanes = activeTabPath ? getPaneCount(activeTabPath) > 1 : false;
 
@@ -726,8 +730,8 @@ export const Sidebar: React.FC = () => {
               ${renameState?.path === node.path ? 'bg-[var(--sidebar-hover)]' : ''}
             `}
             style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: '8px' }}
-            draggable={!node.isDir}
-            onDragStart={(e) => {
+            draggable={!node.isDir && !isTauri}
+            onDragStart={isTauri ? undefined : (e) => {
               if (node.isDir) return;
               
               if (node.handle) {
@@ -738,13 +742,14 @@ export const Sidebar: React.FC = () => {
               e.dataTransfer.setData('application/x-file-path', docPath);
               e.dataTransfer.setData('text/plain', docPath);
               e.dataTransfer.effectAllowed = 'copy';
-              
-              // 设置全局内部拖拽标记（Tauri 环境使用）
-              (window as any).__internalDragPath__ = docPath;
             }}
-            onDragEnd={() => {
-              (window as any).__internalDragPath__ = null;
-            }}
+            onPointerDown={isTauri && !node.isDir ? (e) => {
+              if (node.handle) {
+                setFileHandle(node.path, node.handle as any);
+              }
+              const docPath = `file://${node.path}`;
+              startDrag(e, docPath);
+            } : undefined}
             onClick={() => {
               if (node.isDir) {
                 setSelectedDir(node.path);
@@ -979,18 +984,15 @@ export const Sidebar: React.FC = () => {
                 <div
                   key={file.path}
                   className="group flex items-center py-1.5 px-2 cursor-pointer rounded-md hover:bg-[var(--sidebar-hover)] transition-all"
-                  draggable
-                  onDragStart={(e) => {
+                  draggable={!isTauri}
+                  onDragStart={isTauri ? undefined : (e) => {
                     e.dataTransfer.setData('application/x-file-path', file.path);
                     e.dataTransfer.setData('text/plain', file.path);
                     e.dataTransfer.effectAllowed = 'copy';
-                    
-                    // 设置全局内部拖拽标记（Tauri 环境使用）
-                    (window as any).__internalDragPath__ = file.path;
                   }}
-                  onDragEnd={() => {
-                    (window as any).__internalDragPath__ = null;
-                  }}
+                  onPointerDown={isTauri ? (e) => {
+                    startDrag(e, file.path);
+                  } : undefined}
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}

@@ -34,9 +34,6 @@ function App() {
         const { readTextFile, stat } = await import('@tauri-apps/plugin-fs');
         
         unlisten = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
-          const payload = event.payload as any;
-          console.log('[Tauri DragDrop] event:', payload.type, 'paths:', payload.paths, 'internal:', (window as any).__internalDragPath__);
-          
           if (event.payload.type !== 'drop') return;
           
           const { x, y } = event.payload.position;
