@@ -37,7 +37,12 @@ function App() {
           // 处理 over 事件：显示窗格焦点效果并追踪窗格
           if (event.payload.type === 'over') {
             const { x, y } = event.payload.position;
-            const targetElement = document.elementFromPoint(x, y);
+            // 将物理像素转换为 CSS 像素（逻辑像素）
+            const dpr = window.devicePixelRatio || 1;
+            const logicalX = x / dpr;
+            const logicalY = y / dpr;
+            
+            const targetElement = document.elementFromPoint(logicalX, logicalY);
             const paneLeaf = targetElement?.closest('.pane-leaf');
             const paneId = paneLeaf?.getAttribute('data-pane-id');
             const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
