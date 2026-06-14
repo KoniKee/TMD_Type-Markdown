@@ -28,6 +28,21 @@ function App() {
     
     let unlisten: (() => void) | null = null;
     
+    // 追踪鼠标所在的窗格
+    const handlePointerMove = (e: PointerEvent) => {
+      const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+      const paneLeaf = targetElement?.closest('.pane-leaf');
+      if (paneLeaf) {
+        const paneId = paneLeaf.getAttribute('data-pane-id');
+        const paneTabPath = paneLeaf.getAttribute('data-tab-path');
+        (window as any).__currentPaneInfo__ = { paneId, paneTabPath };
+      } else {
+        (window as any).__currentPaneInfo__ = null;
+      }
+    };
+    
+    document.addEventListener('pointermove', handlePointerMove);
+    
     const setupTauriDragDrop = async () => {
       try {
         const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
@@ -69,11 +84,11 @@ function App() {
           
           const { openDocument, ensureDocument } = useEditorStore.getState();
           const { setPaneDocument } = useSplitStore.getState();
-          const targetElement = document.elementFromPoint(x, y);
           
-          const paneLeaf = targetElement?.closest('.pane-leaf');
-          const paneId = paneLeaf?.getAttribute('data-pane-id');
-          const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
+          // 使用追踪的窗格信息，而不是 elementFromPoint
+          const currentPaneInfo = (window as any).__currentPaneInfo__;
+          const paneId = currentPaneInfo?.paneId;
+          const paneTabPath = currentPaneInfo?.paneTabPath;
           
           for (const path of paths) {
             let isDir = false;
@@ -123,6 +138,7 @@ function App() {
     setupTauriDragDrop();
     
     return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
       if (unlisten) unlisten();
     };
   }, [isReady, readDirectoryTauri, setRootPath, setFileTree, setRootHandle, clearAll]);
