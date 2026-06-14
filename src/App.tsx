@@ -78,7 +78,9 @@ function App() {
               }
               
               try {
+                alert(`[DEBUG] 尝试 getDirectoryHandle...`);
                 const dirHandle = await (entry as any).getDirectoryHandle?.();
+                alert(`[DEBUG] dirHandle=${dirHandle}`);
                 if (dirHandle) {
                   clearAll();
                   setRootPath(entry.name);
@@ -125,10 +127,13 @@ function App() {
                   return;
                 }
               } catch (err) {
+                alert(`[DEBUG] getDirectoryHandle 失败: ${err}`);
                 console.log('无法获取目录句柄，使用备用方法');
               }
               
               setRootPath(entry.name);
+              
+              alert(`[DEBUG] 使用 webkitGetAsEntry 备用方法`);
               
               const readDirectoryFromEntry = async (dirEntry: FileSystemDirectoryEntry, basePath: string): Promise<any[]> => {
                 const reader = dirEntry.createReader();
@@ -143,6 +148,7 @@ function App() {
                 };
                 
                 const allEntries = await readAllEntries();
+                alert(`[DEBUG] readDirectoryFromEntry: allEntries.length=${allEntries.length}`);
                 
                 for (const ent of allEntries) {
                   if (ent.isFile && (ent.name.endsWith('.md') || ent.name.endsWith('.markdown'))) {
@@ -178,6 +184,7 @@ function App() {
               };
               
               const tree = await readDirectoryFromEntry(dirEntry, entry.name);
+              alert(`[DEBUG] tree.length=${tree.length}`);
               setFileTree(tree);
               return;
             }
