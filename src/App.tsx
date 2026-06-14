@@ -28,20 +28,18 @@ function App() {
     
     let unlisten: (() => void) | null = null;
     
-    // 追踪鼠标所在的窗格
-    const handlePointerMove = (e: PointerEvent) => {
-      const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+    // 追踪拖拽时鼠标所在的窗格
+    const handleDragOver = (e: DragEvent) => {
+      const targetElement = e.target as Element;
       const paneLeaf = targetElement?.closest('.pane-leaf');
       if (paneLeaf) {
         const paneId = paneLeaf.getAttribute('data-pane-id');
         const paneTabPath = paneLeaf.getAttribute('data-tab-path');
         (window as any).__currentPaneInfo__ = { paneId, paneTabPath };
-      } else {
-        (window as any).__currentPaneInfo__ = null;
       }
     };
     
-    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('dragover', handleDragOver);
     
     const setupTauriDragDrop = async () => {
       try {
@@ -138,7 +136,7 @@ function App() {
     setupTauriDragDrop();
     
     return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('dragover', handleDragOver);
       if (unlisten) unlisten();
     };
   }, [isReady, readDirectoryTauri, setRootPath, setFileTree, setRootHandle, clearAll]);
