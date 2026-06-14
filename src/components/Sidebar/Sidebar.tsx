@@ -172,9 +172,7 @@ export const Sidebar: React.FC = () => {
       try {
         if (isTauriCached()) {
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
-          alert(`[DEBUG] path=${node.path}\ndocPath=${docPath}\nrootHandle=${JSON.stringify(useFileStore.getState().rootHandle)}\nrootPath=${useFileStore.getState().rootPath}`);
           const content = await readTextFile(node.path);
-          alert(`[DEBUG] content length=${content?.length}`);
           openDocument(docPath, content, false);
         } else {
           if (node.handle) {

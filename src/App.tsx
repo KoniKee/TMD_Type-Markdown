@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { useTheme, useFileOperations } from './hooks';
 import { waitForTauri, isTauriCached } from './utils/platform';
-import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore } from './stores';
+import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore, useSplitStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
@@ -22,7 +22,87 @@ function App() {
     init();
   }, []);
   
+  // Tauri 原生拖拽事件处理（仅桌面版）
   useEffect(() => {
+    if (!isReady || !isTauriCached()) return;
+    
+    let unlisten: (() => void) | null = null;
+    
+    const setupTauriDragDrop = async () => {
+      try {
+        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+        const { readTextFile, stat } = await import('@tauri-apps/plugin-fs');
+        
+        unlisten = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
+          if (event.payload.type !== 'drop') return;
+          
+          const paths = event.payload.paths;
+          if (!paths || paths.length === 0) return;
+          
+          const { openDocument, ensureDocument, activeTabPath } = useEditorStore.getState();
+          const { setPaneDocument } = useSplitStore.getState();
+          const { x, y } = event.payload.position;
+          const targetElement = document.elementFromPoint(x, y);
+          
+          // 检查是否拖到窗格区域
+          const paneLeaf = targetElement?.closest('.pane-leaf');
+          const paneId = paneLeaf?.getAttribute('data-pane-id');
+          
+          for (const path of paths) {
+            // 检查是文件夹还是文件
+            let isDir = false;
+            try {
+              const info = await stat(path);
+              isDir = info.isDirectory;
+            } catch {
+              continue;
+            }
+            
+            if (isDir) {
+              // 打开文件夹
+              const folderName = path.split(/[/\\]/).pop() || path;
+              clearAll();
+              setRootPath(folderName);
+              setRootHandle(path as any);
+              const tree = await readDirectoryTauri(path);
+              setFileTree(tree);
+              return;
+            } else if (path.endsWith('.md') || path.endsWith('.markdown') || path.endsWith('.txt')) {
+              // 打开文件
+              try {
+                const content = await readTextFile(path);
+                const docPath = `file://${path}`;
+                
+                if (paneId && activeTabPath) {
+                  // 拖到窗格中
+                  ensureDocument(docPath, content, false);
+                  setPaneDocument(activeTabPath, paneId, docPath);
+                } else {
+                  // 拖到非窗格区域，新 tab 打开
+                  openDocument(docPath, content, false);
+                }
+              } catch (err) {
+                console.error('读取文件失败:', err);
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('设置 Tauri 拖拽监听失败:', err);
+      }
+    };
+    
+    setupTauriDragDrop();
+    
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [isReady, readDirectoryTauri, setRootPath, setFileTree, setRootHandle, clearAll]);
+  
+  // 浏览器拖拽事件处理（Web 版本）
+  useEffect(() => {
+    if (isTauriCached()) return;
+    
     const handleGlobalDrop = async (e: DragEvent) => {
       const target = e.target as HTMLElement;
       
@@ -41,48 +121,9 @@ function App() {
             if (entry && entry.isDirectory) {
               const dirEntry = entry as FileSystemDirectoryEntry;
               
-              if (isTauriCached()) {
-                const allFiles = e.dataTransfer.files;
-                alert(`[DEBUG Tauri] allFiles.length=${allFiles?.length}\nallFiles[0]=${JSON.stringify(allFiles?.[0])}\nallFiles[0].path=${(allFiles?.[0] as any)?.path}\nallFiles[0].name=${allFiles?.[0]?.name}`);
-                if (allFiles && allFiles.length > 0) {
-                  let folderPath = '';
-                  for (let i = 0; i < allFiles.length; i++) {
-                    const fp = (allFiles[i] as any).path;
-                    if (fp) {
-                      alert(`[DEBUG Tauri] file[${i}].path=${fp}\nentry.name=${entry.name}`);
-                      const sep = fp.includes('\\') ? '\\' : '/';
-                      const idx = fp.lastIndexOf(`${sep}${entry.name}${sep}`);
-                      if (idx >= 0) {
-                        folderPath = fp.substring(0, idx + entry.name.length + 2);
-                        break;
-                      }
-                    }
-                  }
-                  if (!folderPath && (allFiles[0] as any).path) {
-                    const firstFilePath = (allFiles[0] as any).path;
-                    const lastSlash = Math.max(firstFilePath.lastIndexOf('/'), firstFilePath.lastIndexOf('\\'));
-                    folderPath = lastSlash > 0 ? firstFilePath.substring(0, lastSlash) : firstFilePath;
-                  }
-                  
-                  alert(`[DEBUG Tauri] folderPath=${folderPath}`);
-                  
-                  if (folderPath) {
-                    clearAll();
-                    setRootPath(entry.name);
-                    setRootHandle(folderPath as any);
-                    const tree = await readDirectoryTauri(folderPath);
-                    setFileTree(tree);
-                    return;
-                  }
-                }
-              }
-              
               try {
-                alert(`[DEBUG] 尝试 getDirectoryHandle...`);
                 const dirHandle = await (entry as any).getDirectoryHandle?.();
-                alert(`[DEBUG] dirHandle=${dirHandle}`);
                 if (dirHandle) {
-                  clearAll();
                   setRootPath(entry.name);
                   setRootHandle(dirHandle);
                   
@@ -127,13 +168,10 @@ function App() {
                   return;
                 }
               } catch (err) {
-                alert(`[DEBUG] getDirectoryHandle 失败: ${err}`);
                 console.log('无法获取目录句柄，使用备用方法');
               }
               
               setRootPath(entry.name);
-              
-              alert(`[DEBUG] 使用 webkitGetAsEntry 备用方法`);
               
               const readDirectoryFromEntry = async (dirEntry: FileSystemDirectoryEntry, basePath: string): Promise<any[]> => {
                 const reader = dirEntry.createReader();
@@ -148,7 +186,6 @@ function App() {
                 };
                 
                 const allEntries = await readAllEntries();
-                alert(`[DEBUG] readDirectoryFromEntry: allEntries.length=${allEntries.length}`);
                 
                 for (const ent of allEntries) {
                   if (ent.isFile && (ent.name.endsWith('.md') || ent.name.endsWith('.markdown'))) {
@@ -184,7 +221,6 @@ function App() {
               };
               
               const tree = await readDirectoryFromEntry(dirEntry, entry.name);
-              alert(`[DEBUG] tree.length=${tree.length}`);
               setFileTree(tree);
               return;
             }
