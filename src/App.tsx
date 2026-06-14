@@ -68,7 +68,7 @@ function App() {
           if (!paths || paths.length === 0) return;
           
           const { openDocument, ensureDocument } = useEditorStore.getState();
-          const { setPaneDocument } = useSplitStore.getState();
+          const { setPaneDocument, getDocumentsInPanes } = useSplitStore.getState();
           
           // 使用 Tauri 提供的坐标检测窗格
           const targetElement = document.elementFromPoint(x, y);
@@ -98,8 +98,17 @@ function App() {
                 const content = await readTextFile(path);
                 const docPath = `file://${path}`;
                 
+                // 检查文件是否已经在当前 tab 的窗格中打开
+                const currentTabPath = useEditorStore.getState().activeTabPath;
+                if (currentTabPath) {
+                  const existingDocsInPanes = getDocumentsInPanes(currentTabPath);
+                  if (existingDocsInPanes.includes(docPath)) {
+                    // 文件已在窗格中打开，不做任何操作
+                    return;
+                  }
+                }
+                
                 if (paneId && paneTabPath) {
-                  const { getDocumentsInPanes } = useSplitStore.getState();
                   const existingDocs = getDocumentsInPanes(paneTabPath);
                   if (!existingDocs.includes(docPath)) {
                     ensureDocument(docPath, content, false);
