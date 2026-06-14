@@ -43,6 +43,7 @@ function App() {
               
               if (isTauriCached()) {
                 const allFiles = e.dataTransfer.files;
+                alert(`[DEBUG Tauri] allFiles.length=${allFiles?.length}\nallFiles[0]=${JSON.stringify(allFiles?.[0])}\nallFiles[0].path=${(allFiles?.[0] as any)?.path}\nallFiles[0].name=${allFiles?.[0]?.name}`);
                 if (allFiles && allFiles.length > 0) {
                   let folderPath = '';
                   for (let i = 0; i < allFiles.length; i++) {
