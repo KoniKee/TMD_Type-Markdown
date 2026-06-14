@@ -3,6 +3,7 @@ import { useFileStore, useEditorStore, useSplitStore, TreeNode } from '../../sto
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { isTauriCached } from '../../utils/platform';
 import { useRecentFilesStore, formatTime } from '../../stores/recentFilesStore';
+import { useInternalDrag } from '../../hooks/useInternalDrag';
 import {
   Folder,
   FolderOpen,
@@ -67,6 +68,9 @@ export const Sidebar: React.FC = () => {
   const setPaneDocument = useSplitStore((state) => state.setPaneDocument);
   const setActivePane = useSplitStore((state) => state.setActivePane);
   const getDocumentsInPanes = useSplitStore((state) => state.getDocumentsInPanes);
+  
+  // 内部拖拽 hook（Tauri 环境使用 pointer events）
+  const { startDrag, isTauri, isDragTriggered, dragState } = useInternalDrag();
   
   const hasSplitPanes = activeTabPath ? getPaneCount(activeTabPath) > 1 : false;
 
@@ -158,7 +162,6 @@ export const Sidebar: React.FC = () => {
 
   // 点击文件打开
   const handleFileClick = async (node: TreeNode) => {
-    // 设置选中的目录（用于新建文件/文件夹的基准目录）
     if (node.isDir) {
       setSelectedDir(node.path);
     } else {
@@ -172,17 +175,27 @@ export const Sidebar: React.FC = () => {
 
       try {
         if (isTauriCached()) {
-          // Tauri 环境
           const { readTextFile } = await import('@tauri-apps/plugin-fs');
           const content = await readTextFile(node.path);
           openDocument(docPath, content, false);
         } else {
-          // 浏览器环境
-          if (node.handle && node.handle.kind === 'file') {
-            setFileHandle(node.path, node.handle);
-            const file = await node.handle.getFile();
-            const content = await file.text();
+          if (node.handle) {
+            let content: string;
+            
+            if ('kind' in node.handle && node.handle.kind === 'file') {
+              setFileHandle(node.path, node.handle as FileSystemFileHandle);
+              const file = await (node.handle as FileSystemFileHandle).getFile();
+              content = await file.text();
+            } else if ('text' in (node.handle as any)) {
+              content = await (node.handle as any).text();
+            } else {
+              console.error('[handleFileClick] 无法识别的 handle 类型:', node.handle);
+              return;
+            }
+            
             openDocument(docPath, content, false);
+          } else {
+            console.error('[handleFileClick] 节点没有 handle:', node.path);
           }
         }
       } catch (err) {
@@ -210,9 +223,15 @@ export const Sidebar: React.FC = () => {
         const { readTextFile } = await import('@tauri-apps/plugin-fs');
         content = await readTextFile(node.path);
       } else {
-        if (node.handle && node.handle.kind === 'file') {
-          const file = await node.handle.getFile();
-          content = await file.text();
+        if (node.handle) {
+          if ('kind' in node.handle && node.handle.kind === 'file') {
+            const file = await (node.handle as FileSystemFileHandle).getFile();
+            content = await file.text();
+          } else if ('text' in (node.handle as any)) {
+            content = await (node.handle as any).text();
+          } else {
+            return;
+          }
         } else {
           return;
         }
@@ -711,12 +730,12 @@ export const Sidebar: React.FC = () => {
               ${renameState?.path === node.path ? 'bg-[var(--sidebar-hover)]' : ''}
             `}
             style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: '8px' }}
-            draggable={!node.isDir}
-            onDragStart={(e) => {
+            draggable={!node.isDir && !isTauri}
+            onDragStart={isTauri ? undefined : (e) => {
               if (node.isDir) return;
               
-              if (node.handle && node.handle.kind === 'file') {
-                setFileHandle(node.path, node.handle as FileSystemFileHandle);
+              if (node.handle) {
+                setFileHandle(node.path, node.handle as any);
               }
               
               const docPath = `file://${node.path}`;
@@ -724,7 +743,15 @@ export const Sidebar: React.FC = () => {
               e.dataTransfer.setData('text/plain', docPath);
               e.dataTransfer.effectAllowed = 'copy';
             }}
+            onPointerDown={isTauri && !node.isDir ? (e) => {
+              if (node.handle) {
+                setFileHandle(node.path, node.handle as any);
+              }
+              const docPath = `file://${node.path}`;
+              startDrag(e, docPath);
+            } : undefined}
             onClick={() => {
+              if (isDragTriggered.current) return;
               if (node.isDir) {
                 setSelectedDir(node.path);
                 toggleDir(node.path, node);
@@ -958,11 +985,21 @@ export const Sidebar: React.FC = () => {
                 <div
                   key={file.path}
                   className="group flex items-center py-1.5 px-2 cursor-pointer rounded-md hover:bg-[var(--sidebar-hover)] transition-all"
+                  draggable={!isTauri}
+                  onDragStart={isTauri ? undefined : (e) => {
+                    e.dataTransfer.setData('application/x-file-path', file.path);
+                    e.dataTransfer.setData('text/plain', file.path);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onPointerDown={isTauri ? (e) => {
+                    startDrag(e, file.path);
+                  } : undefined}
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
                   onClick={async () => {
-                    try {
+                     if (isDragTriggered.current) return;
+                     try {
                       if (isTauriCached()) {
                         const { readTextFile } = await import('@tauri-apps/plugin-fs');
                         // Tauri版本：去掉file://前缀
@@ -1238,11 +1275,16 @@ export const Sidebar: React.FC = () => {
                       const { readTextFile } = await import('@tauri-apps/plugin-fs');
                       const content = await readTextFile(node.path);
                       openDocument(docPath, content, false);
-                    } else if (node.handle && node.handle.kind === 'file') {
-                      setFileHandle(node.path, node.handle);
-                      const file = await node.handle.getFile();
-                      const content = await file.text();
-                      openDocument(docPath, content, false);
+                    } else if (node.handle) {
+                      if ('kind' in node.handle && node.handle.kind === 'file') {
+                        setFileHandle(node.path, node.handle as FileSystemFileHandle);
+                        const file = await (node.handle as FileSystemFileHandle).getFile();
+                        const content = await file.text();
+                        openDocument(docPath, content, false);
+                      } else if ('text' in (node.handle as any)) {
+                        const content = await (node.handle as any).text();
+                        openDocument(docPath, content, false);
+                      }
                     }
                     addFile(docPath, node.name);
                   } catch (err) {
@@ -1322,6 +1364,19 @@ export const Sidebar: React.FC = () => {
           onConfirm={finishDelete}
           onCancel={cancelDelete}
         />
+      )}
+
+      {/* 拖拽指示器 */}
+      {dragState.isDragging && isDragTriggered.current && (
+        <div
+          className="fixed pointer-events-none z-50 px-3 py-1.5 bg-[var(--accent-500)] text-white text-sm rounded-lg shadow-lg"
+          style={{
+            left: dragState.currentX + 10,
+            top: dragState.currentY + 10,
+          }}
+        >
+          {dragState.docPath?.split(/[/\\]/).pop()}
+        </div>
       )}
     </div>
   );

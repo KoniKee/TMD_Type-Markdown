@@ -5,7 +5,7 @@ export interface TreeNode {
   path: string;
   isDir: boolean;
   children?: TreeNode[];
-  handle?: FileSystemDirectoryHandle | FileSystemFileHandle;
+  handle?: FileSystemDirectoryHandle | FileSystemFileHandle | File;
 }
 
 interface FileState {

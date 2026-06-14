@@ -456,10 +456,14 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     if (!container) return;
     
     const handleDrop = async (e: DragEvent) => {
+      const paneLeaf = container.closest('.pane-leaf');
+      if (paneLeaf) {
+        return;
+      }
+      
       const files = e.dataTransfer?.files;
       if (!files || files.length === 0) return;
       
-      // 检查是否是MD文件
       const mdFiles = Array.from(files).filter(
         file => file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')
       );
@@ -476,6 +480,11 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     };
     
     const handleDragOver = (e: DragEvent) => {
+      const paneLeaf = container.closest('.pane-leaf');
+      if (paneLeaf) {
+        return;
+      }
+      
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
         const hasMdFile = Array.from(files).some(
@@ -863,6 +872,22 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
       // 图片上传配置
       upload: {
         handler: async (files: File[]): Promise<null> => {
+          const imageFiles: File[] = [];
+          for (const file of files) {
+            if (file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')) {
+              if (!isInPane) {
+                const content = await file.text();
+                openDocument(`file://${file.name}`, content, false);
+              }
+            } else {
+              imageFiles.push(file);
+            }
+          }
+          
+          if (imageFiles.length === 0) {
+            return null;
+          }
+          
           const tauriDetected = await waitForTauri();
           const imageDirectory = useSettingsStore.getState().imageDirectory || 'img';
           const { rootHandle } = useFileStore.getState();
@@ -894,7 +919,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
                 // 目录已存在，忽略错误
               }
               
-              for (const file of files) {
+              for (const file of imageFiles) {
                 const timestamp = Date.now();
                 const safeName = file.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.]/g, '_');
                 const fileName = `${timestamp}_${safeName}`;
@@ -971,11 +996,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
             
             const imgDir = await docDirHandle.getDirectoryHandle(imageDirectory, { create: true });
             
-            for (const file of files) {
+            for (const file of imageFiles) {
               const timestamp = Date.now();
               const safeName = file.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5.]/g, '_');
               const fileName = `${timestamp}_${safeName}`;
-              
               const fileHandle = await imgDir.getFileHandle(fileName, { create: true });
               const writable = await fileHandle.createWritable();
               await writable.write(file);
