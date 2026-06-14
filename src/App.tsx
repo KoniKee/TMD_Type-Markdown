@@ -36,6 +36,33 @@ function App() {
         unlisten = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
           if (event.payload.type !== 'drop') return;
           
+          // 检查是否是内部拖拽
+          const internalDragPath = (window as any).__internalDragPath__;
+          if (internalDragPath) {
+            // 内部拖拽：根据鼠标位置找到目标窗格并打开文档
+            const { x, y } = event.payload.position;
+            const targetElement = document.elementFromPoint(x, y);
+            const paneLeaf = targetElement?.closest('.pane-leaf');
+            const paneId = paneLeaf?.getAttribute('data-pane-id');
+            const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
+            
+            if (paneId && paneTabPath) {
+              const { ensureDocument, activeTabPath } = useEditorStore.getState();
+              const { setPaneDocument, getDocumentsInPanes } = useSplitStore.getState();
+              
+              // 检查是否已在窗格中打开
+              const existingDocs = getDocumentsInPanes(paneTabPath);
+              if (!existingDocs.includes(internalDragPath)) {
+                const realPath = internalDragPath.replace(/^file:\/\//, '');
+                const content = await readTextFile(realPath);
+                ensureDocument(internalDragPath, content, false);
+                setPaneDocument(paneTabPath, paneId, internalDragPath);
+              }
+            }
+            return;
+          }
+          
+          // 外部文件拖拽
           const paths = event.payload.paths;
           if (!paths || paths.length === 0) return;
           
@@ -47,6 +74,7 @@ function App() {
           // 检查是否拖到窗格区域
           const paneLeaf = targetElement?.closest('.pane-leaf');
           const paneId = paneLeaf?.getAttribute('data-pane-id');
+          const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
           
           for (const path of paths) {
             // 检查是文件夹还是文件
@@ -73,10 +101,14 @@ function App() {
                 const content = await readTextFile(path);
                 const docPath = `file://${path}`;
                 
-                if (paneId && activeTabPath) {
+                if (paneId && paneTabPath) {
                   // 拖到窗格中
-                  ensureDocument(docPath, content, false);
-                  setPaneDocument(activeTabPath, paneId, docPath);
+                  const { getDocumentsInPanes } = useSplitStore.getState();
+                  const existingDocs = getDocumentsInPanes(paneTabPath);
+                  if (!existingDocs.includes(docPath)) {
+                    ensureDocument(docPath, content, false);
+                    setPaneDocument(paneTabPath, paneId, docPath);
+                  }
                 } else {
                   // 拖到非窗格区域，新 tab 打开
                   openDocument(docPath, content, false);

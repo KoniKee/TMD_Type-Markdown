@@ -738,6 +738,12 @@ export const Sidebar: React.FC = () => {
               e.dataTransfer.setData('application/x-file-path', docPath);
               e.dataTransfer.setData('text/plain', docPath);
               e.dataTransfer.effectAllowed = 'copy';
+              
+              // 设置全局内部拖拽标记（Tauri 环境使用）
+              (window as any).__internalDragPath__ = docPath;
+            }}
+            onDragEnd={() => {
+              (window as any).__internalDragPath__ = null;
             }}
             onClick={() => {
               if (node.isDir) {
@@ -978,6 +984,12 @@ export const Sidebar: React.FC = () => {
                     e.dataTransfer.setData('application/x-file-path', file.path);
                     e.dataTransfer.setData('text/plain', file.path);
                     e.dataTransfer.effectAllowed = 'copy';
+                    
+                    // 设置全局内部拖拽标记（Tauri 环境使用）
+                    (window as any).__internalDragPath__ = file.path;
+                  }}
+                  onDragEnd={() => {
+                    (window as any).__internalDragPath__ = null;
                   }}
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
