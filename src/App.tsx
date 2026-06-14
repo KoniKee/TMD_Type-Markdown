@@ -34,12 +34,18 @@ function App() {
         const { readTextFile, stat } = await import('@tauri-apps/plugin-fs');
         
         unlisten = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
-          // 处理 over 事件：显示窗格焦点效果
+          // 处理 over 事件：显示窗格焦点效果并追踪窗格
           if (event.payload.type === 'over') {
             const { x, y } = event.payload.position;
             const targetElement = document.elementFromPoint(x, y);
             const paneLeaf = targetElement?.closest('.pane-leaf');
             const paneId = paneLeaf?.getAttribute('data-pane-id');
+            const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
+            
+            // 记录当前追踪到的窗格信息
+            if (paneId && paneTabPath) {
+              (window as any).__dragOverPaneInfo__ = { paneId, paneTabPath };
+            }
             
             // 更新所有窗格的拖拽状态
             document.querySelectorAll('.pane-leaf').forEach((pane) => {
@@ -54,6 +60,7 @@ function App() {
           
           // 处理 leave 事件：清除窗格焦点效果
           if (event.payload.type === 'leave') {
+            (window as any).__dragOverPaneInfo__ = null;
             document.querySelectorAll('.pane-leaf').forEach((pane) => {
               pane.classList.remove('drag-over');
             });
@@ -63,7 +70,6 @@ function App() {
           // 处理 drop 事件
           if (event.payload.type !== 'drop') return;
           
-          const { x, y } = event.payload.position;
           const paths = event.payload.paths;
           
           // 清除窗格焦点效果
@@ -71,13 +77,15 @@ function App() {
             pane.classList.remove('drag-over');
           });
           
+          // 使用追踪的窗格信息
+          const trackedPaneInfo = (window as any).__dragOverPaneInfo__;
+          (window as any).__dragOverPaneInfo__ = null;
+          
           // 检查是否是内部拖拽（paths 为空但 __internalDragPath__ 存在）
           const internalDragPath = (window as any).__internalDragPath__;
           if (internalDragPath && (!paths || paths.length === 0)) {
-            const targetElement = document.elementFromPoint(x, y);
-            const paneLeaf = targetElement?.closest('.pane-leaf');
-            const paneId = paneLeaf?.getAttribute('data-pane-id');
-            const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
+            const paneId = trackedPaneInfo?.paneId;
+            const paneTabPath = trackedPaneInfo?.paneTabPath;
             
             if (paneId && paneTabPath) {
               const { ensureDocument } = useEditorStore.getState();
@@ -102,11 +110,9 @@ function App() {
           const { openDocument, ensureDocument } = useEditorStore.getState();
           const { setPaneDocument, getDocumentsInPanes } = useSplitStore.getState();
           
-          // 使用 Tauri 提供的坐标检测窗格
-          const targetElement = document.elementFromPoint(x, y);
-          const paneLeaf = targetElement?.closest('.pane-leaf');
-          const paneId = paneLeaf?.getAttribute('data-pane-id');
-          const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
+          // 使用追踪的窗格信息
+          const paneId = trackedPaneInfo?.paneId;
+          const paneTabPath = trackedPaneInfo?.paneTabPath;
           
           for (const path of paths) {
             let isDir = false;
