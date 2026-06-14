@@ -70,7 +70,7 @@ export const Sidebar: React.FC = () => {
   const getDocumentsInPanes = useSplitStore((state) => state.getDocumentsInPanes);
   
   // 内部拖拽 hook（Tauri 环境使用 pointer events）
-  const { startDrag, isTauri } = useInternalDrag();
+  const { startDrag, isTauri, isDragTriggered, dragState } = useInternalDrag();
   
   const hasSplitPanes = activeTabPath ? getPaneCount(activeTabPath) > 1 : false;
 
@@ -751,6 +751,7 @@ export const Sidebar: React.FC = () => {
               startDrag(e, docPath);
             } : undefined}
             onClick={() => {
+              if (isDragTriggered.current) return;
               if (node.isDir) {
                 setSelectedDir(node.path);
                 toggleDir(node.path, node);
@@ -997,7 +998,8 @@ export const Sidebar: React.FC = () => {
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
                   onClick={async () => {
-                    try {
+                     if (isDragTriggered.current) return;
+                     try {
                       if (isTauriCached()) {
                         const { readTextFile } = await import('@tauri-apps/plugin-fs');
                         // Tauri版本：去掉file://前缀
@@ -1362,6 +1364,19 @@ export const Sidebar: React.FC = () => {
           onConfirm={finishDelete}
           onCancel={cancelDelete}
         />
+      )}
+
+      {/* 拖拽指示器 */}
+      {dragState.isDragging && isDragTriggered.current && (
+        <div
+          className="fixed pointer-events-none z-50 px-3 py-1.5 bg-[var(--accent-500)] text-white text-sm rounded-lg shadow-lg"
+          style={{
+            left: dragState.currentX + 10,
+            top: dragState.currentY + 10,
+          }}
+        >
+          {dragState.docPath?.split(/[/\\]/).pop()}
+        </div>
       )}
     </div>
   );
