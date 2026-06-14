@@ -28,19 +28,6 @@ function App() {
     
     let unlisten: (() => void) | null = null;
     
-    // 追踪拖拽时鼠标所在的窗格
-    const handleDragOver = (e: DragEvent) => {
-      const targetElement = e.target as Element;
-      const paneLeaf = targetElement?.closest('.pane-leaf');
-      if (paneLeaf) {
-        const paneId = paneLeaf.getAttribute('data-pane-id');
-        const paneTabPath = paneLeaf.getAttribute('data-tab-path');
-        (window as any).__currentPaneInfo__ = { paneId, paneTabPath };
-      }
-    };
-    
-    document.addEventListener('dragover', handleDragOver);
-    
     const setupTauriDragDrop = async () => {
       try {
         const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
@@ -83,10 +70,11 @@ function App() {
           const { openDocument, ensureDocument } = useEditorStore.getState();
           const { setPaneDocument } = useSplitStore.getState();
           
-          // 使用追踪的窗格信息，而不是 elementFromPoint
-          const currentPaneInfo = (window as any).__currentPaneInfo__;
-          const paneId = currentPaneInfo?.paneId;
-          const paneTabPath = currentPaneInfo?.paneTabPath;
+          // 使用 Tauri 提供的坐标检测窗格
+          const targetElement = document.elementFromPoint(x, y);
+          const paneLeaf = targetElement?.closest('.pane-leaf');
+          const paneId = paneLeaf?.getAttribute('data-pane-id');
+          const paneTabPath = paneLeaf?.getAttribute('data-tab-path');
           
           for (const path of paths) {
             let isDir = false;
@@ -136,7 +124,6 @@ function App() {
     setupTauriDragDrop();
     
     return () => {
-      document.removeEventListener('dragover', handleDragOver);
       if (unlisten) unlisten();
     };
   }, [isReady, readDirectoryTauri, setRootPath, setFileTree, setRootHandle, clearAll]);
