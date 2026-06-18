@@ -59,6 +59,7 @@ export const TitleBar: React.FC = () => {
     dragPath: null,
     dragOverIndex: null,
   });
+  const [dragGhost, setDragGhost] = useState<{ name: string; x: number; y: number } | null>(null);
   const tabRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const dragInfoRef = useRef<{ startX: number; startY: number; hasMoved: boolean; dragPath: string | null; dragIndex: number }>({ startX: 0, startY: 0, hasMoved: false, dragPath: null, dragIndex: -1 });
   const dragOverIndexRef = useRef<number | null>(null);
@@ -66,6 +67,7 @@ export const TitleBar: React.FC = () => {
   const startTabDrag = useCallback((e: React.MouseEvent, tabPath: string, index: number) => {
     if (e.button !== 0) return;
     
+    const tabName = getFileName(tabPath);
     dragInfoRef.current = { startX: e.clientX, startY: e.clientY, hasMoved: false, dragPath: tabPath, dragIndex: index };
     dragOverIndexRef.current = index;
     
@@ -74,6 +76,8 @@ export const TitleBar: React.FC = () => {
       const dy = moveEvent.clientY - dragInfoRef.current.startY;
       if (!dragInfoRef.current.hasMoved && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       dragInfoRef.current.hasMoved = true;
+      
+      setDragGhost({ name: tabName, x: moveEvent.clientX, y: moveEvent.clientY });
       
       let overIndex = index;
       for (const [path, el] of tabRefs.current) {
@@ -109,6 +113,7 @@ export const TitleBar: React.FC = () => {
         }
       }
       setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
+      setDragGhost(null);
       dragInfoRef.current = { startX: 0, startY: 0, hasMoved: false, dragPath: null, dragIndex: -1 };
       dragOverIndexRef.current = null;
     };
@@ -484,6 +489,19 @@ export const TitleBar: React.FC = () => {
           tabPath={contextMenu.path}
           onClose={() => setContextMenu(null)}
         />
+      )}
+
+      {dragGhost && (
+        <div
+          className="fixed z-[9999] pointer-events-none px-3 py-1.5 rounded-lg bg-[var(--tab-active-bg)] border border-[var(--accent-500)] shadow-lg shadow-[var(--accent-500)]/20 text-sm text-[var(--editor-text)] flex items-center gap-1.5 scale-90 origin-top-left"
+          style={{
+            left: dragGhost.x + 12,
+            top: dragGhost.y + 8,
+          }}
+        >
+          <FileText size={12} className="text-[var(--accent-500)]" />
+          <span className="truncate max-w-[120px] font-medium">{dragGhost.name}</span>
+        </div>
       )}
     </>
   );
