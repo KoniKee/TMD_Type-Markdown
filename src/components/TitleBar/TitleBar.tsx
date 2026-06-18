@@ -322,6 +322,9 @@ export const TitleBar: React.FC = () => {
                       setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
                     }}
                   >
+                    {dragState.isDragging && dragState.dragOverIndex === index && dragState.dragPath !== tabPath && (
+                      <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
+                    )}
                     <FileText
                       size={14}
                       className={`mr-1.5 flex-shrink-0 ${isActive ? 'text-[var(--accent-500)]' : 'text-[var(--editor-text-muted)]'}`}
@@ -350,6 +353,9 @@ export const TitleBar: React.FC = () => {
                     >
                       <X size={12} />
                     </button>
+                    {dragState.isDragging && dragState.dragOverIndex === index + 1 && dragState.dragPath !== tabPath && (
+                      <div className="absolute right-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
+                    )}
                   </div>
                 );
               })}
