@@ -4,7 +4,7 @@ import { TitleBar } from '../TitleBar/TitleBar';
 import { EditorContainer } from '../Editor/EditorContainer';
 import { SettingsPanel } from '../Settings/SettingsPanel';
 import { useEditorStore } from '../../stores';
-import { useAutoSave, useTheme, useFileChangeDetection, useSplitShortcuts } from '../../hooks';
+import { useAutoSave, useTheme, useFileChangeDetection, useSplitShortcuts, useTabShortcuts } from '../../hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -15,6 +15,7 @@ export const Layout: React.FC = () => {
   useTheme();
   useFileChangeDetection();
   useSplitShortcuts();
+  useTabShortcuts();
 
   const handleSidebarResize = (e: React.MouseEvent) => {
     const startX = e.clientX;
