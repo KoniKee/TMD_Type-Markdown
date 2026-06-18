@@ -255,12 +255,14 @@ export const TitleBar: React.FC = () => {
                     }}
                     draggable
                     onDragStart={(e) => {
+                      e.stopPropagation();
                       e.dataTransfer.setData('tabPath', tabPath);
                       e.dataTransfer.setData('tabIndex', String(index));
                       setDragState({ isDragging: true, dragPath: tabPath, dragOverIndex: null });
                     }}
                     onDragOver={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       const rect = e.currentTarget.getBoundingClientRect();
                       const midX = rect.left + rect.width / 2;
                       const overIndex = e.clientX < midX ? index : index + 1;
@@ -268,6 +270,7 @@ export const TitleBar: React.FC = () => {
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       const fromIndex = parseInt(e.dataTransfer.getData('tabIndex'));
                       let toIndex = dragState.dragOverIndex ?? index;
                       
@@ -279,7 +282,8 @@ export const TitleBar: React.FC = () => {
                       
                       setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
                     }}
-                    onDragEnd={() => {
+                    onDragEnd={(e) => {
+                      e.stopPropagation();
                       setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
                     }}
                   >
