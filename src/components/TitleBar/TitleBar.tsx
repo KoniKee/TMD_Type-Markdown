@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
 import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
@@ -59,6 +59,63 @@ export const TitleBar: React.FC = () => {
     dragPath: null,
     dragOverIndex: null,
   });
+  const tabRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const dragInfoRef = useRef<{ startX: number; startY: number; hasMoved: boolean; dragPath: string | null; dragIndex: number }>({ startX: 0, startY: 0, hasMoved: false, dragPath: null, dragIndex: -1 });
+  const dragOverIndexRef = useRef<number | null>(null);
+
+  const startTabDrag = useCallback((e: React.MouseEvent, tabPath: string, index: number) => {
+    if (e.button !== 0) return;
+    
+    dragInfoRef.current = { startX: e.clientX, startY: e.clientY, hasMoved: false, dragPath: tabPath, dragIndex: index };
+    dragOverIndexRef.current = index;
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - dragInfoRef.current.startX;
+      const dy = moveEvent.clientY - dragInfoRef.current.startY;
+      if (!dragInfoRef.current.hasMoved && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      dragInfoRef.current.hasMoved = true;
+      
+      let overIndex = index;
+      for (const [path, el] of tabRefs.current) {
+        const rect = el.getBoundingClientRect();
+        if (moveEvent.clientX >= rect.left && moveEvent.clientX <= rect.right) {
+          const midX = rect.left + rect.width / 2;
+          const pathIdx = useEditorStore.getState().tabs.indexOf(path);
+          overIndex = moveEvent.clientX < midX ? pathIdx : pathIdx + 1;
+          break;
+        }
+      }
+      dragOverIndexRef.current = overIndex;
+      
+      setDragState(prev => {
+        if (!prev.isDragging) {
+          return { isDragging: true, dragPath: tabPath, dragOverIndex: overIndex };
+        }
+        return { ...prev, dragOverIndex: overIndex };
+      });
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      if (dragInfoRef.current.hasMoved && dragInfoRef.current.dragPath) {
+        const state = useEditorStore.getState();
+        const fromIndex = state.tabs.indexOf(dragInfoRef.current.dragPath);
+        let toIndex = dragOverIndexRef.current ?? fromIndex;
+        if (toIndex > fromIndex) toIndex--;
+        if (fromIndex !== toIndex && fromIndex >= 0) {
+          reorderTabs(fromIndex, toIndex);
+        }
+      }
+      setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
+      dragInfoRef.current = { startX: 0, startY: 0, hasMoved: false, dragPath: null, dragIndex: -1 };
+      dragOverIndexRef.current = null;
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [reorderTabs]);
 
   useEffect(() => {
     const win = getTauriWindow();
@@ -227,8 +284,13 @@ export const TitleBar: React.FC = () => {
                 return (
                   <div
                     key={tabPath}
+                    ref={(el) => {
+                      if (el) tabRefs.current.set(tabPath, el);
+                      else tabRefs.current.delete(tabPath);
+                    }}
                     className={`
-                      group relative flex items-center h-[36px] px-3 cursor-pointer
+                      group relative flex items-center h-[36px] px-3
+                      ${dragState.isDragging && dragState.dragPath === tabPath ? 'cursor-grabbing' : 'cursor-pointer'}
                       transition-all duration-[var(--transition-fast)]
                       flex-1 min-w-[80px] max-w-[180px]
                       ${isActive
@@ -239,52 +301,25 @@ export const TitleBar: React.FC = () => {
                     `}
                     style={{ borderRadius: '12px 12px 0 0' }}
                     onClick={(e) => {
+                      if (dragInfoRef.current.hasMoved) return;
                       e.stopPropagation();
                       setActiveDocument(tabPath);
                     }}
                     onMouseDown={(e) => {
+                      e.stopPropagation();
                       if (e.button === 1) {
                         e.preventDefault();
                         handleCloseTab(tabPath);
+                        return;
+                      }
+                      if (e.button === 0) {
+                        startTabDrag(e, tabPath, index);
                       }
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
-                    }}
-                    draggable
-                    onDragStart={(e) => {
-                      e.stopPropagation();
-                      e.dataTransfer.setData('tabPath', tabPath);
-                      e.dataTransfer.setData('tabIndex', String(index));
-                      setDragState({ isDragging: true, dragPath: tabPath, dragOverIndex: null });
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const midX = rect.left + rect.width / 2;
-                      const overIndex = e.clientX < midX ? index : index + 1;
-                      setDragState(prev => ({ ...prev, dragOverIndex: overIndex }));
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const fromIndex = parseInt(e.dataTransfer.getData('tabIndex'));
-                      let toIndex = dragState.dragOverIndex ?? index;
-                      
-                      if (toIndex > fromIndex) toIndex--;
-                      
-                      if (fromIndex !== toIndex) {
-                        reorderTabs(fromIndex, toIndex);
-                      }
-                      
-                      setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
-                    }}
-                    onDragEnd={(e) => {
-                      e.stopPropagation();
-                      setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
                     }}
                   >
                     <FileText
