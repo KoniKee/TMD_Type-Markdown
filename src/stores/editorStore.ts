@@ -107,6 +107,11 @@ interface EditorStateStore {
   setScrollPosition: (path: string, position: number) => void;
   setPreviewMode: (path: string, mode: PreviewMode) => void;
   updateFilePath: (docPath: string, filePath: string) => void;
+  closeOtherTabs: (path: string) => void;
+  closeTabsToRight: (path: string) => void;
+  closeTabsToLeft: (path: string) => void;
+  closeAllTabs: () => void;
+  reorderTabs: (fromIndex: number, toIndex: number) => void;
 }
 
 export const useEditorStore = create<EditorStateStore>((set, get) => ({
@@ -425,5 +430,95 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
     const { addFile } = useRecentFilesStore.getState();
     const fileName = filePath.split('/').pop()?.split('\\').pop() || filePath;
     addFile(newDocPath, fileName);
+  },
+  
+  closeOtherTabs: (path: string) => {
+    const { documents, tabs } = get();
+    
+    const doc = documents[path];
+    if (!doc) return;
+    
+    const newTabs = [path];
+    const newDocuments: Record<string, DocumentState> = {};
+    newDocuments[path] = doc;
+    
+    set({
+      tabs: newTabs,
+      documents: newDocuments,
+      activeDocPath: path,
+      activeTabPath: path,
+    });
+  },
+  
+  closeTabsToRight: (path: string) => {
+    const { documents, tabs, activeDocPath } = get();
+    const pathIndex = tabs.indexOf(path);
+    
+    if (pathIndex === -1) return;
+    
+    const newTabs = tabs.slice(0, pathIndex + 1);
+    const removedTabs = tabs.slice(pathIndex + 1);
+    
+    const newDocuments = { ...documents };
+    removedTabs.forEach(t => delete newDocuments[t]);
+    
+    let newActivePath = activeDocPath;
+    if (removedTabs.includes(activeDocPath || '')) {
+      newActivePath = path;
+    }
+    
+    set({
+      tabs: newTabs,
+      documents: newDocuments,
+      activeDocPath: newActivePath,
+      activeTabPath: newActivePath,
+    });
+  },
+  
+  closeTabsToLeft: (path: string) => {
+    const { documents, tabs, activeDocPath } = get();
+    const pathIndex = tabs.indexOf(path);
+    
+    if (pathIndex === -1) return;
+    
+    const newTabs = tabs.slice(pathIndex);
+    const removedTabs = tabs.slice(0, pathIndex);
+    
+    const newDocuments = { ...documents };
+    removedTabs.forEach(t => delete newDocuments[t]);
+    
+    let newActivePath = activeDocPath;
+    if (removedTabs.includes(activeDocPath || '')) {
+      newActivePath = path;
+    }
+    
+    set({
+      tabs: newTabs,
+      documents: newDocuments,
+      activeDocPath: newActivePath,
+      activeTabPath: newActivePath,
+    });
+  },
+  
+  closeAllTabs: () => {
+    set({
+      tabs: [],
+      documents: {},
+      activeDocPath: null,
+      activeTabPath: null,
+    });
+  },
+  
+  reorderTabs: (fromIndex: number, toIndex: number) => {
+    const { tabs } = get();
+    
+    if (fromIndex < 0 || fromIndex >= tabs.length || 
+        toIndex < 0 || toIndex >= tabs.length) return;
+    
+    const newTabs = [...tabs];
+    const [removed] = newTabs.splice(fromIndex, 1);
+    newTabs.splice(toIndex, 0, removed);
+    
+    set({ tabs: newTabs });
   },
 }));

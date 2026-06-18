@@ -6,6 +6,7 @@ import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as C
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
 import { CloseTabConfirm } from '../Editor/CloseTabConfirm';
+import { TabContextMenu } from '../Tabs/TabContextMenu';
 
 declare global {
   interface Window {
@@ -34,6 +35,7 @@ export const TitleBar: React.FC = () => {
   const documents = useEditorStore((state) => state.documents);
   const setActiveDocument = useEditorStore((state) => state.setActiveDocument);
   const closeDocument = useEditorStore((state) => state.closeDocument);
+  const reorderTabs = useEditorStore((state) => state.reorderTabs);
   const saveToFile = useSaveToFile();
   const { theme, toggleTheme } = useSettingsStore();
   const { handleNewFile } = useFileOperations();
@@ -51,6 +53,12 @@ export const TitleBar: React.FC = () => {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [pendingCloseTab, setPendingCloseTab] = useState<string | null>(null);
   const [pendingCloseDocuments, setPendingCloseDocuments] = useState<string[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+  const [dragState, setDragState] = useState<{ isDragging: boolean; dragPath: string | null; dragOverIndex: number | null }>({
+    isDragging: false,
+    dragPath: null,
+    dragOverIndex: null,
+  });
 
   useEffect(() => {
     const win = getTauriWindow();
@@ -206,7 +214,7 @@ export const TitleBar: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-end h-full flex-1 min-w-0" data-tauri-drag-region>
-              {tabs.map((tabPath) => {
+              {tabs.map((tabPath, index) => {
                 const isActive = tabPath === activeTabPath;
                 const paneCount = getPaneCount(tabPath);
                 const hasSplitState = getCurrentState(tabPath) !== null;
@@ -227,11 +235,52 @@ export const TitleBar: React.FC = () => {
                         ? 'bg-[var(--editor-bg)] text-[var(--editor-text)] shadow-[0_-2px_8px_rgba(0,0,0,0.1)]'
                         : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-hover-bg)] hover:text-[var(--editor-text)]'
                       }
+                      ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
                     `}
                     style={{ borderRadius: '12px 12px 0 0' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveDocument(tabPath);
+                    }}
+                    onMouseDown={(e) => {
+                      if (e.button === 1) {
+                        e.preventDefault();
+                        handleCloseTab(tabPath);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
+                    }}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('tabPath', tabPath);
+                      e.dataTransfer.setData('tabIndex', String(index));
+                      setDragState({ isDragging: true, dragPath: tabPath, dragOverIndex: null });
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const midX = rect.left + rect.width / 2;
+                      const overIndex = e.clientX < midX ? index : index + 1;
+                      setDragState(prev => ({ ...prev, dragOverIndex: overIndex }));
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const fromIndex = parseInt(e.dataTransfer.getData('tabIndex'));
+                      let toIndex = dragState.dragOverIndex ?? index;
+                      
+                      if (toIndex > fromIndex) toIndex--;
+                      
+                      if (fromIndex !== toIndex) {
+                        reorderTabs(fromIndex, toIndex);
+                      }
+                      
+                      setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
+                    }}
+                    onDragEnd={() => {
+                      setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
                     }}
                   >
                     <FileText
@@ -380,6 +429,15 @@ export const TitleBar: React.FC = () => {
           documents={pendingCloseDocuments}
           onConfirm={confirmCloseTab}
           onCancel={cancelCloseTab}
+        />
+      )}
+
+      {contextMenu && (
+        <TabContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          tabPath={contextMenu.path}
+          onClose={() => setContextMenu(null)}
         />
       )}
     </>

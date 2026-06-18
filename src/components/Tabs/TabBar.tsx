@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useEditorStore } from '../../stores';
 import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
 import { FileText, X, Save, Plus } from 'lucide-react';
 import { useFileOperations } from '../../hooks/useFileOperations';
+import { TabContextMenu } from './TabContextMenu';
 
 export const TabBar: React.FC = () => {
   const tabs = useEditorStore((state) => state.tabs);
@@ -10,8 +11,16 @@ export const TabBar: React.FC = () => {
   const documents = useEditorStore((state) => state.documents);
   const setActiveDocument = useEditorStore((state) => state.setActiveDocument);
   const closeDocument = useEditorStore((state) => state.closeDocument);
+  const reorderTabs = useEditorStore((state) => state.reorderTabs);
   const saveToFile = useSaveToFile();
   const { handleNewFile } = useFileOperations();
+  
+  const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
+  const [dragState, setDragState] = useState<{ isDragging: boolean; dragPath: string | null; dragOverIndex: number | null }>({
+    isDragging: false,
+    dragPath: null,
+    dragOverIndex: null,
+  });
 
   if (tabs.length === 0) {
     return (
@@ -28,7 +37,7 @@ export const TabBar: React.FC = () => {
     <div className="h-10 bg-[var(--tab-bg)] flex items-end overflow-x-auto border-b border-[var(--tab-border)]">
       {/* 标签列表 */}
       <div className="flex items-end h-full flex-1">
-        {tabs.map((tabPath) => {
+        {tabs.map((tabPath, index) => {
           const isActive = tabPath === activeDocPath;
           const doc = documents[tabPath];
           const isModified = doc?.isModified || false;
@@ -45,8 +54,48 @@ export const TabBar: React.FC = () => {
                   ? 'bg-[var(--tab-active-bg)] text-[var(--editor-text)]'
                   : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-active-bg)] hover:text-[var(--editor-text)]'
                 }
+                ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
               `}
               onClick={() => setActiveDocument(tabPath)}
+              onMouseDown={(e) => {
+                if (e.button === 1) {
+                  e.preventDefault();
+                  closeDocument(tabPath);
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
+              }}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('tabPath', tabPath);
+                e.dataTransfer.setData('tabIndex', String(index));
+                setDragState({ isDragging: true, dragPath: tabPath, dragOverIndex: null });
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                const overIndex = e.clientX < midX ? index : index + 1;
+                setDragState(prev => ({ ...prev, dragOverIndex: overIndex }));
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData('tabIndex'));
+                let toIndex = dragState.dragOverIndex ?? index;
+                
+                if (toIndex > fromIndex) toIndex--;
+                
+                if (fromIndex !== toIndex) {
+                  reorderTabs(fromIndex, toIndex);
+                }
+                
+                setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
+              }}
+              onDragEnd={() => {
+                setDragState({ isDragging: false, dragPath: null, dragOverIndex: null });
+              }}
             >
               {/* 激活指示器 */}
               {isActive && (
@@ -115,6 +164,16 @@ export const TabBar: React.FC = () => {
             <Save size={16} />
           </button>
         </div>
+      )}
+      
+      {/* 右键菜单 */}
+      {contextMenu && (
+        <TabContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          tabPath={contextMenu.path}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );
