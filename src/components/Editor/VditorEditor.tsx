@@ -29,83 +29,6 @@ interface VditorEditorProps {
   isInPane?: boolean;
 }
 
-// 表格列宽优化参数
-const TABLE_COL_MIN_PERCENT = 8;   // 单列最小宽度百分比
-const TABLE_COL_MAX_PERCENT = 50;  // 单列最大宽度百分比
-const TABLE_DEBOUNCE_DELAY = 300;  // 表格优化防抖延迟
-
-/**
- * 智能分配表格列宽
- * - 分析每列的内容量（表头 + 数据行平均）
- * - 按权重分配宽度，但有最小/最大约束
- * - 通过 colgroup 设定宽度百分比
- * - forceUpdate=true 时重新计算已优化的表格
- */
-function optimizeTableColumns(container: HTMLElement, forceUpdate = false): void {
-  const selector = forceUpdate ? 'table' : 'table:not([data-cols-optimized])';
-  const tables = container.querySelectorAll(selector);
-  
-  tables.forEach((table) => {
-    const rows = table.querySelectorAll('tr');
-    if (rows.length === 0) return;
-    
-    const firstRow = rows[0];
-    const colCount = firstRow.querySelectorAll('th, td').length;
-    if (colCount === 0) return;
-    
-    // 计算每列的"内容权重"
-    const weights: number[] = new Array(colCount).fill(0);
-    
-    rows.forEach((row) => {
-      const cells = row.querySelectorAll('th, td');
-      cells.forEach((cell, idx) => {
-        if (idx < colCount) {
-          const textLen = (cell.textContent || '').length;
-          const isHeader = cell.tagName === 'TH';
-          weights[idx] += isHeader ? textLen * 2 : textLen;
-        }
-      });
-    });
-    
-    const avgWeight = weights.reduce((a, b) => a + b, 0) / colCount;
-    
-    const totalWeight = weights.reduce((a, b) => a + Math.max(b, avgWeight * 0.3), 0);
-    const widths: number[] = [];
-    
-    weights.forEach((w) => {
-      const normalizedWeight = Math.max(w, avgWeight * 0.3);
-      let percent = (normalizedWeight / totalWeight) * 100;
-      percent = Math.max(TABLE_COL_MIN_PERCENT, Math.min(TABLE_COL_MAX_PERCENT, percent));
-      widths.push(percent);
-    });
-    
-    const totalPercent = widths.reduce((a, b) => a + b, 0);
-    const normalizedWidths = widths.map((w) => (w / totalPercent) * 100);
-    
-    // 移除旧的 colgroup
-    const existingColgroup = table.querySelector('colgroup');
-    if (existingColgroup) {
-      existingColgroup.remove();
-    }
-    
-    // 创建 colgroup
-    const colgroup = document.createElement('colgroup');
-    normalizedWidths.forEach((width) => {
-      const col = document.createElement('col');
-      col.style.width = `${width.toFixed(1)}%`;
-      colgroup.appendChild(col);
-    });
-    
-    table.insertBefore(colgroup, table.firstChild);
-    table.setAttribute('data-cols-optimized', 'true');
-  });
-}
-
-// 防抖版本的表格优化（强制更新）
-const optimizeTableColumnsDebounced = debounce((container: HTMLElement) => {
-  optimizeTableColumns(container, true);
-}, TABLE_DEBOUNCE_DELAY);
-
 let tableTipTimeout: number | null = null;
 let tableTipElement: HTMLDivElement | null = null;
 let hasShownTableTip = false;
@@ -1164,15 +1087,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
           console.warn('[Lute] 启用上标/下标失败:', e);
         }
          
-         // 处理本地图片加载
+// 处理本地图片加载
          processLocalImages(containerRef.current!, path);
          
          processAlerts(containerRef.current!);
          
-         // 优化表格列宽
-         optimizeTableColumns(containerRef.current!);
-        
-        // 光标在 alert 标题行时才显示原始语法
+         // 光标在 alert 标题行时才显示原始语法
         const handleAlertEditingSelection = () => {
           const selection = window.getSelection();
           if (!selection || selection.rangeCount === 0) return;
