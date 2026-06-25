@@ -1087,12 +1087,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
           console.warn('[Lute] 启用上标/下标失败:', e);
         }
          
-         // 处理本地图片加载
+// 处理本地图片加载
          processLocalImages(containerRef.current!, path);
          
          processAlerts(containerRef.current!);
-        
-        // 光标在 alert 标题行时才显示原始语法
+         
+         // 光标在 alert 标题行时才显示原始语法
         const handleAlertEditingSelection = () => {
           const selection = window.getSelection();
           if (!selection || selection.rangeCount === 0) return;
