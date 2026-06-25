@@ -188,12 +188,15 @@
 
 /* 暗色主题表格 */
 .dark .vditor .vditor-ir pre.vditor-reset table th,
-.dark .vditor .vditor-ir pre.vditor-reset table td {
+.dark .vditor .vditor-ir pre.vditor-reset table td,
+.dark .vditor .vditor-content .vditor-reset table th,
+.dark .vditor .vditor-content .vditor-reset table td {
   border-color: var(--editor-border, #334155) !important;
   background-color: var(--editor-bg, #0f172a) !important;
 }
 
-.dark .vditor .vditor-ir pre.vditor-reset table th {
+.dark .vditor .vditor-ir pre.vditor-reset table th,
+.dark .vditor .vditor-content .vditor-reset table th {
   background-color: var(--editor-code-bg, #1e293b) !important;
 }
 
@@ -251,20 +254,23 @@
   border-color: #2d2d2d !important;
 }
 
-/* 表格自适应宽度 - 不出现水平滚动条 */
+/* 表格自适应宽度 - 智能列宽分配 */
 .vditor .vditor-ir pre.vditor-reset table,
 .vditor .vditor-sv pre.vditor-reset table,
 .vditor .vditor-content .vditor-reset table {
   width: 100% !important;
-  table-layout: fixed !important;
+  table-layout: auto !important;
   border-collapse: collapse !important;
 }
 
 .vditor .vditor-ir pre.vditor-reset table th,
-.vditor .vditor-ir pre.vditor-reset table td,
 .vditor .vditor-sv pre.vditor-reset table th,
+.vditor .vditor-content .vditor-reset table th {
+  white-space: nowrap !important;
+}
+
+.vditor .vditor-ir pre.vditor-reset table td,
 .vditor .vditor-sv pre.vditor-reset table td,
-.vditor .vditor-content .vditor-reset table th,
 .vditor .vditor-content .vditor-reset table td {
   word-wrap: break-word !important;
   word-break: break-word !important;
