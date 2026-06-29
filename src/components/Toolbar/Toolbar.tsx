@@ -5,14 +5,14 @@ import {
   FileText,
   FolderOpen,
   Settings,
-  Moon,
-  Sun,
+  Palette,
   Command,
   LucideIcon,
   X,
   Keyboard
 } from 'lucide-react';
 import { useSettingsStore } from '../../stores';
+import { ThemePanel } from '../ThemePanel/ThemePanel';
 
 /**
  * 顶部工具栏组件
@@ -20,8 +20,8 @@ import { useSettingsStore } from '../../stores';
  */
 export const Toolbar: React.FC = () => {
   const { handleNewFile, handleOpenFile, handleOpenFolder } = useFileOperations();
-  const { theme, toggleTheme } = useSettingsStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showThemePanel, setShowThemePanel] = useState(false);
 
   return (
     <>
@@ -73,18 +73,26 @@ export const Toolbar: React.FC = () => {
           <div className="w-px h-5 bg-[var(--editor-border)] mx-1" />
 
           {/* 主题切换 */}
-          <ToolbarButton
-            icon={theme === 'dark' ? Sun : Moon}
-            title={theme === 'dark' ? '切换到浅色模式' : '切换到暗色模式'}
-            onClick={toggleTheme}
-          />
+          <div className="relative">
+            <ToolbarButton
+              icon={Palette}
+              title="主题"
+              onClick={() => setShowThemePanel(!showThemePanel)}
+            />
+            {showThemePanel && (
+              <ThemePanel onClose={() => setShowThemePanel(false)} />
+            )}
+          </div>
 
           <div className="w-px h-5 bg-[var(--editor-border)] mx-1" />
 
           <ToolbarButton
             icon={Settings}
             title="设置"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-settings'))}
+            onClick={() => {
+              setShowThemePanel(false);
+              window.dispatchEvent(new CustomEvent('open-settings'));
+            }}
           />
         </div>
       </div>

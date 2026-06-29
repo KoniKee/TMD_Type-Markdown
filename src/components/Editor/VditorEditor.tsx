@@ -3,7 +3,8 @@ import Vditor from 'vditor';
 import 'vditor/dist/index.css';
 import './vditor-styles.css';
 import '../../styles/embed.css';
-import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode } from '../../stores';
+import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode, THEMES } from '../../stores';
+import type { ThemeId } from '../../stores';
 import { useSaveToFile, useSaveAsFile } from '../../hooks/useAutoSave';
 import { isTauriCached, waitForTauri } from '../../utils/platform';
 import { isLocalMdFile, resolveDocPath, readMdFileContent, getFileDisplayName, normalizePath, getFileName } from '../../utils/linkUtils';
@@ -663,7 +664,10 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     const vditor = new Vditor(containerRef.current, {
       mode: savedEditorMode,
       height: '100%',
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'classic',
+      theme: (() => {
+        const themeAttr = document.documentElement.getAttribute('data-theme') as ThemeId | null;
+        return (themeAttr && THEMES[themeAttr]?.group === 'dark') ? 'dark' : 'classic';
+      })(),
       toolbarConfig: {
         pin: true,
       },
@@ -2240,8 +2244,9 @@ const relativePath = `${imageDirectory}/${fileName}`;
   useEffect(() => {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          const isDark = document.documentElement.classList.contains('dark');
+        if (mutation.attributeName === 'data-theme') {
+          const themeAttr = document.documentElement.getAttribute('data-theme') as ThemeId | null;
+          const isDark = themeAttr ? THEMES[themeAttr]?.group === 'dark' : false;
           if (vditorRef.current) {
             vditorRef.current.setTheme(isDark ? 'dark' : 'classic');
           }
@@ -2251,7 +2256,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['data-theme'],
     });
 
     return () => observer.disconnect();

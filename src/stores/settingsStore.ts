@@ -1,9 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type Theme = 'light' | 'dark' | 'system';
+export type ThemeId = 'chen-guang' | 'tian-qing' | 'hu-po' | 'mo-ye' | 'xing-yun' | 'ji-guang';
+export type Theme = ThemeId | 'system';
+export type ThemeGroup = 'light' | 'dark';
 export type EditorWidth = 'full' | 'wide' | 'normal';
 export type LineHeight = 1 | 1.15 | 1.5 | 2 | 2.5 | 3;
+
+export const THEMES: Record<ThemeId, { name: string; group: ThemeGroup }> = {
+  'chen-guang': { name: '晨光', group: 'light' },
+  'tian-qing': { name: '天青', group: 'light' },
+  'hu-po': { name: '琥珀', group: 'light' },
+  'mo-ye': { name: '墨夜', group: 'dark' },
+  'xing-yun': { name: '星云', group: 'dark' },
+  'ji-guang': { name: '极光', group: 'dark' },
+};
 
 export const EMBED_MAX_DEPTH_MIN = 1;
 export const EMBED_MAX_DEPTH_MAX = 5;
@@ -13,8 +24,21 @@ export const EMBED_MAX_COUNT_MIN = 1;
 export const EMBED_MAX_COUNT_MAX = 30;
 export const EMBED_MAX_COUNT_DEFAULT = 5;
 
+function getThemeGroup(themeId: ThemeId): ThemeGroup {
+  return THEMES[themeId].group;
+}
+
+function resolveSystemThemeId(): ThemeId {
+  const state = useSettingsStore.getState();
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? state.systemDarkTheme
+    : state.systemLightTheme;
+}
+
 interface SettingsState {
   theme: Theme;
+  systemLightTheme: ThemeId;
+  systemDarkTheme: ThemeId;
   imageDirectory: string;
   autoSave: boolean;
   autoSaveDelay: number;
@@ -25,6 +49,8 @@ interface SettingsState {
 
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  setSystemLightTheme: (themeId: ThemeId) => void;
+  setSystemDarkTheme: (themeId: ThemeId) => void;
   setImageDirectory: (dir: string) => void;
   setAutoSave: (enabled: boolean) => void;
   setAutoSaveDelay: (delay: number) => void;
@@ -33,12 +59,16 @@ interface SettingsState {
   setEditorWidth: (width: EditorWidth) => void;
   setLineHeight: (height: LineHeight) => void;
   getEffectiveTheme: () => 'light' | 'dark';
+  getEffectiveThemeId: () => ThemeId;
+  getThemeGroup: () => ThemeGroup;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       theme: 'system',
+      systemLightTheme: 'tian-qing' as ThemeId,
+      systemDarkTheme: 'mo-ye' as ThemeId,
       imageDirectory: 'img',
       autoSave: true,
       autoSaveDelay: 1000,
@@ -49,10 +79,15 @@ export const useSettingsStore = create<SettingsState>()(
 
       setTheme: (theme: Theme) => set({ theme }),
       toggleTheme: () => {
-        const { theme, getEffectiveTheme } = get();
-        const currentEffective = getEffectiveTheme();
-        // 如果当前是暗色，切换到浅色；否则切换到暗色
-        set({ theme: currentEffective === 'dark' ? 'light' : 'dark' });
+        const current = get().getEffectiveThemeId();
+        const currentGroup = getThemeGroup(current);
+        set({ theme: currentGroup === 'dark' ? 'tian-qing' : 'mo-ye' });
+      },
+      setSystemLightTheme: (themeId: ThemeId) => {
+        if (THEMES[themeId].group === 'light') set({ systemLightTheme: themeId });
+      },
+      setSystemDarkTheme: (themeId: ThemeId) => {
+        if (THEMES[themeId].group === 'dark') set({ systemDarkTheme: themeId });
       },
       setImageDirectory: (dir: string) => set({ imageDirectory: dir }),
       setAutoSave: (enabled: boolean) => set({ autoSave: enabled }),
@@ -71,15 +106,44 @@ export const useSettingsStore = create<SettingsState>()(
       getEffectiveTheme: () => {
         const { theme } = get();
         if (theme === 'system') {
-          return window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : 'light';
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return getThemeGroup(theme);
+      },
+
+      getEffectiveThemeId: () => {
+        const { theme } = get();
+        if (theme === 'system') {
+          return resolveSystemThemeId();
         }
         return theme;
+      },
+
+      getThemeGroup: () => {
+        const { theme } = get();
+        if (theme === 'system') {
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return getThemeGroup(theme);
       },
     }),
     {
       name: 'md-editor-settings',
+      version: 3,
+      migrate: (persistedState: any) => {
+        if (persistedState && persistedState.theme === 'light') {
+          persistedState.theme = 'tian-qing';
+        } else if (persistedState && persistedState.theme === 'dark') {
+          persistedState.theme = 'mo-ye';
+        }
+        if (persistedState && !persistedState.systemLightTheme) {
+          persistedState.systemLightTheme = 'tian-qing';
+        }
+        if (persistedState && !persistedState.systemDarkTheme) {
+          persistedState.systemDarkTheme = 'mo-ye';
+        }
+        return persistedState;
+      },
     }
   )
 );
