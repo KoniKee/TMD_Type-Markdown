@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSettingsStore, EMBED_MAX_DEPTH_MIN, EMBED_MAX_DEPTH_MAX, EMBED_MAX_COUNT_MIN, EMBED_MAX_COUNT_MAX, EditorWidth, LineHeight } from '../../stores/settingsStore';
-import { X, Sun, Moon, Monitor, Image, Save, Info, FileText, Columns, AlignLeft, ExternalLink } from 'lucide-react';
+import { X, Palette, Image, Save, Info, FileText, Columns, AlignLeft, ExternalLink } from 'lucide-react';
+import { ThemePanel } from '../ThemePanel/ThemePanel';
 import { version } from '../../../package.json';
 
 export const SettingsPanel: React.FC = () => {
@@ -12,7 +13,6 @@ export const SettingsPanel: React.FC = () => {
     return () => window.removeEventListener('open-settings', handleOpenSettings);
   }, []);
   const {
-    theme,
     imageDirectory,
     autoSave,
     autoSaveDelay,
@@ -20,7 +20,6 @@ export const SettingsPanel: React.FC = () => {
     embedMaxCount,
     editorWidth,
     lineHeight,
-    setTheme,
     setImageDirectory,
     setAutoSave,
     setAutoSaveDelay,
@@ -29,10 +28,6 @@ export const SettingsPanel: React.FC = () => {
     setEditorWidth,
     setLineHeight,
   } = useSettingsStore();
-
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTheme(e.target.value as 'light' | 'dark' | 'system');
-  };
 
   const handleImageDirectoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageDirectory(e.target.value);
@@ -100,31 +95,14 @@ export const SettingsPanel: React.FC = () => {
               {/* Theme settings */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
-                  {theme === 'dark' ? <Moon size={16} className="text-[var(--accent-400)]" /> : 
-                   theme === 'light' ? <Sun size={16} className="text-[var(--warning-500)]" /> :
-                   <Monitor size={16} className="text-[var(--editor-text-secondary)]" />}
+                  <Palette size={16} className="text-[var(--accent-400)]" />
                   <h3 className="text-sm font-medium text-[var(--editor-text)]">主题设置</h3>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-[var(--editor-text-secondary)] mb-2">
-                      主题模式
-                    </label>
-                    <select
-                      value={theme}
-                      onChange={handleThemeChange}
-                      className="w-full px-3 py-2.5 bg-[var(--editor-surface)] border border-[var(--editor-border)] rounded-lg text-[var(--editor-text)] focus:outline-none focus:border-[var(--accent-500)] focus:ring-2 focus:ring-[var(--accent-500)]/20 transition-all cursor-pointer"
-                    >
-                      <option value="light">🌞 亮色主题</option>
-                      <option value="dark">🌙 暗色主题</option>
-                      <option value="system">💻 跟随系统</option>
-                    </select>
-                  </div>
-                <p className="text-xs text-[var(--editor-text-muted)]">
+                <ThemePanel embedded />
+                <p className="text-xs text-[var(--editor-text-muted)] mt-3">
                   主题变化将实时生效
                 </p>
               </div>
-            </div>
 
             {/* Editor width settings */}
             <div className="mb-8">

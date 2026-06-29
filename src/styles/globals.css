@@ -5,6 +5,19 @@
 /* ============================================
    设计系统 - 现代编辑器配色方案
    灵感来源: VS Code + Notion + Linear
+   
+   主题系统说明:
+   - :root 提供默认值（tian-qing 天青）
+   - [data-theme="xxx"] 属性选择器定义各主题完整变量
+   - .dark 保留给 TailwindCSS dark: 前缀使用，与 mo-ye 墨夜相同
+   
+   6个主题:
+   1. chen-guang (晨光) - 浅色 - 纯白界面
+   2. tian-qing  (天青) - 浅色 - 默认亮色
+   3. hu-po      (琥珀) - 浅色 - Anthropic暖象牙+陶土
+   4. mo-ye      (墨夜) - 深色 - 默认暗色
+   5. xing-yun   (星云) - 深色 - Atom One Dark
+   6. ji-guang   (极光) - 深色 - Nord
    ============================================ */
 
 :root {
@@ -102,10 +115,434 @@
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
+
+  /* hljs - 亮色使用默认hljs，无需定义 */
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #dbeafe;
+  --code-inline-text: #1e40af;
+  --code-block-bg: #f1f5f9;
+  --code-block-container-bg: transparent;
+  --code-block-text: inherit;
+
+  /* 滚动条 */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #888;
+
+  /* Alert - GitHub风格 */
+  --alert-note-border: #0969da;
+  --alert-note-bg: rgba(9, 105, 218, 0.1);
+  --alert-note-text: #0969da;
+  --alert-tip-border: #1a7f37;
+  --alert-tip-bg: rgba(26, 127, 55, 0.1);
+  --alert-tip-text: #1a7f37;
+  --alert-important-border: #8250df;
+  --alert-important-bg: rgba(130, 80, 223, 0.1);
+  --alert-important-text: #8250df;
+  --alert-warning-border: #9a6700;
+  --alert-warning-bg: rgba(154, 103, 0, 0.1);
+  --alert-warning-text: #9a6700;
+  --alert-caution-border: #cf222e;
+  --alert-caution-bg: rgba(207, 34, 46, 0.1);
+  --alert-caution-text: #cf222e;
 }
 
 /* ============================================
-   暗色模式
+   主题: 天青 (tian-qing) - 浅色 - 默认亮色
+   与 :root 相同，确保 data-theme 机制下完整覆盖
+   ============================================ */
+[data-theme="tian-qing"] {
+  /* 主色调 */
+  --primary-50: #f0f4f8;
+  --primary-100: #d9e2ec;
+  --primary-200: #bcccdc;
+  --primary-300: #9fb3c8;
+  --primary-400: #829ab1;
+  --primary-500: #627d98;
+  --primary-600: #486581;
+  --primary-700: #334e68;
+  --primary-800: #243b53;
+  --primary-900: #102a43;
+
+  /* 强调色 */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-800: #1e40af;
+
+  /* 成功色 */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+
+  /* 警告色 */
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* 错误色 */
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* 编辑器颜色 */
+  --editor-bg: #ffffff;
+  --editor-surface: #f8fafc;
+  --editor-text: #1e293b;
+  --editor-text-secondary: #64748b;
+  --editor-text-muted: #94a3b8;
+  --editor-border: #e2e8f0;
+  --editor-border-focus: #3b82f6;
+  --editor-code-bg: #f1f5f9;
+  --editor-heading: #0f172a;
+  --editor-link: #3b82f6;
+  --editor-accent: #3b82f6;
+  --editor-quote-bg: rgba(59, 130, 246, 0.08);
+  --editor-selection: rgba(59, 130, 246, 0.15);
+
+  /* 侧边栏颜色 */
+  --sidebar-bg: #f8fafc;
+  --sidebar-surface: #ffffff;
+  --sidebar-text: #334155;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: #e2e8f0;
+  --sidebar-border: #e2e8f0;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #ffffff;
+  --toolbar-hover: #f1f5f9;
+  --toolbar-active: #e2e8f0;
+
+  /* 标签栏颜色 */
+  --tab-bg: #f8fafc;
+  --tab-active-bg: #ffffff;
+  --tab-inactive-bg: #f1f5f9;
+  --tab-hover-bg: #e2e8f0;
+  --tab-border: #e2e8f0;
+  --tab-active-indicator: #3b82f6;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #f8fafc;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #f8fafc;
+  --statusbar-text: #64748b;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs - 亮色使用默认hljs，无需定义 */
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #dbeafe;
+  --code-inline-text: #1e40af;
+  --code-block-bg: #f1f5f9;
+  --code-block-container-bg: transparent;
+  --code-block-text: inherit;
+
+  /* 滚动条 */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #888;
+
+  /* Alert */
+  --alert-note-border: #0969da;
+  --alert-note-bg: rgba(9, 105, 218, 0.1);
+  --alert-note-text: #0969da;
+  --alert-tip-border: #1a7f37;
+  --alert-tip-bg: rgba(26, 127, 55, 0.1);
+  --alert-tip-text: #1a7f37;
+  --alert-important-border: #8250df;
+  --alert-important-bg: rgba(130, 80, 223, 0.1);
+  --alert-important-text: #8250df;
+  --alert-warning-border: #9a6700;
+  --alert-warning-bg: rgba(154, 103, 0, 0.1);
+  --alert-warning-text: #9a6700;
+  --alert-caution-border: #cf222e;
+  --alert-caution-bg: rgba(207, 34, 46, 0.1);
+  --alert-caution-text: #cf222e;
+}
+
+/* ============================================
+   主题: 晨光 (chen-guang) - 浅色 - 纯白界面+编辑区
+   ============================================ */
+[data-theme="chen-guang"] {
+  /* 主色调 - 浅灰蓝色系 */
+  --primary-50: #f0f4f8;
+  --primary-100: #d9e2ec;
+  --primary-200: #bcccdc;
+  --primary-300: #9fb3c8;
+  --primary-400: #829ab1;
+  --primary-500: #627d98;
+  --primary-600: #486581;
+  --primary-700: #334e68;
+  --primary-800: #243b53;
+  --primary-900: #102a43;
+
+  /* 强调色 - 蓝色 */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-800: #1e40af;
+
+  /* 成功色 */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+
+  /* 警告色 */
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* 错误色 */
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* 编辑器颜色 - 纯白界面 */
+  --editor-bg: #ffffff;
+  --editor-surface: #ffffff;
+  --editor-text: #1e293b;
+  --editor-text-secondary: #64748b;
+  --editor-text-muted: #94a3b8;
+  --editor-border: #e5e7eb;
+  --editor-border-focus: #3b82f6;
+  --editor-code-bg: #f8fafc;
+  --editor-heading: #0f172a;
+  --editor-link: #3b82f6;
+  --editor-accent: #3b82f6;
+  --editor-quote-bg: rgba(59, 130, 246, 0.08);
+  --editor-selection: rgba(59, 130, 246, 0.15);
+
+  /* 侧边栏颜色 - 纯白 */
+  --sidebar-bg: #ffffff;
+  --sidebar-surface: #ffffff;
+  --sidebar-text: #334155;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: #f9fafb;
+  --sidebar-active: #e5e7eb;
+  --sidebar-border: #e5e7eb;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #ffffff;
+  --toolbar-hover: #f9fafb;
+  --toolbar-active: #e5e7eb;
+
+  /* 标签栏颜色 */
+  --tab-bg: #ffffff;
+  --tab-active-bg: #ffffff;
+  --tab-inactive-bg: #f9fafb;
+  --tab-hover-bg: #e5e7eb;
+  --tab-border: #e5e7eb;
+  --tab-active-indicator: #3b82f6;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #ffffff;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #ffffff;
+  --statusbar-text: #64748b;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs - 亮色使用默认hljs，无需定义 */
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #eff6ff;
+  --code-inline-text: #1d4ed8;
+  --code-block-bg: #f8fafc;
+  --code-block-container-bg: transparent;
+  --code-block-text: inherit;
+
+  /* 滚动条 */
+  --scrollbar-track: #f8f8f8;
+  --scrollbar-thumb: #c0c0c0;
+
+  /* Alert - 同天青 */
+  --alert-note-border: #0969da;
+  --alert-note-bg: rgba(9, 105, 218, 0.1);
+  --alert-note-text: #0969da;
+  --alert-tip-border: #1a7f37;
+  --alert-tip-bg: rgba(26, 127, 55, 0.1);
+  --alert-tip-text: #1a7f37;
+  --alert-important-border: #8250df;
+  --alert-important-bg: rgba(130, 80, 223, 0.1);
+  --alert-important-text: #8250df;
+  --alert-warning-border: #9a6700;
+  --alert-warning-bg: rgba(154, 103, 0, 0.1);
+  --alert-warning-text: #9a6700;
+  --alert-caution-border: #cf222e;
+  --alert-caution-bg: rgba(207, 34, 46, 0.1);
+  --alert-caution-text: #cf222e;
+}
+
+/* ============================================
+   主题: 琥珀 (hu-po) - 浅色 - Anthropic暖象牙+陶土
+   ============================================ */
+[data-theme="hu-po"] {
+  /* 主色调 - 暖灰色系 */
+  --primary-50: #FAF9F5;
+  --primary-100: #F0EDE4;
+  --primary-200: #DDD9CC;
+  --primary-300: #C4BFAD;
+  --primary-400: #A9A28E;
+  --primary-500: #8E866F;
+  --primary-600: #7A725E;
+  --primary-700: #665D4D;
+  --primary-800: #524A3D;
+  --primary-900: #3E372F;
+
+  /* 强调色 - 陶土色 #D97757 */
+  --accent-50: #FFF5F0;
+  --accent-100: #FEE8DD;
+  --accent-200: #FDCFB5;
+  --accent-300: #FBAF82;
+  --accent-400: #F8894F;
+  --accent-500: #D97757;
+  --accent-600: #C4623E;
+  --accent-700: #A34D2E;
+  --accent-800: #833C23;
+
+  /* 成功色 */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+
+  /* 警告色 */
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* 错误色 */
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* 编辑器颜色 - 暖象牙 */
+  --editor-bg: #FAF9F5;
+  --editor-surface: #F5F4EF;
+  --editor-text: #141413;
+  --editor-text-secondary: #6B6860;
+  --editor-text-muted: #9B978F;
+  --editor-border: #E2DFD3;
+  --editor-border-focus: #D97757;
+  --editor-code-bg: #EFEEE9;
+  --editor-heading: #1A1918;
+  --editor-link: #D97757;
+  --editor-accent: #D97757;
+  --editor-quote-bg: rgba(217, 119, 87, 0.08);
+  --editor-selection: rgba(217, 119, 87, 0.15);
+
+  /* 侧边栏颜色 */
+  --sidebar-bg: #F5F4EF;
+  --sidebar-surface: #FFFFFF;
+  --sidebar-text: #141413;
+  --sidebar-text-muted: #9B978F;
+  --sidebar-hover: #EFEEE9;
+  --sidebar-active: #E2DFD3;
+  --sidebar-border: #E2DFD3;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #FAF9F5;
+  --toolbar-hover: #EFEEE9;
+  --toolbar-active: #E2DFD3;
+
+  /* 标签栏颜色 */
+  --tab-bg: #F5F4EF;
+  --tab-active-bg: #FAF9F5;
+  --tab-inactive-bg: #EFEEE9;
+  --tab-hover-bg: #E2DFD3;
+  --tab-border: #E2DFD3;
+  --tab-active-indicator: #D97757;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #FAF9F5;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #FAF9F5;
+  --statusbar-text: #6B6860;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs - 亮色使用默认hljs，无需定义 */
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #FDF0EB;
+  --code-inline-text: #C2410C;
+  --code-block-bg: #EFEEE9;
+  --code-block-container-bg: transparent;
+  --code-block-text: inherit;
+
+  /* 滚动条 */
+  --scrollbar-track: #EFEEE9;
+  --scrollbar-thumb: #9B978F;
+
+  /* Alert - 陶土色替代 */
+  --alert-note-border: #2B6CB0;
+  --alert-note-bg: rgba(43, 108, 176, 0.1);
+  --alert-note-text: #2B6CB0;
+  --alert-tip-border: #276749;
+  --alert-tip-bg: rgba(39, 103, 73, 0.1);
+  --alert-tip-text: #276749;
+  --alert-important-border: #6B46C1;
+  --alert-important-bg: rgba(107, 70, 193, 0.1);
+  --alert-important-text: #6B46C1;
+  --alert-warning-border: #975A16;
+  --alert-warning-bg: rgba(151, 90, 22, 0.1);
+  --alert-warning-text: #975A16;
+  --alert-caution-border: #C53030;
+  --alert-caution-bg: rgba(197, 48, 48, 0.1);
+  --alert-caution-text: #C53030;
+}
+
+/* ============================================
+   主题: 墨夜 (mo-ye) - 深色 - 默认暗色
+   
+   .dark 选择器保留给 TailwindCSS dark: 前缀使用
+   [data-theme="mo-ye"] 完整定义所有变量
    ============================================ */
 .dark {
   /* 编辑器颜色 - 暗色模式 */
@@ -156,7 +593,513 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+  /* hljs */
+  --hljs-comment: #64748b;
+  --hljs-keyword: #f472b6;
+  --hljs-string: #a5d6ff;
+  --hljs-attr: #a5d6ff;
+  --hljs-number: #dab55f;
+  --hljs-title: #60a5fa;
+  --hljs-function: #93c5fd;
+  --hljs-params: #94a3b8;
+  --hljs-variable: #fbbf24;
+  --hljs-class: #86efac;
+  --hljs-meta: #e2e8f0;
+  --hljs-deletion: #fca5a5;
+  --hljs-regexp: #67e8f9;
+  --hljs-selector-class: #fda4af;
+  --hljs-selector-id: #c4b5fd;
+  --hljs-link: #93c5fd;
+  --hljs-addition: #f472b6;
+  --hljs-built_in: #dab55f;
+  --hljs-literal: #dab55f;
+  --hljs-type: #dab55f;
+  --hljs-symbol: #86efac;
+  --hljs-bullet: #86efac;
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #1e3a5f;
+  --code-inline-text: #93c5fd;
+  --code-block-bg: #1e293b;
+  --code-block-container-bg: #0f172a;
+  --code-block-text: #e2e8f0;
+
+  /* 滚动条 */
+  --scrollbar-track: #2d2d2d;
+  --scrollbar-thumb: #666;
+
+  /* Alert - GitHub Dark风格 */
+  --alert-note-border: #4493f8;
+  --alert-note-bg: rgba(68, 147, 248, 0.1);
+  --alert-note-text: #4493f8;
+  --alert-tip-border: #3fb950;
+  --alert-tip-bg: rgba(63, 185, 80, 0.1);
+  --alert-tip-text: #3fb950;
+  --alert-important-border: #a371f7;
+  --alert-important-bg: rgba(163, 113, 247, 0.1);
+  --alert-important-text: #a371f7;
+  --alert-warning-border: #d29922;
+  --alert-warning-bg: rgba(210, 153, 34, 0.1);
+  --alert-warning-text: #d29922;
+  --alert-caution-border: #f85149;
+  --alert-caution-bg: rgba(248, 81, 73, 0.1);
+  --alert-caution-text: #f85149;
 }
+
+[data-theme="mo-ye"] {
+  /* 主色调 */
+  --primary-50: #0f172a;
+  --primary-100: #1e293b;
+  --primary-200: #334155;
+  --primary-300: #475569;
+  --primary-400: #64748b;
+  --primary-500: #94a3b8;
+  --primary-600: #cbd5e1;
+  --primary-700: #e2e8f0;
+  --primary-800: #f1f5f9;
+  --primary-900: #f8fafc;
+
+  /* 强调色 - 蓝色 */
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-800: #1e40af;
+
+  /* 成功色 */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+
+  /* 警告色 */
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+
+  /* 错误色 */
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* 编辑器颜色 - 暗色模式 */
+  --editor-bg: #0f172a;
+  --editor-surface: #1e293b;
+  --editor-text: #e2e8f0;
+  --editor-text-secondary: #94a3b8;
+  --editor-text-muted: #64748b;
+  --editor-border: #334155;
+  --editor-border-focus: #60a5fa;
+  --editor-code-bg: #1e293b;
+  --editor-heading: #f8fafc;
+  --editor-link: #60a5fa;
+  --editor-accent: #60a5fa;
+  --editor-quote-bg: rgba(96, 165, 250, 0.1);
+  --editor-selection: rgba(96, 165, 250, 0.2);
+
+  /* 侧边栏颜色 - 暗色模式 */
+  --sidebar-bg: #1e293b;
+  --sidebar-surface: #334155;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #64748b;
+  --sidebar-hover: #334155;
+  --sidebar-active: #475569;
+  --sidebar-border: #334155;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #1e293b;
+  --toolbar-hover: #334155;
+  --toolbar-active: #475569;
+
+  /* 标签栏颜色 */
+  --tab-bg: #1e293b;
+  --tab-active-bg: #0f172a;
+  --tab-inactive-bg: #1a2332;
+  --tab-hover-bg: #243044;
+  --tab-border: #334155;
+  --tab-active-indicator: #60a5fa;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #1e293b;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #1e293b;
+  --statusbar-text: #94a3b8;
+
+  /* 阴影 - 暗色模式更深 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs */
+  --hljs-comment: #64748b;
+  --hljs-keyword: #f472b6;
+  --hljs-string: #a5d6ff;
+  --hljs-attr: #a5d6ff;
+  --hljs-number: #dab55f;
+  --hljs-title: #60a5fa;
+  --hljs-function: #93c5fd;
+  --hljs-params: #94a3b8;
+  --hljs-variable: #fbbf24;
+  --hljs-class: #86efac;
+  --hljs-meta: #e2e8f0;
+  --hljs-deletion: #fca5a5;
+  --hljs-regexp: #67e8f9;
+  --hljs-selector-class: #fda4af;
+  --hljs-selector-id: #c4b5fd;
+  --hljs-link: #93c5fd;
+  --hljs-addition: #f472b6;
+  --hljs-built_in: #dab55f;
+  --hljs-literal: #dab55f;
+  --hljs-type: #dab55f;
+  --hljs-symbol: #86efac;
+  --hljs-bullet: #86efac;
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #1e3a5f;
+  --code-inline-text: #93c5fd;
+  --code-block-bg: #1e293b;
+  --code-block-container-bg: #0f172a;
+  --code-block-text: #e2e8f0;
+
+  /* 滚动条 */
+  --scrollbar-track: #2d2d2d;
+  --scrollbar-thumb: #666;
+
+  /* Alert - GitHub Dark风格 */
+  --alert-note-border: #4493f8;
+  --alert-note-bg: rgba(68, 147, 248, 0.1);
+  --alert-note-text: #4493f8;
+  --alert-tip-border: #3fb950;
+  --alert-tip-bg: rgba(63, 185, 80, 0.1);
+  --alert-tip-text: #3fb950;
+  --alert-important-border: #a371f7;
+  --alert-important-bg: rgba(163, 113, 247, 0.1);
+  --alert-important-text: #a371f7;
+  --alert-warning-border: #d29922;
+  --alert-warning-bg: rgba(210, 153, 34, 0.1);
+  --alert-warning-text: #d29922;
+  --alert-caution-border: #f85149;
+  --alert-caution-bg: rgba(248, 81, 73, 0.1);
+  --alert-caution-text: #f85149;
+}
+
+/* ============================================
+   主题: 星云 (xing-yun) - 深色 - Atom One Dark
+   ============================================ */
+[data-theme="xing-yun"] {
+  /* 主色调 - 深蓝灰系 */
+  --primary-50: #282c34;
+  --primary-100: #2c313a;
+  --primary-200: #3e4451;
+  --primary-300: #4a4f57;
+  --primary-400: #5c6370;
+  --primary-500: #7f848e;
+  --primary-600: #abb2bf;
+  --primary-700: #c8ccd4;
+  --primary-800: #d7d9de;
+  --primary-900: #e5e7eb;
+
+  /* 强调色 - Atom One Dark蓝 #61afef */
+  --accent-50: #EBF5FF;
+  --accent-100: #D6EBFF;
+  --accent-200: #ADD6FF;
+  --accent-300: #85C2FF;
+  --accent-400: #61afef;
+  --accent-500: #4E97D6;
+  --accent-600: #3B7FBE;
+  --accent-700: #2D6699;
+  --accent-800: #1F4D75;
+
+  /* 成功色 */
+  --success-500: #98c379;
+  --success-600: #7ec669;
+
+  /* 警告色 */
+  --warning-500: #e5c07b;
+  --warning-600: #d4a853;
+
+  /* 错误色 */
+  --error-500: #e06c75;
+  --error-600: #c53b4d;
+
+  /* 编辑器颜色 */
+  --editor-bg: #282c34;
+  --editor-surface: #2c313a;
+  --editor-text: #abb2bf;
+  --editor-text-secondary: #7f848e;
+  --editor-text-muted: #5c6370;
+  --editor-border: #3e4451;
+  --editor-border-focus: #61afef;
+  --editor-code-bg: #2c313a;
+  --editor-heading: #e5c07b;
+  --editor-link: #61afef;
+  --editor-accent: #61afef;
+  --editor-quote-bg: rgba(97, 175, 239, 0.08);
+  --editor-selection: rgba(97, 175, 239, 0.2);
+
+  /* 侧边栏颜色 */
+  --sidebar-bg: #21252b;
+  --sidebar-surface: #2c313a;
+  --sidebar-text: #abb2bf;
+  --sidebar-text-muted: #5c6370;
+  --sidebar-hover: #2c313a;
+  --sidebar-active: #3e4451;
+  --sidebar-border: #3e4451;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #21252b;
+  --toolbar-hover: #2c313a;
+  --toolbar-active: #3e4451;
+
+  /* 标签栏颜色 */
+  --tab-bg: #21252b;
+  --tab-active-bg: #282c34;
+  --tab-inactive-bg: #21252b;
+  --tab-hover-bg: #2c313a;
+  --tab-border: #3e4451;
+  --tab-active-indicator: #61afef;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #21252b;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #21252b;
+  --statusbar-text: #7f848e;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs - Atom One Dark */
+  --hljs-comment: #5c6370;
+  --hljs-keyword: #c678dd;
+  --hljs-string: #98c379;
+  --hljs-attr: #d19a66;
+  --hljs-number: #d19a66;
+  --hljs-title: #61afef;
+  --hljs-function: #61afef;
+  --hljs-params: #abb2bf;
+  --hljs-variable: #e06c75;
+  --hljs-class: #e5c07b;
+  --hljs-meta: #abb2bf;
+  --hljs-deletion: #e06c75;
+  --hljs-regexp: #98c379;
+  --hljs-selector-class: #d19a66;
+  --hljs-selector-id: #61afef;
+  --hljs-link: #61afef;
+  --hljs-addition: #98c379;
+  --hljs-built_in: #e5c07b;
+  --hljs-literal: #56b6c2;
+  --hljs-type: #56b6c2;
+  --hljs-symbol: #56b6c2;
+  --hljs-bullet: #61afef;
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #3e4451;
+  --code-inline-text: #98c379;
+  --code-block-bg: #2c313a;
+  --code-block-container-bg: #21252b;
+  --code-block-text: #abb2bf;
+
+  /* 滚动条 */
+  --scrollbar-track: #21252b;
+  --scrollbar-thumb: #4a4f57;
+
+  /* Alert - Atom One Dark风格 */
+  --alert-note-border: #61afef;
+  --alert-note-bg: rgba(97, 175, 239, 0.1);
+  --alert-note-text: #61afef;
+  --alert-tip-border: #98c379;
+  --alert-tip-bg: rgba(152, 195, 121, 0.1);
+  --alert-tip-text: #98c379;
+  --alert-important-border: #c678dd;
+  --alert-important-bg: rgba(198, 120, 221, 0.1);
+  --alert-important-text: #c678dd;
+  --alert-warning-border: #e5c07b;
+  --alert-warning-bg: rgba(229, 192, 123, 0.1);
+  --alert-warning-text: #e5c07b;
+  --alert-caution-border: #e06c75;
+  --alert-caution-bg: rgba(224, 108, 117, 0.1);
+  --alert-caution-text: #e06c75;
+}
+
+/* ============================================
+   主题: 极光 (ji-guang) - 深色 - Nord
+   ============================================ */
+[data-theme="ji-guang"] {
+  /* 主色调 - Nord Polar Night系 */
+  --primary-50: #2e3440;
+  --primary-100: #3b4252;
+  --primary-200: #434c5e;
+  --primary-300: #4c566a;
+  --primary-400: #616e88;
+  --primary-500: #81a1c1;
+  --primary-600: #d8dee9;
+  --primary-700: #e5e7eb;
+  --primary-800: #eceff4;
+  --primary-900: #f8fafc;
+
+  /* 强调色 - Nord Frost冰蓝 #88c0d0 */
+  --accent-50: #E8F4F6;
+  --accent-100: #D1E9ED;
+  --accent-200: #A3D3DB;
+  --accent-300: #88c0d0;
+  --accent-400: #6DADB8;
+  --accent-500: #88c0d0;
+  --accent-600: #6FA8B8;
+  --accent-700: #5690A0;
+  --accent-800: #3D7888;
+
+  /* 成功色 */
+  --success-500: #a3be8c;
+  --success-600: #8fbcbb;
+
+  /* 警告色 */
+  --warning-500: #ebcb8b;
+  --warning-600: #d4a853;
+
+  /* 错误色 */
+  --error-500: #bf616a;
+  --error-600: #c53b4d;
+
+  /* 编辑器颜色 */
+  --editor-bg: #2e3440;
+  --editor-surface: #3b4252;
+  --editor-text: #d8dee9;
+  --editor-text-secondary: #81a1c1;
+  --editor-text-muted: #616e88;
+  --editor-border: #434c5e;
+  --editor-border-focus: #88c0d0;
+  --editor-code-bg: #3b4252;
+  --editor-heading: #8fbcbb;
+  --editor-link: #88c0d0;
+  --editor-accent: #88c0d0;
+  --editor-quote-bg: rgba(136, 192, 208, 0.08);
+  --editor-selection: rgba(136, 192, 208, 0.2);
+
+  /* 侧边栏颜色 */
+  --sidebar-bg: #2e3440;
+  --sidebar-surface: #3b4252;
+  --sidebar-text: #d8dee9;
+  --sidebar-text-muted: #616e88;
+  --sidebar-hover: #3b4252;
+  --sidebar-active: #434c5e;
+  --sidebar-border: #434c5e;
+
+  /* 工具栏颜色 */
+  --toolbar-bg: #3b4252;
+  --toolbar-hover: #434c5e;
+  --toolbar-active: #4c566a;
+
+  /* 标签栏颜色 */
+  --tab-bg: #2e3440;
+  --tab-active-bg: #2e3440;
+  --tab-inactive-bg: #2e3440;
+  --tab-hover-bg: #3b4252;
+  --tab-border: #434c5e;
+  --tab-active-indicator: #88c0d0;
+
+  /* 标题栏颜色 */
+  --titlebar-bg: #2e3440;
+
+  /* 状态栏颜色 */
+  --statusbar-bg: #3b4252;
+  --statusbar-text: #81a1c1;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* hljs - Nord */
+  --hljs-comment: #616e88;
+  --hljs-keyword: #81a1c1;
+  --hljs-string: #a3be8c;
+  --hljs-attr: #8fbcbb;
+  --hljs-number: #b48ead;
+  --hljs-title: #88c0d0;
+  --hljs-function: #88c0d0;
+  --hljs-params: #d8dee9;
+  --hljs-variable: #d08770;
+  --hljs-class: #8fbcbb;
+  --hljs-meta: #d8dee9;
+  --hljs-deletion: #bf616a;
+  --hljs-regexp: #ebcb8b;
+  --hljs-selector-class: #8fbcbb;
+  --hljs-selector-id: #81a1c1;
+  --hljs-link: #88c0d0;
+  --hljs-addition: #a3be8c;
+  --hljs-built_in: #8fbcbb;
+  --hljs-literal: #81a1c1;
+  --hljs-type: #8fbcbb;
+  --hljs-symbol: #5e81ac;
+  --hljs-bullet: #81a1c1;
+
+  /* 行内代码/代码块 */
+  --code-inline-bg: #434c5e;
+  --code-inline-text: #a3be8c;
+  --code-block-bg: #3b4252;
+  --code-block-container-bg: #242933;
+  --code-block-text: #d8dee9;
+
+  /* 滚动条 */
+  --scrollbar-track: #2e3440;
+  --scrollbar-thumb: #4c566a;
+
+  /* Alert - Nord风格 */
+  --alert-note-border: #81a1c1;
+  --alert-note-bg: rgba(129, 161, 193, 0.1);
+  --alert-note-text: #81a1c1;
+  --alert-tip-border: #a3be8c;
+  --alert-tip-bg: rgba(163, 190, 140, 0.1);
+  --alert-tip-text: #a3be8c;
+  --alert-important-border: #b48ead;
+  --alert-important-bg: rgba(180, 142, 173, 0.1);
+  --alert-important-text: #b48ead;
+  --alert-warning-border: #ebcb8b;
+  --alert-warning-bg: rgba(235, 203, 139, 0.1);
+  --alert-warning-text: #ebcb8b;
+  --alert-caution-border: #bf616a;
+  --alert-caution-bg: rgba(191, 97, 106, 0.1);
+  --alert-caution-text: #bf616a;
+}
+
 
 /* ============================================
    基础样式
@@ -192,13 +1135,12 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--editor-text-muted);
+  background: var(--scrollbar-thumb);
   border-radius: 100px;
-  opacity: 0.5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -208,7 +1150,7 @@ body {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--editor-text-muted) transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* ============================================

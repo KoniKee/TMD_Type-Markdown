@@ -103,15 +103,6 @@ const StatusBar: React.FC = () => {
   const saveStatus = useEditorStore((state) => state.saveStatus);
   const wordCount = useEditorStore((state) => state.wordCount);
   const markdownLength = useEditorStore((state) => state.markdownLength);
-  const [isDark, setIsDark] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkDark = () => setIsDark(document.documentElement.classList.contains('dark'));
-    checkDark();
-    const observer = new MutationObserver(checkDark);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
 
   const getStatusText = () => {
     switch (saveStatus) {
@@ -150,17 +141,17 @@ const StatusBar: React.FC = () => {
           <span 
             className="absolute bottom-full right-0 mb-2 px-3 py-2 text-xs rounded-lg shadow-2xl whitespace-nowrap pointer-events-none z-[100] border font-medium hidden group-hover:block"
             style={{ 
-              backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgb(255, 255, 255)',
-              color: isDark ? 'rgb(241, 245, 249)' : 'rgb(15, 23, 42)',
-              borderColor: isDark ? 'rgb(71, 85, 105)' : 'rgb(148, 163, 184)'
+              backgroundColor: 'var(--editor-surface)',
+              color: 'var(--editor-text)',
+              borderColor: 'var(--editor-border)'
             }}
           >
             <div className="flex justify-between gap-4">
-              <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(71, 85, 105)' }}>字数</span>
+              <span style={{ color: 'var(--editor-text-secondary)' }}>字数</span>
               <span>{wordCount}</span>
             </div>
             <div className="flex justify-between gap-4 mt-1">
-              <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(71, 85, 105)' }}>Markdown文本</span>
+              <span style={{ color: 'var(--editor-text-secondary)' }}>Markdown文本</span>
               <span>{markdownLength}</span>
             </div>
           </span>

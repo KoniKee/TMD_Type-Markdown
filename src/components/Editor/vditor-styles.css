@@ -1,4 +1,9 @@
-/* Vditor编辑器容器 */
+/* ============================================
+   Vditor 编辑器样式覆盖
+   所有颜色使用 CSS 变量，跟随主题自动适配
+   ============================================ */
+
+/* 编辑器容器 */
 .vditor-container {
   height: 100%;
   width: 100%;
@@ -11,26 +16,22 @@
   width: 100%;
 }
 
-/* Vditor编辑器主体 */
 .vditor.vditor {
   border: none !important;
   height: 100% !important;
-  background-color: #ffffff !important;
+  background-color: var(--editor-bg) !important;
 }
 
-/* 工具栏 */
 .vditor .vditor-toolbar {
-  border-bottom: 1px solid var(--editor-border, #e0e0e0) !important;
-  background-color: #ffffff !important;
+  background-color: var(--toolbar-bg) !important;
+  border-bottom: 1px solid var(--editor-border) !important;
 }
 
-/* 内容区域 - 亮色主题强制白色 */
 .vditor .vditor-content {
   overflow: hidden !important;
-  background-color: #ffffff !important;
+  background-color: var(--editor-bg) !important;
 }
 
-/* 编辑区域滚动 - IR模式让 vditor-reset 有滚动 */
 .vditor .vditor-content .vditor-ir {
   overflow: hidden !important;
 }
@@ -39,24 +40,58 @@
   overflow: auto !important;
 }
 
-/* SV模式 - vditor-sv 本身就是textarea，需要保持滚动 */
 .vditor .vditor-content .vditor-sv {
   overflow: auto !important;
 }
 
-/* 亮色主题 - 强制白色背景 */
-.vditor:not(.dark),
-.vditor:not(.dark) .vditor-ir,
-.vditor:not(.dark) .vditor-sv,
-.vditor:not(.dark) .vditor-content,
-.vditor:not(.dark) .vditor-ir pre.vditor-reset,
-.vditor:not(.dark) .vditor-sv pre.vditor-reset,
-.vditor:not(.dark) .vditor-panel {
-  background-color: #ffffff !important;
+/* 统一编辑区域背景 */
+.vditor,
+.vditor .vditor-ir,
+.vditor .vditor-sv,
+.vditor .vditor-content,
+.vditor .vditor-ir pre.vditor-reset,
+.vditor .vditor-sv pre.vditor-reset,
+.vditor-panel {
+  background-color: var(--editor-bg) !important;
 }
 
-/* 修复有序列表序号 - 需要覆盖TailwindCSS preflight的重置 */
-/* 第一层：数字 1. 2. 3. */
+/* 右侧大纲 */
+.vditor .vditor-outline {
+  background-color: var(--editor-bg) !important;
+  border-left: 1px solid var(--editor-border) !important;
+}
+
+.vditor .vditor-outline ul {
+  color: var(--editor-text) !important;
+}
+
+/* 编辑区文字颜色 */
+.vditor .vditor-ir pre.vditor-reset,
+.vditor .vditor-sv pre.vditor-reset,
+.vditor .vditor-content .vditor-reset {
+  color: var(--editor-text) !important;
+}
+
+/* 标题颜色 */
+.vditor .vditor-ir pre.vditor-reset h1,
+.vditor .vditor-ir pre.vditor-reset h2,
+.vditor .vditor-ir pre.vditor-reset h3,
+.vditor .vditor-ir pre.vditor-reset h4,
+.vditor .vditor-ir pre.vditor-reset h5,
+.vditor .vditor-ir pre.vditor-reset h6 {
+  color: var(--editor-heading) !important;
+  border-bottom-color: var(--editor-border) !important;
+}
+
+/* 链接颜色 */
+.vditor .vditor-ir pre.vditor-reset a {
+  color: var(--editor-link) !important;
+}
+
+/* ============================================
+   列表样式修复 - 覆盖 TailwindCSS preflight 重置
+   ============================================ */
+
 .vditor .vditor-content .vditor-reset ol,
 .vditor .vditor-ir pre.vditor-reset ol {
   list-style: decimal !important;
@@ -65,16 +100,13 @@
   margin: 0 0 16px 0 !important;
 }
 
-/* 第二层：小写字母 a. b. c. */
 .vditor .vditor-content .vditor-reset ol ol,
 .vditor .vditor-ir pre.vditor-reset ol ol {
-  list-style: lower-alpha !important;
-  list-style-type: lower-alpha !important;
+  list-style: upper-alpha !important;
+  list-style-type: upper-alpha !important;
   padding-left: 2em !important;
-  margin: 0 0 16px 0 !important;
 }
 
-/* 第三层：小写罗马数字 i. ii. iii. */
 .vditor .vditor-content .vditor-reset ol ol ol,
 .vditor .vditor-ir pre.vditor-reset ol ol ol {
   list-style: lower-roman !important;
@@ -84,11 +116,9 @@
 }
 
 .vditor .vditor-content .vditor-reset ul,
-.vditor .vditor-content .vditor-reset ul ul,
-.vditor .vditor-content .vditor-reset ul ul ul,
-.vditor .vditor-ir pre.vditor-reset ul,
 .vditor .vditor-ir pre.vditor-reset ul ul,
-.vditor .vditor-ir pre.vditor-reset ul ul ul {
+.vditor .vditor-ir pre.vditor-reset ul ul ul,
+.vditor .vditor-ir pre.vditor-reset ul {
   list-style: disc !important;
   list-style-type: disc !important;
   padding-left: 2em !important;
@@ -111,108 +141,53 @@
   list-style-type: square !important;
 }
 
-/* 引用块样式 - 浅色模式 */
+/* ============================================
+   引用块样式
+   ============================================ */
+
 .vditor .vditor-ir pre.vditor-reset blockquote,
 .vditor .vditor-sv pre.vditor-reset blockquote,
 .vditor .vditor-content .vditor-reset blockquote {
-  border-left: 4px solid var(--accent-500, #3b82f6) !important;
-  background-color: var(--editor-quote-bg, rgba(59, 130, 246, 0.08)) !important;
-  color: var(--editor-text-secondary, #64748b) !important;
+  border-left: 4px solid var(--accent-500) !important;
+  background-color: var(--editor-quote-bg) !important;
+  color: var(--editor-text-secondary) !important;
   padding: 8px 16px !important;
   margin: 16px 0 !important;
   border-radius: 0 4px 4px 0 !important;
 }
 
-/* 暗色主题 */
-.dark .vditor .vditor-toolbar {
-  background-color: var(--toolbar-bg, #1e293b) !important;
-  border-bottom-color: var(--editor-border, #334155) !important;
+/* ============================================
+   表格样式
+   ============================================ */
+
+.vditor .vditor-ir pre.vditor-reset table th,
+.vditor .vditor-ir pre.vditor-reset table td,
+.vditor .vditor-content .vditor-reset table th,
+.vditor .vditor-content .vditor-reset table td {
+  border-color: var(--editor-border) !important;
+  background-color: var(--editor-bg) !important;
 }
 
-.dark .vditor .vditor-content {
-  background-color: var(--editor-bg, #0f172a) !important;
+.vditor .vditor-ir pre.vditor-reset table th,
+.vditor .vditor-content .vditor-reset table th {
+  background-color: var(--editor-code-bg) !important;
 }
 
-/* 暗色主题 - 强制统一背景色 */
-.dark .vditor,
-.dark .vditor .vditor-ir,
-.dark .vditor .vditor-sv,
-.dark .vditor .vditor-content,
-.dark .vditor .vditor-ir pre.vditor-reset,
-.dark .vditor .vditor-sv pre.vditor-reset,
-.dark .vditor-panel {
-  background-color: var(--editor-bg, #0f172a) !important;
+/* 分割线 */
+.vditor .vditor-ir pre.vditor-reset hr {
+  border-color: var(--editor-border) !important;
 }
 
-/* 暗色主题 - 右侧大纲 */
-.dark .vditor .vditor-outline {
-  background-color: var(--editor-bg, #0f172a) !important;
-  border-left-color: var(--editor-border, #334155) !important;
-}
+/* ============================================
+   编辑区域底部缓冲 + 内容自适应宽度
+   ============================================ */
 
-.dark .vditor .vditor-outline ul {
-  color: var(--editor-text, #e2e8f0) !important;
-}
-
-/* 暗色主题文字颜色 */
-.dark .vditor .vditor-ir pre.vditor-reset,
-.dark .vditor .vditor-sv pre.vditor-reset,
-.dark .vditor .vditor-content .vditor-reset {
-  color: var(--editor-text, #e2e8f0) !important;
-}
-
-/* 暗色主题标题 */
-.dark .vditor .vditor-ir pre.vditor-reset h1,
-.dark .vditor .vditor-ir pre.vditor-reset h2,
-.dark .vditor .vditor-ir pre.vditor-reset h3,
-.dark .vditor .vditor-ir pre.vditor-reset h4,
-.dark .vditor .vditor-ir pre.vditor-reset h5,
-.dark .vditor .vditor-ir pre.vditor-reset h6 {
-  color: var(--editor-heading, #f8fafc) !important;
-  border-bottom-color: var(--editor-border, #334155) !important;
-}
-
-/* 暗色主题链接 */
-.dark .vditor .vditor-ir pre.vditor-reset a {
-  color: var(--editor-link, #60a5fa) !important;
-}
-
-/* 暗色主题引用 */
-.dark .vditor .vditor-ir pre.vditor-reset blockquote,
-.dark .vditor .vditor-sv pre.vditor-reset blockquote,
-.dark .vditor .vditor-content .vditor-reset blockquote {
-  border-left-color: var(--accent-400, #60a5fa) !important;
-  color: var(--editor-text-secondary, #94a3b8) !important;
-  background-color: var(--editor-quote-bg, rgba(96, 165, 250, 0.1)) !important;
-}
-
-/* 暗色主题表格 */
-.dark .vditor .vditor-ir pre.vditor-reset table th,
-.dark .vditor .vditor-ir pre.vditor-reset table td,
-.dark .vditor .vditor-content .vditor-reset table th,
-.dark .vditor .vditor-content .vditor-reset table td {
-  border-color: var(--editor-border, #334155) !important;
-  background-color: var(--editor-bg, #0f172a) !important;
-}
-
-.dark .vditor .vditor-ir pre.vditor-reset table th,
-.dark .vditor .vditor-content .vditor-reset table th {
-  background-color: var(--editor-code-bg, #1e293b) !important;
-}
-
-/* 暗色主题分割线 */
-.dark .vditor .vditor-ir pre.vditor-reset hr {
-  border-color: var(--editor-border, #334155) !important;
-}
-
-/* 编辑区域底部缓冲 - 约50%高度，类似 Typora */
 .vditor .vditor-ir pre.vditor-reset,
 .vditor .vditor-sv {
   padding-bottom: 50vh !important;
   min-height: 100% !important;
 }
 
-/* 编辑区域内容自适应宽度 */
 .vditor .vditor-ir pre.vditor-reset {
   max-width: 100%;
   margin: 0 auto;
@@ -221,40 +196,36 @@
   box-sizing: border-box !important;
 }
 
-/* 滚动区域配置 - 让光标不在最底部 */
 .vditor .vditor-content {
   scroll-padding-bottom: 40vh !important;
 }
 
-/* 滚动条样式 */
+/* ============================================
+   滚动条样式 - 使用CSS变量
+   ============================================ */
+
 .vditor .vditor-content::-webkit-scrollbar {
   width: 12px !important;
 }
 
 .vditor .vditor-content::-webkit-scrollbar-track {
-  background: #f1f1f1 !important;
+  background: var(--scrollbar-track) !important;
 }
 
 .vditor .vditor-content::-webkit-scrollbar-thumb {
-  background: #888 !important;
+  background: var(--scrollbar-thumb) !important;
   border-radius: 6px !important;
-  border: 3px solid #f1f1f1 !important;
+  border: 3px solid var(--scrollbar-track) !important;
 }
 
 .vditor .vditor-content::-webkit-scrollbar-thumb:hover {
-  background: #555 !important;
+  background: var(--editor-text-secondary) !important;
 }
 
-.dark .vditor .vditor-content::-webkit-scrollbar-track {
-  background: #2d2d2d !important;
-}
+/* ============================================
+   表格自适应宽度
+   ============================================ */
 
-.dark .vditor .vditor-content::-webkit-scrollbar-thumb {
-  background: #666 !important;
-  border-color: #2d2d2d !important;
-}
-
-/* 表格自适应宽度 - 智能列宽分配 */
 .vditor .vditor-ir pre.vditor-reset table,
 .vditor .vditor-sv pre.vditor-reset table,
 .vditor .vditor-content .vditor-reset table {
@@ -278,12 +249,15 @@
   white-space: normal !important;
 }
 
-/* TOC 目录样式修复 */
+/* ============================================
+   TOC 目录样式
+   ============================================ */
+
 .vditor .vditor-ir pre.vditor-reset .vditor-toc,
 .vditor .vditor-content .vditor-reset .vditor-toc {
   padding: 8px 16px !important;
   margin: 16px 0 !important;
-  background-color: var(--editor-code-bg, #f5f5f5) !important;
+  background-color: var(--editor-code-bg) !important;
   border-radius: 4px !important;
 }
 
@@ -302,7 +276,7 @@
 
 .vditor .vditor-ir pre.vditor-reset .vditor-toc a,
 .vditor .vditor-content .vditor-reset .vditor-toc a {
-  color: var(--editor-link, #3b82f6) !important;
+  color: var(--editor-link) !important;
   text-decoration: none !important;
 }
 
@@ -310,7 +284,10 @@
   text-decoration: underline !important;
 }
 
-/* Mermaid 图表样式 */
+/* ============================================
+   Mermaid & PlantUML
+   ============================================ */
+
 .vditor .vditor-ir pre.vditor-reset .mermaid,
 .vditor .vditor-content .vditor-reset .mermaid {
   background-color: transparent !important;
@@ -318,7 +295,6 @@
   overflow-x: auto !important;
 }
 
-/* PlantUML 图表样式 */
 .vditor .vditor-ir pre.vditor-reset .language-plantuml,
 .vditor .vditor-content .vditor-reset .language-plantuml {
   background-color: transparent !important;
@@ -326,7 +302,6 @@
   overflow-x: auto !important;
 }
 
-/* PlantUML 生成的图片/SVG居中显示 */
 .vditor .vditor-ir pre.vditor-reset .language-plantuml img,
 .vditor .vditor-content .vditor-reset .language-plantuml img,
 .vditor .vditor-ir pre.vditor-reset .language-plantuml svg,
@@ -338,21 +313,19 @@
   height: auto !important;
 }
 
-.dark .vditor .vditor-ir pre.vditor-reset .vditor-toc,
-.dark .vditor .vditor-content .vditor-reset .vditor-toc {
-  background-color: var(--editor-code-bg, #1e293b) !important;
-}
-
-/* 隐藏工具栏字数统计显示（已在状态栏显示） */
+/* 隐藏工具栏字数统计 */
 .vditor .vditor-counter {
   display: none !important;
 }
 
-/* 预览模式链接样式 */
+/* ============================================
+   预览模式链接样式
+   ============================================ */
+
 .vditor .vditor-preview a,
 .vditor .vditor-sv__preview a,
 .vditor .vditor-ir__preview a {
-  color: var(--accent-500, #3b82f6) !important;
+  color: var(--accent-500) !important;
   text-decoration: none !important;
   cursor: pointer;
 }
@@ -361,23 +334,13 @@
 .vditor .vditor-sv__preview a:hover,
 .vditor .vditor-ir__preview a:hover {
   text-decoration: underline !important;
-  color: var(--accent-600, #2563eb) !important;
+  color: var(--accent-600) !important;
 }
 
-/* 暗色主题预览模式链接 */
-.dark .vditor .vditor-preview a,
-.dark .vditor .vditor-sv__preview a,
-.dark .vditor .vditor-ir__preview a {
-  color: var(--accent-400, #60a5fa) !important;
-}
+/* ============================================
+   大纲对齐修复
+   ============================================ */
 
-.dark .vditor .vditor-preview a:hover,
-.dark .vditor .vditor-sv__preview a:hover,
-.dark .vditor .vditor-ir__preview a:hover {
-  color: var(--accent-300, #93c5fd) !important;
-}
-
-/* 大纲对齐修复 */
 .vditor .vditor-outline ul {
   list-style: none !important;
   padding-left: 0 !important;
@@ -391,7 +354,6 @@
   line-height: 1.8 !important;
 }
 
-/* 嵌套层级缩进 */
 .vditor .vditor-outline li li {
   padding-left: 16px !important;
 }
@@ -404,14 +366,12 @@
   padding-left: 32px !important;
 }
 
-/* 列表项容器 - 包含箭头和标题 */
 .vditor .vditor-outline li > span {
   display: flex !important;
   align-items: center !important;
   padding: 2px 4px !important;
 }
 
-/* 展开/折叠箭头 - 保持原版大小 */
 .vditor .vditor-outline li > span > svg {
   flex-shrink: 0 !important;
   width: 10px !important;
@@ -419,7 +379,6 @@
   margin-right: 4px !important;
 }
 
-/* 没有箭头的项 - 添加占位符保持对齐 */
 .vditor .vditor-outline li > span:not(:has(> svg))::before {
   content: '' !important;
   display: inline-block !important;
@@ -429,33 +388,24 @@
   flex-shrink: 0 !important;
 }
 
-/* 标题文字 */
 .vditor .vditor-outline li > span > span {
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
-/* 鼠标悬停效果 */
 .vditor .vditor-outline li > span:hover {
-  background-color: var(--editor-code-bg, #f5f5f5) !important;
+  background-color: var(--editor-code-bg) !important;
   border-radius: 4px !important;
   cursor: pointer !important;
 }
 
-/* 暗色主题大纲 */
-.dark .vditor .vditor-outline li > span:hover {
-  background-color: var(--editor-code-bg, #1e293b) !important;
-}
-
-/* 大纲栏宽度调整 */
 .vditor .vditor-outline {
   position: relative !important;
   min-width: 180px !important;
   max-width: 50% !important;
 }
 
-/* 大纲栏左边缘拖拽热区提示 */
 .vditor .vditor-outline::before {
   content: '';
   position: absolute;
@@ -470,31 +420,34 @@
 
 .vditor .vditor-outline:hover::before,
 .vditor .vditor-outline.outline-resizing::before {
-  background: var(--accent-500, #3b82f6);
+  background: var(--accent-500);
 }
 
-/* 代码字体大小统一 - 强制与正文一致 */
+/* ============================================
+   代码样式 - 使用CSS变量
+   ============================================ */
+
 .vditor .vditor-ir pre.vditor-reset code,
 .vditor .vditor-sv pre.vditor-reset code,
 .vditor .vditor-wysiwyg pre.vditor-reset code {
   font-size: 1em !important;
 }
 
-/* 亮色模式 - 行内代码 */
+/* 行内代码 */
 .vditor .vditor-ir pre.vditor-reset code:not(.hljs),
 .vditor .vditor-sv pre.vditor-reset code:not(.hljs),
 .vditor .vditor-wysiwyg pre.vditor-reset code:not(.hljs) {
-  background-color: #dbeafe !important;
-  color: #1e40af !important;
+  background-color: var(--code-inline-bg) !important;
+  color: var(--code-inline-text) !important;
   padding: 2px 6px !important;
   border-radius: 4px !important;
 }
 
-/* 亮色模式 - 多行代码块背景 */
+/* 多行代码块背景 */
 .vditor .vditor-ir pre.vditor-reset pre code.hljs,
 .vditor .vditor-sv pre.vditor-reset pre code.hljs,
 .vditor .vditor-wysiwyg pre.vditor-reset pre code.hljs {
-  background-color: #f1f5f9 !important;
+  background-color: var(--code-block-bg) !important;
 }
 
 /* IR模式代码块容器和预览区背景 */
@@ -505,145 +458,120 @@
 
 .vditor .vditor-ir pre.vditor-reset .vditor-ir__marker--pre pre code,
 .vditor .vditor-ir pre.vditor-reset .vditor-ir__preview pre code {
-  background-color: #f1f5f9 !important;
+  background-color: var(--code-block-bg) !important;
 }
 
-/* 暗色模式 - 行内代码 */
-.dark .vditor .vditor-ir pre.vditor-reset code:not(.hljs),
-.dark .vditor .vditor-sv pre.vditor-reset code:not(.hljs),
-.dark .vditor .vditor-wysiwyg pre.vditor-reset code:not(.hljs) {
-  background-color: #1e3a5f !important;
-  color: #93c5fd !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
+/* 代码块文字颜色 */
+.vditor .vditor-ir pre.vditor-reset pre code.hljs,
+.vditor .vditor-sv pre.vditor-reset pre code.hljs,
+.vditor .vditor-wysiwyg pre.vditor-reset pre code.hljs,
+.vditor .vditor-ir pre.vditor-reset .vditor-ir__marker--pre pre code,
+.vditor .vditor-ir pre.vditor-reset .vditor-ir__preview pre code {
+  color: var(--code-block-text) !important;
 }
 
-/* 暗色模式 - 多行代码块背景 */
-.dark .vditor .vditor-ir pre.vditor-reset pre code.hljs,
-.dark .vditor .vditor-sv pre.vditor-reset pre code.hljs,
-.dark .vditor .vditor-wysiwyg pre.vditor-reset pre code.hljs {
-  background-color: #1e293b !important;
-}
-
-/* 暗色模式 - IR模式代码块容器和预览区背景 */
-.dark .vditor .vditor-ir .vditor-ir__marker--pre,
-.dark .vditor .vditor-ir .vditor-ir__preview {
-  background-color: transparent !important;
-}
-
-.dark .vditor .vditor-ir pre.vditor-reset .vditor-ir__marker--pre pre code,
-.dark .vditor .vditor-ir pre.vditor-reset .vditor-ir__preview pre code {
-  background-color: #1e293b !important;
-}
-
-/* 暗色模式 - 代码块文字颜色 */
-.dark .vditor .vditor-ir pre.vditor-reset pre code.hljs,
-.dark .vditor .vditor-sv pre.vditor-reset pre code.hljs,
-.dark .vditor .vditor-wysiwyg pre.vditor-reset pre code.hljs,
-.dark .vditor .vditor-ir pre.vditor-reset .vditor-ir__marker--pre pre code,
-.dark .vditor .vditor-ir pre.vditor-reset .vditor-ir__preview pre code {
-  color: #e2e8f0 !important;
-}
-
-/* 暗色模式 - 代码块容器背景和边框 */
-.dark .vditor .vditor-ir pre.vditor-reset pre,
-.dark .vditor .vditor-sv pre.vditor-reset pre,
-.dark .vditor .vditor-wysiwyg pre.vditor-reset pre {
-  background-color: #0f172a !important;
-  border: 1px solid var(--editor-border, #334155) !important;
+/* 代码块容器背景和边框 */
+.vditor .vditor-ir pre.vditor-reset pre,
+.vditor .vditor-sv pre.vditor-reset pre,
+.vditor .vditor-wysiwyg pre.vditor-reset pre {
+  background-color: var(--code-block-container-bg) !important;
+  border: 1px solid var(--editor-border) !important;
   border-radius: 6px !important;
 }
 
-/* 暗色模式 - SV模式代码预览区 */
-.dark .vditor .vditor-sv__preview {
-  background-color: var(--editor-bg, #0f172a) !important;
+/* SV模式代码预览区 */
+.vditor .vditor-sv__preview {
+  background-color: var(--editor-bg) !important;
 }
 
-.dark .vditor .vditor-sv__preview pre code.hljs {
-  color: #e2e8f0 !important;
-  background-color: #1e293b !important;
+.vditor .vditor-sv__preview pre code.hljs {
+  color: var(--code-block-text) !important;
+  background-color: var(--code-block-bg) !important;
 }
 
-/* 暗色模式 - hljs 语法高亮颜色 */
-.dark .vditor .hljs-comment,
-.dark .vditor .hljs-quote {
-  color: #64748b !important;
+/* ============================================
+   hljs 语法高亮颜色 - CSS变量 + GitHub风格亮色回退
+   ============================================ */
+
+.vditor .hljs-comment,
+.vditor .hljs-quote {
+  color: var(--hljs-comment, #6a737d) !important;
 }
 
-.dark .vditor .hljs-keyword,
-.dark .vditor .hljs-selector-tag,
-.dark .vditor .hljs-addition {
-  color: #f472b6 !important;
+.vditor .hljs-keyword,
+.vditor .hljs-selector-tag,
+.vditor .hljs-addition {
+  color: var(--hljs-keyword, #d73a49) !important;
 }
 
-.dark .vditor .hljs-string,
-.dark .vditor .hljs-attr,
-.dark .vditor .hljs-template-variable {
-  color: #a5d6ff !important;
+.vditor .hljs-string,
+.vditor .hljs-attr,
+.vditor .hljs-template-variable {
+  color: var(--hljs-string, #032f62) !important;
 }
 
-.dark .vditor .hljs-number,
-.dark .vditor .hljs-literal,
-.dark .vditor .hljs-type,
-.dark .vditor .hljs-built_in {
-  color: #dab55f !important;
+.vditor .hljs-number,
+.vditor .hljs-literal,
+.vditor .hljs-type,
+.vditor .hljs-built_in {
+  color: var(--hljs-number, #005cc5) !important;
 }
 
-.dark .vditor .hljs-title,
-.dark .vditor .hljs-section,
-.dark .vditor .hljs-name {
-  color: #60a5fa !important;
+.vditor .hljs-title,
+.vditor .hljs-section,
+.vditor .hljs-name {
+  color: var(--hljs-title, #6f42c1) !important;
 }
 
-.dark .vditor .hljs-function {
-  color: #93c5fd !important;
+.vditor .hljs-function {
+  color: var(--hljs-function, #6f42c1) !important;
 }
 
-.dark .vditor .hljs-params {
-  color: #94a3b8 !important;
+.vditor .hljs-params {
+  color: var(--hljs-params, #24292e) !important;
 }
 
-.dark .vditor .hljs-variable {
-  color: #fbbf24 !important;
+.vditor .hljs-variable {
+  color: var(--hljs-variable, #e36209) !important;
 }
 
-.dark .vditor .hljs-class .hljs-title,
-.dark .vditor .hljs-symbol,
-.dark .vditor .hljs-bullet {
-  color: #86efac !important;
+.vditor .hljs-class .hljs-title,
+.vditor .hljs-symbol,
+.vditor .hljs-bullet {
+  color: var(--hljs-class, #005cc5) !important;
 }
 
-.dark .vditor .hljs-meta,
-.dark .vditor .hljs-subst {
-  color: #e2e8f0 !important;
+.vditor .hljs-meta,
+.vditor .hljs-subst {
+  color: var(--hljs-meta, #24292e) !important;
 }
 
-.dark .vditor .hljs-deletion {
-  color: #fca5a5 !important;
+.vditor .hljs-deletion {
+  color: var(--hljs-deletion, #22863a) !important;
 }
 
-.dark .vditor .hljs-regexp,
-.dark .vditor .hljs-attribute {
-  color: #67e8f9 !important;
+.vditor .hljs-regexp,
+.vditor .hljs-attribute {
+  color: var(--hljs-regexp, #032f62) !important;
 }
 
-.dark .vditor .hljs-selector-class {
-  color: #fda4af !important;
+.vditor .hljs-selector-class {
+  color: var(--hljs-selector-class, #6f42c1) !important;
 }
 
-.dark .vditor .hljs-selector-id {
-  color: #c4b5fd !important;
+.vditor .hljs-selector-id {
+  color: var(--hljs-selector-id, #005cc5) !important;
 }
 
-.dark .vditor .hljs-link {
-  color: #93c5fd !important;
+.vditor .hljs-link {
+  color: var(--hljs-link, #032f62) !important;
 }
 
-.dark .vditor .hljs-emphasis {
+.vditor .hljs-emphasis {
   font-style: italic !important;
 }
 
-.dark .vditor .hljs-strong {
+.vditor .hljs-strong {
   font-weight: bold !important;
 }
 
@@ -651,22 +579,18 @@
    编辑区域宽度控制
    ============================================ */
 
-/* 全宽 - 自适应铺满 */
 .editor-width-full .vditor-ir pre.vditor-reset {
   max-width: 100% !important;
 }
 
-/* 较宽 - 960px */
 .editor-width-wide .vditor-ir pre.vditor-reset {
   max-width: 960px !important;
 }
 
-/* 普通 - 750px */
 .editor-width-normal .vditor-ir pre.vditor-reset {
   max-width: 750px !important;
 }
 
-/* SV 模式也应用宽度限制 */
 .editor-width-full .vditor-sv pre.vditor-reset {
   max-width: 100% !important;
 }
@@ -683,7 +607,8 @@
    GitHub Alerts 样式
    统一策略: ::before(图标) + ::after(标题@data-alert-title)
    预览/WYSIWYG: 首段隐藏
-   IR: 首段默认隐藏，hover时显示（类似语法标记行为）
+   IR: 首段默认隐藏，hover时显示
+   边框/背景/标题色使用CSS变量
    ============================================ */
 
 /* ---- 基础：所有 blockquote.alert ---- */
@@ -710,7 +635,7 @@
   display: none !important;
 }
 
-/* ---- 图标 ::before（预览/WYSIWYG 共用） ---- */
+/* ---- 图标 ::before ---- */
 .vditor .vditor-preview blockquote.alert::before,
 .vditor .vditor-ir__preview blockquote.alert::before,
 .vditor .vditor-sv__preview blockquote.alert::before,
@@ -724,7 +649,7 @@
   pointer-events: none;
 }
 
-/* ---- 标题 ::after（预览/WYSIWYG 共用） ---- */
+/* ---- 标题 ::after ---- */
 .vditor .vditor-preview blockquote.alert::after,
 .vditor .vditor-ir__preview blockquote.alert::after,
 .vditor .vditor-sv__preview blockquote.alert::after,
@@ -739,18 +664,14 @@
 }
 
 /* ============================================
-   IR 模式专属：首段显示 markdown 源码
-   ::before 覆盖显示漂亮标题，原始文本隐藏
-   类似 # 标题的交互效果
+   IR 模式专属
    ============================================ */
 
-/* 恢复默认 padding + 圆角 */
 .vditor .vditor-ir .vditor-reset blockquote.alert {
   padding-top: 8px !important;
   border-radius: 6px !important;
 }
 
-/* 首段：图标背景 + 文本透明（标题由 ::before 显示） */
 .vditor .vditor-ir .vditor-reset blockquote.alert > p:first-child {
   position: relative !important;
   font-size: 14px !important;
@@ -763,16 +684,15 @@
   background-position: 0 2px !important;
 }
 
-/* 光标在标题行时显示原始文本（可编辑） */
 .vditor .vditor-ir .vditor-reset blockquote.alert.alert--editing > p:first-child {
   color: inherit !important;
   opacity: 0.6 !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert.alert--editing > p:first-child::before {
   opacity: 0 !important;
 }
 
-/* ::before 显示标题 */
 .vditor .vditor-ir .vditor-reset blockquote.alert > p:first-child::before {
   content: attr(data-alert-title);
   position: absolute;
@@ -785,20 +705,18 @@
 }
 
 /* ============================================
-   NOTE (蓝色 - info 图标)
+   NOTE (蓝色) - CSS变量
    ============================================ */
 
-/* 通用：边框 + 背景（含 IR） */
 .vditor .vditor-reset blockquote.alert-note,
 .vditor .vditor-preview blockquote.alert-note,
 .vditor .vditor-ir__preview blockquote.alert-note,
 .vditor .vditor-sv__preview blockquote.alert-note,
 .vditor .vditor-ir .vditor-reset blockquote.alert-note {
-  border-left: 4px solid #0969DA !important;
-  background-color: rgba(9,105,218,0.1) !important;
+  border-left: 4px solid var(--alert-note-border) !important;
+  background-color: var(--alert-note-bg) !important;
 }
 
-/* 图标（预览/WYSIWYG） */
 .vditor .vditor-preview blockquote.alert-note::before,
 .vditor .vditor-ir__preview blockquote.alert-note::before,
 .vditor .vditor-sv__preview blockquote.alert-note::before,
@@ -806,22 +724,21 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%230969DA' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
 }
 
-/* 标题（预览/WYSIWYG） */
 .vditor .vditor-preview blockquote.alert-note::after,
 .vditor .vditor-ir__preview blockquote.alert-note::after,
 .vditor .vditor-sv__preview blockquote.alert-note::after,
-.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::after { color: #0969DA; }
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::after { color: var(--alert-note-text); }
 
-/* IR 首段：图标背景 + ::before 标题色 */
 .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%230969DA' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child::before {
-  color: #0969DA;
+  color: var(--alert-note-text);
 }
 
 /* ============================================
-   TIP (绿色 - light-bulb 图标)
+   TIP (绿色) - CSS变量
    ============================================ */
 
 .vditor .vditor-reset blockquote.alert-tip,
@@ -829,8 +746,8 @@
 .vditor .vditor-ir__preview blockquote.alert-tip,
 .vditor .vditor-sv__preview blockquote.alert-tip,
 .vditor .vditor-ir .vditor-reset blockquote.alert-tip {
-  border-left: 4px solid #1A7F37 !important;
-  background-color: rgba(26,127,55,0.1) !important;
+  border-left: 4px solid var(--alert-tip-border) !important;
+  background-color: var(--alert-tip-bg) !important;
 }
 
 .vditor .vditor-preview blockquote.alert-tip::before,
@@ -843,17 +760,18 @@
 .vditor .vditor-preview blockquote.alert-tip::after,
 .vditor .vditor-ir__preview blockquote.alert-tip::after,
 .vditor .vditor-sv__preview blockquote.alert-tip::after,
-.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::after { color: #1A7F37; }
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::after { color: var(--alert-tip-text); }
 
 .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231A7F37' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E") !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child::before {
-  color: #1A7F37;
+  color: var(--alert-tip-text);
 }
 
 /* ============================================
-   IMPORTANT (紫色 - report 图标)
+   IMPORTANT (紫色) - CSS变量
    ============================================ */
 
 .vditor .vditor-reset blockquote.alert-important,
@@ -861,8 +779,8 @@
 .vditor .vditor-ir__preview blockquote.alert-important,
 .vditor .vditor-sv__preview blockquote.alert-important,
 .vditor .vditor-ir .vditor-reset blockquote.alert-important {
-  border-left: 4px solid #8250DF !important;
-  background-color: rgba(130,80,223,0.1) !important;
+  border-left: 4px solid var(--alert-important-border) !important;
+  background-color: var(--alert-important-bg) !important;
 }
 
 .vditor .vditor-preview blockquote.alert-important::before,
@@ -875,17 +793,18 @@
 .vditor .vditor-preview blockquote.alert-important::after,
 .vditor .vditor-ir__preview blockquote.alert-important::after,
 .vditor .vditor-sv__preview blockquote.alert-important::after,
-.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::after { color: #8250DF; }
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::after { color: var(--alert-important-text); }
 
 .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%238250DF' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child::before {
-  color: #8250DF;
+  color: var(--alert-important-text);
 }
 
 /* ============================================
-   WARNING (橙色 - alert 图标)
+   WARNING (橙色) - CSS变量
    ============================================ */
 
 .vditor .vditor-reset blockquote.alert-warning,
@@ -893,8 +812,8 @@
 .vditor .vditor-ir__preview blockquote.alert-warning,
 .vditor .vditor-sv__preview blockquote.alert-warning,
 .vditor .vditor-ir .vditor-reset blockquote.alert-warning {
-  border-left: 4px solid #9A6700 !important;
-  background-color: rgba(154,103,0,0.1) !important;
+  border-left: 4px solid var(--alert-warning-border) !important;
+  background-color: var(--alert-warning-bg) !important;
 }
 
 .vditor .vditor-preview blockquote.alert-warning::before,
@@ -907,17 +826,18 @@
 .vditor .vditor-preview blockquote.alert-warning::after,
 .vditor .vditor-ir__preview blockquote.alert-warning::after,
 .vditor .vditor-sv__preview blockquote.alert-warning::after,
-.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::after { color: #9A6700; }
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::after { color: var(--alert-warning-text); }
 
 .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%239A6700' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child::before {
-  color: #9A6700;
+  color: var(--alert-warning-text);
 }
 
 /* ============================================
-   CAUTION (红色 - stop 图标)
+   CAUTION (红色) - CSS变量
    ============================================ */
 
 .vditor .vditor-reset blockquote.alert-caution,
@@ -925,8 +845,8 @@
 .vditor .vditor-ir__preview blockquote.alert-caution,
 .vditor .vditor-sv__preview blockquote.alert-caution,
 .vditor .vditor-ir .vditor-reset blockquote.alert-caution {
-  border-left: 4px solid #CF222E !important;
-  background-color: rgba(207,34,46,0.1) !important;
+  border-left: 4px solid var(--alert-caution-border) !important;
+  background-color: var(--alert-caution-bg) !important;
 }
 
 .vditor .vditor-preview blockquote.alert-caution::before,
@@ -939,151 +859,12 @@
 .vditor .vditor-preview blockquote.alert-caution::after,
 .vditor .vditor-ir__preview blockquote.alert-caution::after,
 .vditor .vditor-sv__preview blockquote.alert-caution::after,
-.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::after { color: #CF222E; }
+.vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::after { color: var(--alert-caution-text); }
 
 .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23CF222E' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
 }
+
 .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child::before {
-  color: #CF222E;
+  color: var(--alert-caution-text);
 }
-
-/* ============================================
-   暗色主题 - NOTE
-   ============================================ */
-
-.dark .vditor .vditor-reset blockquote.alert-note,
-.dark .vditor .vditor-preview blockquote.alert-note,
-.dark .vditor .vditor-ir__preview blockquote.alert-note,
-.dark .vditor .vditor-sv__preview blockquote.alert-note,
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note {
-  border-left-color: #58A6FF !important;
-  background-color: rgba(88,166,255,0.1) !important;
-}
-.dark .vditor .vditor-preview blockquote.alert-note::before,
-.dark .vditor .vditor-ir__preview blockquote.alert-note::before,
-.dark .vditor .vditor-sv__preview blockquote.alert-note::before,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%2358A6FF' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
-}
-.dark .vditor .vditor-preview blockquote.alert-note::after,
-.dark .vditor .vditor-ir__preview blockquote.alert-note::after,
-.dark .vditor .vditor-sv__preview blockquote.alert-note::after,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-note::after { color: #58A6FF; }
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%2358A6FF' d='M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
-}
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-note > p:first-child::before { color: #58A6FF; }
-
-/* ============================================
-   暗色主题 - TIP
-   ============================================ */
-
-.dark .vditor .vditor-reset blockquote.alert-tip,
-.dark .vditor .vditor-preview blockquote.alert-tip,
-.dark .vditor .vditor-ir__preview blockquote.alert-tip,
-.dark .vditor .vditor-sv__preview blockquote.alert-tip,
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip {
-  border-left-color: #3FB950 !important;
-  background-color: rgba(63,185,80,0.1) !important;
-}
-.dark .vditor .vditor-preview blockquote.alert-tip::before,
-.dark .vditor .vditor-ir__preview blockquote.alert-tip::before,
-.dark .vditor .vditor-sv__preview blockquote.alert-tip::before,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%233FB950' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E");
-}
-.dark .vditor .vditor-preview blockquote.alert-tip::after,
-.dark .vditor .vditor-ir__preview blockquote.alert-tip::after,
-.dark .vditor .vditor-sv__preview blockquote.alert-tip::after,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-tip::after { color: #3FB950; }
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%233FB950' d='M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z'/%3E%3C/svg%3E") !important;
-}
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-tip > p:first-child::before { color: #3FB950; }
-
-/* ============================================
-   暗色主题 - IMPORTANT
-   ============================================ */
-
-.dark .vditor .vditor-reset blockquote.alert-important,
-.dark .vditor .vditor-preview blockquote.alert-important,
-.dark .vditor .vditor-ir__preview blockquote.alert-important,
-.dark .vditor .vditor-sv__preview blockquote.alert-important,
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important {
-  border-left-color: #A371F7 !important;
-  background-color: rgba(163,113,247,0.1) !important;
-}
-.dark .vditor .vditor-preview blockquote.alert-important::before,
-.dark .vditor .vditor-ir__preview blockquote.alert-important::before,
-.dark .vditor .vditor-sv__preview blockquote.alert-important::before,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23A371F7' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
-}
-.dark .vditor .vditor-preview blockquote.alert-important::after,
-.dark .vditor .vditor-ir__preview blockquote.alert-important::after,
-.dark .vditor .vditor-sv__preview blockquote.alert-important::after,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-important::after { color: #A371F7; }
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23A371F7' d='M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
-}
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-important > p:first-child::before { color: #A371F7; }
-
-/* WARNING */
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23D29922' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E") !important;
-}
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning > p:first-child::before { color: #D29922; }
-
-/* CAUTION */
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23F85149' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E") !important;
-}
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child::before { color: #F85149; }
-
-/* ============================================
-   暗色主题 - WARNING
-   ============================================ */
-
-.dark .vditor .vditor-reset blockquote.alert-warning,
-.dark .vditor .vditor-preview blockquote.alert-warning,
-.dark .vditor .vditor-ir__preview blockquote.alert-warning,
-.dark .vditor .vditor-sv__preview blockquote.alert-warning,
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-warning {
-  border-left-color: #D29922 !important;
-  background-color: rgba(210,153,34,0.1) !important;
-}
-.dark .vditor .vditor-preview blockquote.alert-warning::before,
-.dark .vditor .vditor-ir__preview blockquote.alert-warning::before,
-.dark .vditor .vditor-sv__preview blockquote.alert-warning::before,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23D29922' d='M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z'/%3E%3C/svg%3E");
-}
-.dark .vditor .vditor-preview blockquote.alert-warning::after,
-.dark .vditor .vditor-ir__preview blockquote.alert-warning::after,
-.dark .vditor .vditor-sv__preview blockquote.alert-warning::after,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-warning::after { color: #D29922; }
-
-/* ============================================
-   暗色主题 - CAUTION
-   ============================================ */
-
-.dark .vditor .vditor-reset blockquote.alert-caution,
-.dark .vditor .vditor-preview blockquote.alert-caution,
-.dark .vditor .vditor-ir__preview blockquote.alert-caution,
-.dark .vditor .vditor-sv__preview blockquote.alert-caution,
-.dark .vditor .vditor-ir .vditor-reset blockquote.alert-caution {
-  border-left-color: #F85149 !important;
-  background-color: rgba(248,81,73,0.1) !important;
-}
-.dark .vditor .vditor-preview blockquote.alert-caution::before,
-.dark .vditor .vditor-ir__preview blockquote.alert-caution::before,
-.dark .vditor .vditor-sv__preview blockquote.alert-caution::before,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23F85149' d='M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z'/%3E%3C/svg%3E");
-}
-.dark .vditor .vditor-preview blockquote.alert-caution::after,
-.dark .vditor .vditor-ir__preview blockquote.alert-caution::after,
-.dark .vditor .vditor-sv__preview blockquote.alert-caution::after,
-.dark .vditor .vditor-wysiwyg .vditor-reset blockquote.alert-caution::after { color: #F85149; }
-

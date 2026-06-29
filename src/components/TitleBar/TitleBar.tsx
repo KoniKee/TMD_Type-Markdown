@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
 import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, Moon, Sun, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows } from 'lucide-react';
+import { FileText, X, Save, Palette, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows } from 'lucide-react';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
 import { CloseTabConfirm } from '../Editor/CloseTabConfirm';
 import { TabContextMenu } from '../Tabs/TabContextMenu';
+import { ThemePanel } from '../ThemePanel/ThemePanel';
 
 declare global {
   interface Window {
@@ -37,7 +38,7 @@ export const TitleBar: React.FC = () => {
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const reorderTabs = useEditorStore((state) => state.reorderTabs);
   const saveToFile = useSaveToFile();
-  const { theme, toggleTheme } = useSettingsStore();
+  const [showThemePanel, setShowThemePanel] = useState(false);
   const { handleNewFile } = useFileOperations();
   const { hasUpdate, latestVersion } = useUpdateStore();
   const canSplit = useSplitStore((state) => activeTabPath ? state.canSplit(activeTabPath) : false);
@@ -415,11 +416,16 @@ export const TitleBar: React.FC = () => {
             onClick={() => setShowShortcuts(true)}
           />
 
-          <TitleBarButton
-            icon={theme === 'dark' ? Sun : Moon}
-            title={theme === 'dark' ? '浅色模式' : '暗色模式'}
-            onClick={toggleTheme}
-          />
+          <div className="relative">
+            <TitleBarButton
+              icon={Palette}
+              title="主题"
+              onClick={() => setShowThemePanel(!showThemePanel)}
+            />
+            {showThemePanel && (
+              <ThemePanel onClose={() => setShowThemePanel(false)} />
+            )}
+          </div>
 
           {hasUpdate && (
             <button
@@ -435,7 +441,10 @@ export const TitleBar: React.FC = () => {
           <TitleBarButton
             icon={Settings}
             title="设置"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-settings'))}
+            onClick={() => {
+              setShowThemePanel(false);
+              window.dispatchEvent(new CustomEvent('open-settings'));
+            }}
           />
 
           {isTauriCached() && (
