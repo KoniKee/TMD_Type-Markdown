@@ -42,6 +42,7 @@ fn main() {
             commands::get_file_info,
             commands::get_pending_file,
             commands::clear_pending_file,
+            commands::open_in_new_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

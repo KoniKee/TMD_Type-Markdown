@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { TitleBar } from '../TitleBar/TitleBar';
 import { EditorContainer } from '../Editor/EditorContainer';
@@ -9,13 +9,37 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   const [sidebarWidth, setSidebarWidth] = useState(260);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    // 初始化时检查 localStorage 标记，用于新窗口隐藏侧边栏
+    return localStorage.getItem('md-editor-sidebar-hidden') === 'true';
+  });
 
   useAutoSave();
   useTheme();
   useFileChangeDetection();
   useSplitShortcuts();
   useTabShortcuts();
+
+  // 监听自定义事件，用于新窗口初始化时隐藏侧边栏
+  useEffect(() => {
+    const handleSidebarHide = () => {
+      setIsSidebarCollapsed(true);
+      // 清除 localStorage 标记，避免影响后续正常启动
+      localStorage.removeItem('md-editor-sidebar-hidden');
+    };
+
+    window.addEventListener('sidebar-hide', handleSidebarHide);
+    return () => {
+      window.removeEventListener('sidebar-hide', handleSidebarHide);
+    };
+  }, []);
+
+  // 初始化时如果侧边栏因 localStorage 被折叠，清除标记
+  useEffect(() => {
+    if (isSidebarCollapsed && localStorage.getItem('md-editor-sidebar-hidden') === 'true') {
+      localStorage.removeItem('md-editor-sidebar-hidden');
+    }
+  }, []);
 
   const handleSidebarResize = (e: React.MouseEvent) => {
     const startX = e.clientX;

@@ -46,6 +46,7 @@ interface SettingsState {
   embedMaxCount: number;
   editorWidth: EditorWidth;
   lineHeight: LineHeight;
+  headingFolding: boolean;
 
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
@@ -58,6 +59,7 @@ interface SettingsState {
   setEmbedMaxCount: (count: number) => void;
   setEditorWidth: (width: EditorWidth) => void;
   setLineHeight: (height: LineHeight) => void;
+  setHeadingFolding: (folding: boolean) => void;
   getEffectiveTheme: () => 'light' | 'dark';
   getEffectiveThemeId: () => ThemeId;
   getThemeGroup: () => ThemeGroup;
@@ -76,6 +78,7 @@ export const useSettingsStore = create<SettingsState>()(
       embedMaxCount: EMBED_MAX_COUNT_DEFAULT,
       editorWidth: 'full' as EditorWidth,
       lineHeight: 1.5 as LineHeight,
+      headingFolding: true,
 
       setTheme: (theme: Theme) => set({ theme }),
       toggleTheme: () => {
@@ -102,6 +105,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setEditorWidth: (width: EditorWidth) => set({ editorWidth: width }),
       setLineHeight: (height: LineHeight) => set({ lineHeight: height }),
+      setHeadingFolding: (folding: boolean) => set({ headingFolding: folding }),
 
       getEffectiveTheme: () => {
         const { theme } = get();
@@ -129,7 +133,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'md-editor-settings',
-      version: 3,
+      version: 4,
       migrate: (persistedState: any) => {
         if (persistedState && persistedState.theme === 'light') {
           persistedState.theme = 'tian-qing';
@@ -141,6 +145,9 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (persistedState && !persistedState.systemDarkTheme) {
           persistedState.systemDarkTheme = 'mo-ye';
+        }
+        if (persistedState && persistedState.headingFolding === undefined) {
+          persistedState.headingFolding = true;
         }
         return persistedState;
       },

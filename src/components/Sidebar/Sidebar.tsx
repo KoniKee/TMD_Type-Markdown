@@ -29,6 +29,7 @@ import {
   FolderSearch
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ContextMenuState {
   visible: boolean;
@@ -1132,6 +1133,23 @@ export const Sidebar: React.FC = () => {
                   }
                 }}
               />
+              {isTauriCached() && (
+                <ContextMenuItem
+                  icon={ExternalLink}
+                  label="在新窗口中打开"
+                  onClick={async () => {
+                    const file = contextMenu.recentFile;
+                    if (!file) return;
+                    closeContextMenu();
+                    try {
+                      const realPath = file.path.replace(/^file:\/\//, '');
+                      await invoke('open_in_new_window', { filePath: realPath });
+                    } catch (err) {
+                      console.error('在新窗口中打开失败:', err);
+                    }
+                  }}
+                />
+              )}
               {hasSplitPanes && (
                 <ContextMenuItem
                   icon={Columns}
@@ -1292,6 +1310,22 @@ export const Sidebar: React.FC = () => {
                   }
                 }}
               />
+              {isTauriCached() && (
+                <ContextMenuItem
+                  icon={ExternalLink}
+                  label="在新窗口中打开"
+                  onClick={async () => {
+                    const node = contextMenu.node;
+                    if (!node) return;
+                    closeContextMenu();
+                    try {
+                      await invoke('open_in_new_window', { filePath: node.path });
+                    } catch (err) {
+                      console.error('在新窗口中打开失败:', err);
+                    }
+                  }}
+                />
+              )}
               {hasSplitPanes && (
                 <ContextMenuItem
                   icon={Columns}

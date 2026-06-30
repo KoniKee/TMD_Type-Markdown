@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, XCircle, ArrowRight, ArrowLeft, XSquare } from 'lucide-react';
+import { X, XCircle, ArrowRight, ArrowLeft, XSquare, ExternalLink } from 'lucide-react';
 import { useEditorStore } from '../../stores';
 import { getFileName } from '../../hooks/useAutoSave';
 import { BatchCloseConfirm } from './BatchCloseConfirm';
 import { LucideIcon } from 'lucide-react';
+import { isTauriCached } from '../../utils/platform';
 
 interface TabContextMenuProps {
   x: number;
@@ -98,7 +99,20 @@ export const TabContextMenu: React.FC<TabContextMenuProps> = ({
     handleBatchClose(tabs, () => closeAllTabs());
   };
   
+  const handleOpenInNewWindow = async () => {
+    if (!isTauriCached()) return;
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const filePath = tabPath.replace('file://', '');
+      await invoke('open_in_new_window', { filePath });
+    } catch (err) {
+      console.error('在新窗口中打开失败:', err);
+    }
+    onClose();
+  };
+
   const menuItems: { icon: LucideIcon; label: string; onClick: () => void; disabled?: boolean; danger?: boolean }[] = [
+    ...(isTauriCached() ? [{ icon: ExternalLink, label: '在新窗口中打开', onClick: handleOpenInNewWindow }] : []),
     { icon: X, label: '关闭', onClick: handleCloseCurrent },
     { icon: XCircle, label: '关闭其他', onClick: handleCloseOther, disabled: tabs.length <= 1 },
     { icon: ArrowRight, label: '关闭右侧', onClick: handleCloseRight, disabled: !hasRightTabs },

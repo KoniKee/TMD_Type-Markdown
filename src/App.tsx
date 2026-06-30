@@ -7,7 +7,7 @@ import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore, useSpli
 function App() {
   const [isReady, setIsReady] = useState(false);
   const checkForUpdate = useUpdateStore((state) => state.checkForUpdate);
-  const { readDirectoryTauri } = useFileOperations();
+  const { readDirectoryTauri, readDirectoryRecursive } = useFileOperations();
   const { setRootPath, setFileTree, setRootHandle, clearAll } = useFileStore();
 
   useTheme();
@@ -352,10 +352,11 @@ function App() {
     };
   }, [checkForUpdate]);
 
-  useEffect(() => {
+   useEffect(() => {
     if (!isReady || !isTauriCached()) return;
     
     let unlisten: (() => void) | null = null;
+    let unlistenNewWindow: (() => void) | null = null;
     
     const setupFileOpenListener = async () => {
       try {
@@ -365,6 +366,18 @@ function App() {
         
         const openFile = async (filePath: string) => {
           try {
+            const fileStore = useFileStore.getState();
+            const currentRootPath = fileStore.rootPath;
+            const dirPath = filePath.replace(/[/\\][^/\\]+$/, '');
+            const normalizedDirPath = dirPath.replace(/[/\\]+$/, '');
+            if (normalizedDirPath && normalizedDirPath !== currentRootPath) {
+              const folderName = normalizedDirPath.split(/[/\\]/).pop() || normalizedDirPath;
+              fileStore.clearAll();
+              fileStore.setRootPath(folderName);
+              fileStore.setRootHandle(normalizedDirPath as any);
+              const tree = await readDirectoryTauri(normalizedDirPath);
+              fileStore.setFileTree(tree);
+            }
             const content = await readTextFile(filePath);
             const { openDocument } = useEditorStore.getState();
             openDocument(`file://${filePath}`, content, false);
@@ -375,6 +388,17 @@ function App() {
 
         unlisten = await listen<string>('file-open', async (event) => {
           await openFile(event.payload);
+        });
+
+        // 监听新窗口初始化事件
+        await listen<{ filePath: string; hideSidebar: boolean }>('new-window-init', async (event) => {
+          const { filePath, hideSidebar } = event.payload;
+          await openFile(filePath);
+          if (hideSidebar) {
+            localStorage.setItem('md-editor-sidebar-hidden', 'true');
+            // 通过自定义事件通知 Layout 组件隐藏侧边栏
+            window.dispatchEvent(new CustomEvent('sidebar-hide'));
+          }
         });
 
         const pendingFile = await invoke<string | null>('get_pending_file');
