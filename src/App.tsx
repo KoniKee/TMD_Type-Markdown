@@ -356,7 +356,6 @@ function App() {
     if (!isReady || !isTauriCached()) return;
     
     let unlisten: (() => void) | null = null;
-    let unlistenNewWindow: (() => void) | null = null;
     
     const setupFileOpenListener = async () => {
       try {
@@ -390,16 +389,17 @@ function App() {
           await openFile(event.payload);
         });
 
-        // 监听新窗口初始化事件
-        await listen<{ filePath: string; hideSidebar: boolean }>('new-window-init', async (event) => {
-          const { filePath, hideSidebar } = event.payload;
-          await openFile(filePath);
+        const newWindowFile = (window as any).__NEW_WINDOW_FILE__;
+        if (newWindowFile && newWindowFile.filePath) {
+          const filePath = newWindowFile.filePath;
+          const hideSidebar = newWindowFile.hideSidebar;
+          delete (window as any).__NEW_WINDOW_FILE__;
           if (hideSidebar) {
             localStorage.setItem('md-editor-sidebar-hidden', 'true');
-            // 通过自定义事件通知 Layout 组件隐藏侧边栏
             window.dispatchEvent(new CustomEvent('sidebar-hide'));
           }
-        });
+          await openFile(filePath);
+        }
 
         const pendingFile = await invoke<string | null>('get_pending_file');
         if (pendingFile) {
