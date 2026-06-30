@@ -106,69 +106,23 @@ pub fn clear_pending_file(pending: tauri::State<PendingFile>) {
     *pending.0.lock().unwrap() = None;
 }
 
- 
-
 #[tauri::command]
 pub async fn open_in_new_window(
     app: tauri::AppHandle,
     file_path: String,
     hide_sidebar: Option<bool>,
 ) -> Result<(), String> {
-    use tauri::Manager;
-    use tauri::Emitter;
-    
-    let label = format!("doc-{}", uuid::Uuid::new_v4().to_string()[..8]);
-    
-    let url = tauri::WebviewUrl::App("/".into());
-    
-    let mut builder = tauri::WebviewWindowBuilder::new(&app, &label, url)
-        .title("TMD")
-        .inner_size(1200.0, 800.0)
-        .decorations(false)
-        .shadow(true);
-    
-    if let Some(hide) = hide_sidebar {
-        builder = builder.initialization_script(format!(
-            const initData = JSON.parse(window.__INIT_DATA__ || '{}');
-            if (initData.hideSidebar) {{
-                document.body.classList.add('sidebar-hidden');
-            }}
-        "#));
-    }
-    
-    let window = builder.build().map_err(|e| e.to_string())?;
-    
-    let init_data = serde_json::json!({
-        "filePath": file_path,
-        "hideSidebar": hide_sidebar.unwrap_or(false),
-    });
-    app.emit_to(&label, "new-window-init", init_data).map_err(|e| e.to_string())?;
-    
-    Ok(())
-}
-
- 
-
-#[tauri::command]
-pub async fn open_in_new_window(
-    app: tauri::AppHandle,
-    file_path: String,
-    hide_sidebar: Option<bool>,
-) -> Result<(), String> {
-    use tauri::Manager;
-    use tauri::Emitter;
-    
     let label = format!("doc-{}", &uuid::Uuid::new_v4().to_string()[..8]);
-    
+
     let url = tauri::WebviewUrl::App("/".into());
-    
+
     let mut builder = tauri::WebviewWindowBuilder::new(&app, &label, url)
         .title("TMD")
         .inner_size(1200.0, 800.0)
         .decorations(false)
         .shadow(true);
-    
-    if let Some(hide) ) = hide_sidebar {
+
+    if hide_sidebar.unwrap_or(false) {
         builder = builder.initialization_script(r#"
             const initData = JSON.parse(window.__INIT_DATA__ || '{}');
             if (initData.hideSidebar) {
@@ -176,44 +130,16 @@ pub async fn open_in_new_window(
             }
         "#);
     }
-    
+
     let window = builder.build().map_err(|e| e.to_string())?;
-    
+    window.set_focus().map_err(|e| e.to_string())?;
+
     let init_data = serde_json::json!({
         "filePath": file_path,
         "hideSidebar": hide_sidebar.unwrap_or(false),
     });
-    
+
     app.emit_to(&label, "new-window-init", init_data).map_err(|e| e.to_string())?;
-    
-    Ok(())
-}}
-
-#[tauri::command]
-pub async fn open_in_new_window(
-    app: tauri::AppHandle,
-    file_path: String,
-) -> Result<(), String> {
-    let label = format!("doc-{}", &uuid::Uuid::new_v4().to_string()[..8]);
-
-    let window = tauri::WebviewWindowBuilder::new(
-        &app,
-        &label,
-        tauri::WebviewUrl::App("/".into()),
-    )
-    .title("TMD")
-    .inner_size(1200.0, 800.0)
-    .decorations(false)
-    .shadow(true)
-    .build()
-    .map_err(|e| e.to_string())?;
-
-    window.set_focus().map_err(|e| e.to_string())?;
-
-    app.emit_to(&label, "new-window-init", serde_json::json!({
-        "filePath": file_path,
-        "hideSidebar": true,
-    })).map_err(|e| e.to_string())?;
 
     Ok(())
 }
