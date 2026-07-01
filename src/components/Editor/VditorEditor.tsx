@@ -374,6 +374,12 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
         if (!toolbar) return;
         
+        // 模式切换前移除折叠图标，避免干扰Vditor DOM解析
+        const editorContent = containerRef.current?.querySelector('.vditor-ir .vditor-reset, .vditor-wysiwyg .vditor-reset') as HTMLElement;
+        if (editorContent) {
+          editorContent.querySelectorAll('.heading-fold-icon').forEach(icon => icon.remove());
+        }
+        
         const currentMode = vditorRef.current?.getCurrentMode();
         const targetMode = currentMode === 'ir' ? 'sv' : 'ir';
         
