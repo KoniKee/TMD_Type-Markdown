@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": ["main", "doc-*"],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
@@ -10,6 +10,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
     "core:window:allow-is-maximized",
+    "core:window:allow-create",
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [{ "path": "**" }]

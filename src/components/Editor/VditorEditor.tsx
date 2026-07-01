@@ -12,6 +12,7 @@ import { shouldRenderEmbed, processEmbedsInMarkdown, createEmbedContainer, creat
 import EmojiPicker from './EmojiPicker';
 import ReplaceDialog from './ReplaceDialog';
 import AlertsPicker from './AlertsPicker';
+import { initHeadingFolding, refreshHeadingFolding, destroyHeadingFolding } from './HeadingFolding';
 
 // 本地化 Vditor CDN 路径
 const VDITOR_CDN = './vditor';
@@ -299,6 +300,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const embedMaxCount = useSettingsStore((state) => state.embedMaxCount);
   const editorWidth = useSettingsStore((state) => state.editorWidth);
   const lineHeight = useSettingsStore((state) => state.lineHeight);
+  const headingFolding = useSettingsStore((state) => state.headingFolding);
   const rootHandle = useFileStore((state) => state.rootHandle);
   const isInitializedRef = useRef(false);
   const currentPathRef = useRef<string>('');
@@ -382,6 +384,10 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           
           if ((targetMode === 'ir' && text.includes('即时渲染')) ||
               (targetMode === 'sv' && text.includes('分屏预览'))) {
+            // 先触发mousedown再click，模拟真实鼠标点击
+            // mousedown会在capture阶段被HeadingFolding捕获并移除折叠图标
+            // 避免图标干扰Vditor的DOM解析导致#标记丢失
+            (btn as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
             (btn as HTMLElement).click();
             return;
           }
@@ -1057,12 +1063,14 @@ const relativePath = `${imageDirectory}/${fileName}`;
       tab: '',
       value: contentRef.current,
       input: (value: string) => {
-        // 中文》归一化为标准 > blockquote 语法
         const normalized = value.replace(/^》\s/gm, '> ');
         updateDocument(path, normalized);
         updateWordCountDebounced();
         if (containerRef.current) {
           processAlerts(containerRef.current);
+          if (headingFolding) {
+            refreshHeadingFolding(containerRef.current);
+          }
         }
       },
       after: () => {
@@ -1093,8 +1101,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
          
 // 处理本地图片加载
          processLocalImages(containerRef.current!, path);
-         
+          
          processAlerts(containerRef.current!);
+
+         if (headingFolding && containerRef.current) {
+           initHeadingFolding(containerRef.current);
+         }
          
          // 光标在 alert 标题行时才显示原始语法
         const handleAlertEditingSelection = () => {
@@ -1459,6 +1471,26 @@ const relativePath = `${imageDirectory}/${fileName}`;
           }
           
           setEditorModeRef.current(pathRef.current, currentMode);
+
+          if (containerRef.current && headingFolding) {
+            destroyHeadingFolding(containerRef.current);
+            if (currentMode !== 'sv') {
+              const tryInit = (attempts: number) => {
+                if (attempts > 10) return;
+                if (containerRef.current) {
+                  const editorContent = containerRef.current.querySelector(
+                    currentMode === 'ir' ? '.vditor-ir .vditor-reset' : '.vditor-wysiwyg .vditor-reset'
+                  ) as HTMLElement;
+                  if (editorContent && editorContent.querySelector('h1, h2, h3, h4, h5, h6')) {
+                    initHeadingFolding(containerRef.current);
+                  } else {
+                    setTimeout(() => tryInit(attempts + 1), 100);
+                  }
+                }
+              };
+              setTimeout(() => tryInit(0), 100);
+            }
+          }
         };
         
         // 监听三个编辑区域的style变化
@@ -2231,6 +2263,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
           cnQuotePreEl.removeEventListener('keydown', cnQuoteBeforeInput, true);
         }
         
+        if (containerRef.current) {
+          destroyHeadingFolding(containerRef.current);
+        }
+        
         vditorRef.current.destroy();
         vditorRef.current = null;
         isInitializedRef.current = false;
@@ -2261,6 +2297,15 @@ const relativePath = `${imageDirectory}/${fileName}`;
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!isInitializedRef.current || !containerRef.current) return;
+    if (headingFolding) {
+      initHeadingFolding(containerRef.current);
+    } else {
+      destroyHeadingFolding(containerRef.current);
+    }
+  }, [headingFolding]);
 
   return (
     <div className={`vditor-container editor-width-${editorWidth}`} style={{ position: 'relative' }}>

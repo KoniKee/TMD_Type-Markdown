@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use crate::PendingFile;
+use tauri::Manager;
+use tauri::Emitter;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DirEntry {
@@ -102,4 +104,42 @@ pub fn get_pending_file(pending: tauri::State<PendingFile>) -> Option<String> {
 #[tauri::command]
 pub fn clear_pending_file(pending: tauri::State<PendingFile>) {
     *pending.0.lock().unwrap() = None;
+}
+
+#[tauri::command]
+pub async fn open_in_new_window(
+    app: tauri::AppHandle,
+    file_path: String,
+    hide_sidebar: Option<bool>,
+) -> Result<(), String> {
+    let label = format!("doc-{}", &uuid::Uuid::new_v4().to_string()[..8]);
+
+    let file_path_json = serde_json::to_string(&file_path).unwrap_or_else(|_| "null".to_string());
+    let hide_val = hide_sidebar.unwrap_or(false);
+
+    let init_script = format!(
+        r#"
+        window.__NEW_WINDOW_FILE__ = {{
+            filePath: {file_path_json},
+            hideSidebar: {hide_val}
+        }};
+        localStorage.removeItem('md-editor-tabs');
+        localStorage.removeItem('md-editor-docs');
+        localStorage.removeItem('md-editor-active-path');
+        "#
+    );
+
+    let url = tauri::WebviewUrl::App("/".into());
+
+    let builder = tauri::WebviewWindowBuilder::new(&app, &label, url)
+        .title("TMD")
+        .inner_size(1200.0, 800.0)
+        .decorations(false)
+        .shadow(true)
+        .initialization_script(init_script);
+
+    let window = builder.build().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())?;
+
+    Ok(())
 }

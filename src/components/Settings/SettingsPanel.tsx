@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSettingsStore, EMBED_MAX_DEPTH_MIN, EMBED_MAX_DEPTH_MAX, EMBED_MAX_COUNT_MIN, EMBED_MAX_COUNT_MAX, EditorWidth, LineHeight } from '../../stores/settingsStore';
-import { X, Palette, Image, Save, Info, FileText, Columns, AlignLeft, ExternalLink } from 'lucide-react';
+import { X, Palette, Image, Save, Info, FileText, Columns, AlignLeft, ExternalLink, Hash } from 'lucide-react';
 import { ThemePanel } from '../ThemePanel/ThemePanel';
 import { version } from '../../../package.json';
 
@@ -20,6 +20,7 @@ export const SettingsPanel: React.FC = () => {
     embedMaxCount,
     editorWidth,
     lineHeight,
+    headingFolding,
     setImageDirectory,
     setAutoSave,
     setAutoSaveDelay,
@@ -27,6 +28,7 @@ export const SettingsPanel: React.FC = () => {
     setEmbedMaxCount,
     setEditorWidth,
     setLineHeight,
+    setHeadingFolding,
   } = useSettingsStore();
 
   const handleImageDirectoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +159,25 @@ export const SettingsPanel: React.FC = () => {
                 </div>
                 <p className="text-xs text-[var(--editor-text-muted)]">
                   调整编辑器的行高，影响阅读舒适度
+                </p>
+              </div>
+            </div>
+
+            {/* Heading folding settings */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Hash size={16} className="text-[var(--accent-400)]" />
+                <h3 className="text-sm font-medium text-[var(--editor-text)]">标题折叠</h3>
+              </div>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group" onClick={() => setHeadingFolding(!headingFolding)}>
+                  <div className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${headingFolding ? 'bg-[var(--accent-500)]' : 'bg-[var(--editor-border)]'}`}>
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${headingFolding ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm text-[var(--editor-text-secondary)]">启用标题折叠</span>
+                </label>
+                <p className="text-xs text-[var(--editor-text-muted)]">
+                  在标题旁显示折叠图标，可折叠标题下的内容
                 </p>
               </div>
             </div>

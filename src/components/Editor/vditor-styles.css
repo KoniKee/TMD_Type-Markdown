@@ -868,3 +868,43 @@
 .vditor .vditor-ir .vditor-reset blockquote.alert-caution > p:first-child::before {
   color: var(--alert-caution-text);
 }
+
+/* Heading Folding */
+.heading-fold-icon {
+  display: inline-block;
+  width: 14px;
+  height: 1em;
+  font-size: 0.7em;
+  color: var(--editor-text-muted, rgba(128, 128, 128, 0.5));
+  cursor: pointer;
+  user-select: none;
+  vertical-align: middle;
+  text-align: center;
+  line-height: 1;
+  transition: color 0.15s;
+  margin-right: 1px;
+}
+
+.heading-fold-icon::before {
+  content: '▾';
+}
+
+.heading-fold-icon[data-fold-state="collapsed"]::before {
+  content: '▸';
+}
+
+.heading-fold-icon:hover {
+  color: var(--editor-text-secondary, rgba(128, 128, 128, 0.85));
+}
+
+[data-theme-group="dark"] .heading-fold-icon {
+  color: rgba(158, 150, 150, 0.45);
+}
+
+[data-theme-group="dark"] .heading-fold-icon:hover {
+  color: rgba(158, 150, 150, 0.85);
+}
+
+[data-heading-folded="true"] {
+  display: none !important;
+}
