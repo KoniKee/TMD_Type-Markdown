@@ -374,12 +374,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
         if (!toolbar) return;
         
-        // 模式切换前移除折叠图标，避免干扰Vditor DOM解析
-        const editorContent = containerRef.current?.querySelector('.vditor-ir .vditor-reset, .vditor-wysiwyg .vditor-reset') as HTMLElement;
-        if (editorContent) {
-          editorContent.querySelectorAll('.heading-fold-icon').forEach(icon => icon.remove());
-        }
-        
         const currentMode = vditorRef.current?.getCurrentMode();
         const targetMode = currentMode === 'ir' ? 'sv' : 'ir';
         
@@ -390,6 +384,10 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           
           if ((targetMode === 'ir' && text.includes('即时渲染')) ||
               (targetMode === 'sv' && text.includes('分屏预览'))) {
+            // 先触发mousedown再click，模拟真实鼠标点击
+            // mousedown会在capture阶段被HeadingFolding捕获并移除折叠图标
+            // 避免图标干扰Vditor的DOM解析导致#标记丢失
+            (btn as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
             (btn as HTMLElement).click();
             return;
           }
