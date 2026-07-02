@@ -33,6 +33,9 @@ Thumbs.db
 # Design docs (internal)
 design/
 
+# Research data
+data_collection_agent/
+
 # Tauri (for future desktop app)
 src-tauri/target/
 

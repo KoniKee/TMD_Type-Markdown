@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ThemeId = 'chen-guang' | 'tian-qing' | 'hu-po' | 'mo-ye' | 'xing-yun' | 'ji-guang';
+export type ThemeId = 'chen-guang' | 'tian-qing' | 'hu-po' | 'na-tie' | 'mo-ye' | 'xing-yun' | 'ji-guang' | 'zi-teng';
 export type Theme = ThemeId | 'system';
 export type ThemeGroup = 'light' | 'dark';
 export type EditorWidth = 'full' | 'wide' | 'normal';
@@ -11,9 +11,11 @@ export const THEMES: Record<ThemeId, { name: string; group: ThemeGroup }> = {
   'chen-guang': { name: '晨光', group: 'light' },
   'tian-qing': { name: '天青', group: 'light' },
   'hu-po': { name: '琥珀', group: 'light' },
+  'na-tie': { name: '霜华', group: 'light' },
   'mo-ye': { name: '墨夜', group: 'dark' },
   'xing-yun': { name: '星云', group: 'dark' },
   'ji-guang': { name: '极光', group: 'dark' },
+  'zi-teng': { name: '紫藤', group: 'dark' },
 };
 
 export const EMBED_MAX_DEPTH_MIN = 1;
@@ -133,8 +135,14 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'md-editor-settings',
-      version: 4,
+      version: 5,
       migrate: (persistedState: any) => {
+        if (persistedState && persistedState.theme === 'shuang-ye') {
+          persistedState.theme = 'na-tie';
+        }
+        if (persistedState && persistedState.theme === 'nuan-yang') {
+          persistedState.theme = 'na-tie';
+        }
         if (persistedState && persistedState.theme === 'light') {
           persistedState.theme = 'tian-qing';
         } else if (persistedState && persistedState.theme === 'dark') {

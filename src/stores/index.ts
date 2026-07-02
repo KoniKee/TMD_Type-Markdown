@@ -6,6 +6,7 @@ export { useSettingsStore, THEMES } from './settingsStore';
 export type { ThemeId, Theme, ThemeGroup } from './settingsStore';
 export { useUpdateStore } from './updateStore';
 export { useSplitStore } from './splitStore';
+export { useShortcutStore } from './shortcutStore';
 export type { Pane, PaneLeaf, PaneSplit, SplitDirection, TabSplitState } from './splitStore';
 
 let internalDragData: string | null = null;

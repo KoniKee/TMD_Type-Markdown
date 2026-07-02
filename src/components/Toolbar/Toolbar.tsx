@@ -7,12 +7,11 @@ import {
   Settings,
   Palette,
   Command,
-  LucideIcon,
-  X,
-  Keyboard
+  LucideIcon
 } from 'lucide-react';
 import { useSettingsStore } from '../../stores';
 import { ThemePanel } from '../ThemePanel/ThemePanel';
+import { ShortcutsPanel } from '../Shortcuts/ShortcutsPanel';
 
 /**
  * 顶部工具栏组件
@@ -97,96 +96,13 @@ export const Toolbar: React.FC = () => {
         </div>
       </div>
 
-      {/* 快捷键弹窗 */}
       {showShortcuts && (
-        <ShortcutsDialog onClose={() => setShowShortcuts(false)} />
+        <ShortcutsPanel mode="dialog" onClose={() => setShowShortcuts(false)} />
       )}
     </>
   );
 };
 
-/**
- * 快捷键弹窗
- */
-const ShortcutsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const shortcuts = [
-    { category: '文件操作', items: [
-      { key: 'Ctrl + S', action: '保存文件' },
-    ]},
-    { category: '编辑操作', items: [
-      { key: 'Ctrl + B', action: '加粗' },
-      { key: 'Ctrl + I', action: '斜体' },
-      { key: 'Ctrl + D', action: '删除线' },
-      { key: 'Ctrl + `', action: '行内代码' },
-    ]},
-    { category: '标题', items: [
-      { key: 'Ctrl + 1', action: '一级标题' },
-      { key: 'Ctrl + 2', action: '二级标题' },
-      { key: 'Ctrl + 3', action: '三级标题' },
-    ]},
-    { category: '其他', items: [
-      { key: 'Ctrl + M', action: '插入表格' },
-      { key: 'Ctrl + Z', action: '撤销' },
-      { key: 'Ctrl + Shift + Z', action: '重做' },
-    ]},
-  ];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* 背景遮罩 */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-      
-      {/* 弹窗内容 */}
-      <div className="relative bg-[var(--editor-bg)] rounded-xl shadow-2xl border border-[var(--editor-border)] w-[500px] max-h-[80vh] overflow-hidden animate-scale-in">
-        {/* 标题栏 */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--editor-border)]">
-          <div className="flex items-center gap-2">
-            <Keyboard size={18} className="text-[var(--accent-500)]" />
-            <h2 className="text-base font-semibold text-[var(--editor-text)]">键盘快捷键</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md hover:bg-[var(--sidebar-hover)] text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        
-        {/* 快捷键列表 */}
-        <div className="p-4 overflow-y-auto max-h-[calc(80vh-60px)]">
-          {shortcuts.map((group) => (
-            <div key={group.category} className="mb-4 last:mb-0">
-              <h3 className="text-xs font-semibold text-[var(--editor-text-secondary)] uppercase tracking-wider mb-2">
-                {group.category}
-              </h3>
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <div 
-                    key={item.key}
-                    className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-[var(--sidebar-hover)] transition-colors"
-                  >
-                    <span className="text-sm text-[var(--editor-text)]">{item.action}</span>
-                    <kbd className="px-2 py-0.5 text-xs font-mono bg-[var(--editor-code-bg)] text-[var(--editor-text-secondary)] rounded border border-[var(--editor-border)]">
-                      {item.key}
-                    </kbd>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/**
- * 工具栏按钮组件
- * 带有优雅的悬停动画和工具提示
- */
 interface ToolbarButtonProps {
   icon: LucideIcon;
   title: string;
