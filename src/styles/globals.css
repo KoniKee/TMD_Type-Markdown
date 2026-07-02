@@ -11,13 +11,15 @@
    - [data-theme="xxx"] 属性选择器定义各主题完整变量
    - .dark 保留给 TailwindCSS dark: 前缀使用，与 mo-ye 墨夜相同
    
-   6个主题:
+   8个主题:
    1. chen-guang (晨光) - 浅色 - 纯白界面
    2. tian-qing  (天青) - 浅色 - 默认亮色
    3. hu-po      (琥珀) - 浅色 - Anthropic暖象牙+陶土
-   4. mo-ye      (墨夜) - 深色 - 默认暗色
-   5. xing-yun   (星云) - 深色 - Atom One Dark
-   6. ji-guang   (极光) - 深色 - Nord
+   4. na-tie     (霜华) - 浅色 - Catppuccin Latte
+   5. mo-ye      (墨夜) - 深色 - 默认暗色
+   6. xing-yun   (星云) - 深色 - Atom One Dark
+   7. ji-guang   (极光) - 深色 - Nord
+   8. zi-teng    (紫藤) - 深色 - Dracula
    ============================================ */
 
 :root {
@@ -536,6 +538,137 @@
   --alert-caution-border: #C53030;
   --alert-caution-bg: rgba(197, 48, 48, 0.1);
   --alert-caution-text: #C53030;
+}
+
+[data-theme="na-tie"] {
+  --primary-50: #eff1f5;
+  --primary-100: #e6e9ef;
+  --primary-200: #dce0e8;
+  --primary-300: #ccd0da;
+  --primary-400: #bcc0cc;
+  --primary-500: #acb0be;
+  --primary-600: #9ca0b0;
+  --primary-700: #8c8fa1;
+  --primary-800: #6c6f85;
+  --primary-900: #4c4f69;
+
+  --accent-50: #e3edfe;
+  --accent-100: #c4d8fc;
+  --accent-200: #9bc2fa;
+  --accent-300: #72abf8;
+  --accent-400: #4997f6;
+  --accent-500: #1e66f5;
+  --accent-600: #1a56d0;
+  --accent-700: #1546ab;
+  --accent-800: #103786;
+
+  --success-500: #40a02b;
+  --success-600: #338021;
+
+  --warning-500: #df8e1d;
+  --warning-600: #b87015;
+
+  --error-500: #d20f39;
+  --error-600: #a80b2d;
+
+  --editor-bg: #eff1f5;
+  --editor-surface: #e6e9ef;
+  --editor-text: #4c4f69;
+  --editor-text-secondary: #6c6f85;
+  --editor-text-muted: #9ca0b0;
+  --editor-border: #ccd0da;
+  --editor-border-focus: #1e66f5;
+  --editor-code-bg: #e6e9ef;
+  --editor-heading: #4c4f69;
+  --editor-link: #1e66f5;
+  --editor-accent: #1e66f5;
+  --editor-quote-bg: rgba(30, 102, 245, 0.08);
+  --editor-selection: rgba(30, 102, 245, 0.15);
+
+  --sidebar-bg: #e6e9ef;
+  --sidebar-surface: #eff1f5;
+  --sidebar-text: #4c4f69;
+  --sidebar-text-muted: #9ca0b0;
+  --sidebar-hover: #dce0e8;
+  --sidebar-active: #ccd0da;
+  --sidebar-border: #dce0e8;
+
+  --toolbar-bg: #eff1f5;
+  --toolbar-hover: #e6e9ef;
+  --toolbar-active: #dce0e8;
+
+  --tab-bg: #e6e9ef;
+  --tab-active-bg: #eff1f5;
+  --tab-inactive-bg: #e6e9ef;
+  --tab-hover-bg: #dce0e8;
+  --tab-border: #dce0e8;
+  --tab-active-indicator: #1e66f5;
+
+  --titlebar-bg: #eff1f5;
+
+  --statusbar-bg: #eff1f5;
+  --statusbar-text: #6c6f85;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  --hljs-comment: #9ca0b0;
+  --hljs-keyword: #8839ef;
+  --hljs-string: #40a02b;
+  --hljs-attr: #df8e1d;
+  --hljs-number: #fe640b;
+  --hljs-title: #1e66f5;
+  --hljs-function: #1e66f5;
+  --hljs-params: #5c5f77;
+  --hljs-variable: #4c4f69;
+  --hljs-class: #df8e1d;
+  --hljs-meta: #9ca0b0;
+  --hljs-deletion: #d20f39;
+  --hljs-regexp: #40a02b;
+  --hljs-selector-class: #40a02b;
+  --hljs-selector-id: #1e66f5;
+  --hljs-link: #1e66f5;
+  --hljs-addition: #40a02b;
+  --hljs-built_in: #fe640b;
+  --hljs-literal: #fe640b;
+  --hljs-type: #df8e1d;
+  --hljs-symbol: #40a02b;
+  --hljs-bullet: #1e66f5;
+
+  --code-inline-bg: #e6e9ef;
+  --code-inline-text: #1e66f5;
+  --code-block-bg: #e6e9ef;
+  --code-block-container-bg: transparent;
+  --code-block-text: inherit;
+
+  --scrollbar-track: #e6e9ef;
+  --scrollbar-thumb: #ccd0da;
+
+  --alert-note-border: #1e66f5;
+  --alert-note-bg: #d8e4fc;
+  --alert-note-text: #1546ab;
+  --alert-tip-border: #40a02b;
+  --alert-tip-bg: #d8ecd0;
+  --alert-tip-text: #2d7a1e;
+  --alert-important-border: #8839ef;
+  --alert-important-bg: #e8dcf4;
+  --alert-important-text: #5a289e;
+  --alert-warning-border: #df8e1d;
+  --alert-warning-bg: #f8e8c8;
+  --alert-warning-text: #a86810;
+  --alert-caution-border: #d20f39;
+  --alert-caution-bg: #f8d0d8;
+  --alert-caution-text: #a80b2d;
 }
 
 /* ============================================
@@ -1098,6 +1231,137 @@
   --alert-caution-border: #bf616a;
   --alert-caution-bg: rgba(191, 97, 106, 0.1);
   --alert-caution-text: #bf616a;
+}
+
+[data-theme="zi-teng"] {
+  --primary-50: #F8F8F2;
+  --primary-100: #e8e8e0;
+  --primary-200: #d0d0c8;
+  --primary-300: #b8b8b0;
+  --primary-400: #a0a098;
+  --primary-500: #6272A4;
+  --primary-600: #505888;
+  --primary-700: #44475A;
+  --primary-800: #343746;
+  --primary-900: #21222C;
+
+  --accent-50: #f3e8ff;
+  --accent-100: #e4c6ff;
+  --accent-200: #d4a4ff;
+  --accent-300: #c482ff;
+  --accent-400: #b460ff;
+  --accent-500: #BD93F9;
+  --accent-600: #a878e0;
+  --accent-700: #9363c7;
+  --accent-800: #7e4eae;
+
+  --success-500: #50FA7B;
+  --success-600: #40e06b;
+
+  --warning-500: #F1FA8C;
+  --warning-600: #e0e37a;
+
+  --error-500: #FF5555;
+  --error-600: #e04444;
+
+  --editor-bg: #282A36;
+  --editor-surface: #343746;
+  --editor-text: #F8F8F2;
+  --editor-text-secondary: #BFC7D5;
+  --editor-text-muted: #6272A4;
+  --editor-border: #44475A;
+  --editor-border-focus: #BD93F9;
+  --editor-code-bg: #44475A;
+  --editor-heading: #F8F8F2;
+  --editor-link: #8BE9FD;
+  --editor-accent: #BD93F9;
+  --editor-quote-bg: rgba(189, 147, 249, 0.1);
+  --editor-selection: rgba(189, 147, 249, 0.2);
+
+  --sidebar-bg: #21222C;
+  --sidebar-surface: #343746;
+  --sidebar-text: #F8F8F2;
+  --sidebar-text-muted: #6272A4;
+  --sidebar-hover: #343746;
+  --sidebar-active: #44475A;
+  --sidebar-border: #44475A;
+
+  --toolbar-bg: #21222C;
+  --toolbar-hover: #343746;
+  --toolbar-active: #44475A;
+
+  --tab-bg: #21222C;
+  --tab-active-bg: #282A36;
+  --tab-inactive-bg: #21222C;
+  --tab-hover-bg: #343746;
+  --tab-border: #44475A;
+  --tab-active-indicator: #BD93F9;
+
+  --titlebar-bg: #21222C;
+
+  --statusbar-bg: #21222C;
+  --statusbar-text: #6272A4;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  --hljs-comment: #6272A4;
+  --hljs-keyword: #FF79C6;
+  --hljs-string: #F1FA8C;
+  --hljs-attr: #50FA7B;
+  --hljs-number: #BD93F9;
+  --hljs-title: #BD93F9;
+  --hljs-function: #50FA7B;
+  --hljs-params: #BFC7D5;
+  --hljs-variable: #F8F8F2;
+  --hljs-class: #8BE9FD;
+  --hljs-meta: #F8F8F2;
+  --hljs-deletion: #FF5555;
+  --hljs-regexp: #F1FA8C;
+  --hljs-selector-class: #50FA7B;
+  --hljs-selector-id: #BD93F9;
+  --hljs-link: #8BE9FD;
+  --hljs-addition: #50FA7B;
+  --hljs-built_in: #8BE9FD;
+  --hljs-literal: #BD93F9;
+  --hljs-type: #8BE9FD;
+  --hljs-symbol: #BD93F9;
+  --hljs-bullet: #FF79C6;
+
+  --code-inline-bg: #44475A;
+  --code-inline-text: #BD93F9;
+  --code-block-bg: #343746;
+  --code-block-container-bg: #21222C;
+  --code-block-text: #F8F8F2;
+
+  --scrollbar-track: #282A36;
+  --scrollbar-thumb: #44475A;
+
+  --alert-note-border: #8BE9FD;
+  --alert-note-bg: #343746;
+  --alert-note-text: #8BE9FD;
+  --alert-tip-border: #50FA7B;
+  --alert-tip-bg: #1a3a1a;
+  --alert-tip-text: #50FA7B;
+  --alert-important-border: #BD93F9;
+  --alert-important-bg: #2d1f3d;
+  --alert-important-text: #BD93F9;
+  --alert-warning-border: #F1FA8C;
+  --alert-warning-bg: #3a3a1a;
+  --alert-warning-text: #F1FA8C;
+  --alert-caution-border: #FF5555;
+  --alert-caution-bg: #3a1a1a;
+  --alert-caution-text: #FF5555;
 }
 
 

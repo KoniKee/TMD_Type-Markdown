@@ -9,18 +9,20 @@ interface ThemePanelProps {
 
 // 每个主题的预览配色
 const THEME_PREVIEW_COLORS: Record<ThemeId, string[]> = {
-  'chen-guang': ['#ffffff', '#3b82f6', '#1e293b', '#e5e7eb'],
-  'tian-qing': ['#f8fafc', '#3b82f6', '#334155', '#e2e8f0'],
-  'hu-po': ['#FAF9F5', '#D97757', '#141413', '#E2DFD3'],
-  'mo-ye': ['#0f172a', '#60a5fa', '#e2e8f0', '#334155'],
-  'xing-yun': ['#282c34', '#61afef', '#abb2bf', '#3e4451'],
-  'ji-guang': ['#2e3440', '#88c0d0', '#d8dee9', '#434c5e'],
+  'chen-guang': ['#ffffff', '#3b82f6', '#1e293b'],
+  'tian-qing': ['#f8fafc', '#3b82f6', '#334155'],
+  'hu-po': ['#FAF9F5', '#D97757', '#141413'],
+  'na-tie': ['#eff1f5', '#1e66f5', '#4c4f69'],
+  'mo-ye': ['#0f172a', '#60a5fa', '#e2e8f0'],
+  'xing-yun': ['#282c34', '#61afef', '#abb2bf'],
+  'ji-guang': ['#2e3440', '#88c0d0', '#d8dee9'],
+  'zi-teng': ['#282A36', '#BD93F9', '#F8F8F2'],
 };
 
 // 按组分类的主题列表
 const THEME_GROUPS: { label: string; key: ThemeGroup; themeIds: ThemeId[] }[] = [
-  { label: 'Light', key: 'light', themeIds: ['chen-guang', 'tian-qing', 'hu-po'] },
-  { label: 'Dark', key: 'dark', themeIds: ['mo-ye', 'xing-yun', 'ji-guang'] },
+  { label: 'Light', key: 'light', themeIds: ['chen-guang', 'tian-qing', 'hu-po', 'na-tie'] },
+  { label: 'Dark', key: 'dark', themeIds: ['mo-ye', 'xing-yun', 'ji-guang', 'zi-teng'] },
 ];
 
 export const ThemePanel: React.FC<ThemePanelProps> = ({ embedded = false, onClose }) => {
@@ -89,14 +91,14 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ embedded = false, onClos
         title={themeInfo.name}
       >
         {/* 颜色圆点 */}
-        <div className="flex items-center gap-1 mb-1.5">
-          {colors.map((color, idx) => (
+        <div className="flex items-center gap-1.5 mb-1.5">
+          {colors.slice(0, 3).map((color, idx) => (
             <span
               key={idx}
               className="inline-block rounded-full"
               style={{
-                width: 12,
-                height: 12,
+                width: 10,
+                height: 10,
                 backgroundColor: color,
                 boxShadow: '0 0 0 1px rgba(0,0,0,0.08)',
               }}
@@ -135,7 +137,7 @@ export const ThemePanel: React.FC<ThemePanelProps> = ({ embedded = false, onClos
             {group.label}
           </div>
           {/* 3列网格 */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {group.themeIds.map((themeId) => (
               <ThemeCardContent key={themeId} themeId={themeId} />
             ))}

@@ -8,3 +8,4 @@ export { useFileOperations } from './useFileOperations';
 export { useFileChangeDetection } from './useFileChangeDetection';
 export { useSplitShortcuts } from './useSplitShortcuts';
 export { useTabShortcuts } from './useTabShortcuts';
+export { useShortcut, useShortcutKey } from './useShortcutManager';

@@ -6,6 +6,7 @@ import '../../styles/embed.css';
 import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode, THEMES } from '../../stores';
 import type { ThemeId } from '../../stores';
 import { useSaveToFile, useSaveAsFile } from '../../hooks/useAutoSave';
+import { useShortcut } from '../../hooks/useShortcutManager';
 import { isTauriCached, waitForTauri } from '../../utils/platform';
 import { isLocalMdFile, resolveDocPath, readMdFileContent, getFileDisplayName, normalizePath, getFileName } from '../../utils/linkUtils';
 import { shouldRenderEmbed, processEmbedsInMarkdown, createEmbedContainer, createEmbedWarning, EmbedContext } from '../../utils/embedUtils';
@@ -364,97 +365,73 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     setPreviewModeRef.current = setPreviewMode;
   }, [setPreviewMode]);
   
-  // Ctrl+/ 快捷键 - 在IR和SV模式间切换
+  useShortcut('modeSwitch', (e: KeyboardEvent) => {
+    const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
+    if (!toolbar) return;
+
+    const currentMode = vditorRef.current?.getCurrentMode();
+    const targetMode = currentMode === 'ir' ? 'sv' : 'ir';
+
+    const buttons = toolbar.querySelectorAll('button');
+    for (const btn of buttons) {
+      const text = btn.textContent?.trim() || '';
+
+      if ((targetMode === 'ir' && text.includes('即时渲染')) ||
+          (targetMode === 'sv' && text.includes('分屏预览'))) {
+        (btn as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+        (btn as HTMLElement).click();
+        return;
+      }
+    }
+  }, []);
+
   useEffect(() => {
-    const handleModeSwitch = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === '/') {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
-        if (!toolbar) return;
-        
-        const currentMode = vditorRef.current?.getCurrentMode();
-        const targetMode = currentMode === 'ir' ? 'sv' : 'ir';
-        
-        // 直接点击工具栏中的模式按钮
-        const buttons = toolbar.querySelectorAll('button');
-        for (const btn of buttons) {
-          const text = btn.textContent?.trim() || '';
-          
-          if ((targetMode === 'ir' && text.includes('即时渲染')) ||
-              (targetMode === 'sv' && text.includes('分屏预览'))) {
-            // 先触发mousedown再click，模拟真实鼠标点击
-            // mousedown会在capture阶段被HeadingFolding捕获并移除折叠图标
-            // 避免图标干扰Vditor的DOM解析导致#标记丢失
-            (btn as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-            (btn as HTMLElement).click();
-            return;
-          }
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.altKey || !e.ctrlKey) return;
+      if (e.key !== '7' && e.key !== '8' && e.key !== '9') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetMode = e.key === '7' ? 'wysiwyg' : e.key === '8' ? 'ir' : 'sv';
+      const toolbar = container.querySelector('.vditor-toolbar');
+      if (!toolbar) return;
+      const buttons = toolbar.querySelectorAll('button');
+      for (const btn of buttons) {
+        const text = btn.textContent?.trim() || '';
+        if ((targetMode === 'wysiwyg' && text.includes('所见即所得')) ||
+            (targetMode === 'ir' && text.includes('即时渲染')) ||
+            (targetMode === 'sv' && text.includes('分屏预览'))) {
+          (btn as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+          (btn as HTMLElement).click();
+          return;
         }
       }
     };
-    
-    window.addEventListener('keydown', handleModeSwitch, true);
-    return () => window.removeEventListener('keydown', handleModeSwitch, true);
+
+    container.addEventListener('keydown', handleKeyDown as EventListener, true);
+    return () => container.removeEventListener('keydown', handleKeyDown as EventListener, true);
   }, []);
-  
-  // Ctrl+H 快捷键 - 打开查找替换弹窗
-  useEffect(() => {
-    const handleFindReplace = (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'h') {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowReplaceDialog(true);
-      }
-    };
-    
-    window.addEventListener('keydown', handleFindReplace, true);
-    return () => window.removeEventListener('keydown', handleFindReplace, true);
+
+  useShortcut('findReplace', () => {
+    setShowReplaceDialog(true);
   }, []);
-  
-  // Ctrl+Shift+A 快捷键 - 打开 Alerts 选择器
-  useEffect(() => {
-    const handleAlertsShortcut = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowAlertsPicker(true);
-      }
-    };
-    
-    window.addEventListener('keydown', handleAlertsShortcut, true);
-    return () => window.removeEventListener('keydown', handleAlertsShortcut, true);
+
+  useShortcut('alerts', () => {
+    setShowAlertsPicker(true);
   }, []);
-  
-  // Ctrl+S 快捷键 - 智能保存
-  useEffect(() => {
-    const handleSave = (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        saveToFile();
-      }
-    };
-    
-    window.addEventListener('keydown', handleSave, true);
-    return () => window.removeEventListener('keydown', handleSave, true);
+
+  useShortcut('save', (e: KeyboardEvent) => {
+    e.stopImmediatePropagation();
+    saveToFile();
   }, [saveToFile]);
-  
-  // Ctrl+Shift+S 快捷键 - 强制另存为
-  useEffect(() => {
-    const handleSaveAs = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        saveAsFile();
-      }
-    };
-    
-    window.addEventListener('keydown', handleSaveAs, true);
-    return () => window.removeEventListener('keydown', handleSaveAs, true);
+
+  useShortcut('saveAs', (e: KeyboardEvent) => {
+    e.stopImmediatePropagation();
+    saveAsFile();
   }, [saveAsFile]);
   
   // 编辑区拖放文件处理
@@ -1456,6 +1433,8 @@ const relativePath = `${imageDirectory}/${fileName}`;
         }
         
         // 监听编辑模式切换 - 监听三个编辑区域的display变化
+        let prevMode: EditorMode | null = null;
+        let lastOutlineFixTime = 0;
         const checkEditorMode = () => {
           const irElement = containerRef.current?.querySelector('.vditor-ir') as HTMLElement | null;
           const svElement = containerRef.current?.querySelector('.vditor-sv') as HTMLElement | null;
@@ -1471,6 +1450,66 @@ const relativePath = `${imageDirectory}/${fileName}`;
           }
           
           setEditorModeRef.current(pathRef.current, currentMode);
+
+          const switchedToIR = prevMode !== null && prevMode !== 'ir' && currentMode === 'ir';
+          prevMode = currentMode;
+
+          if (switchedToIR) {
+            const now = Date.now();
+            if (now - lastOutlineFixTime > 500) {
+              lastOutlineFixTime = now;
+
+              const restoreWidth = () => {
+                const outline = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
+                if (!outline) return;
+                const savedWidth = localStorage.getItem('md-editor-outline-width');
+                if (savedWidth) {
+                  const w = parseInt(savedWidth, 10);
+                  if (!isNaN(w)) {
+                    const content = outline.closest('.vditor-content') as HTMLElement;
+                    const maxW = content ? Math.floor(content.offsetWidth * 0.5) : 400;
+                    const fw = Math.max(180, Math.min(maxW, w));
+                    outline.style.width = `${fw}px`;
+                    outline.style.flexBasis = `${fw}px`;
+                  }
+                }
+              };
+
+              setTimeout(() => {
+                const outline = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
+                if (!outline || outline.style.display === 'none') return;
+
+                if (outline.querySelector('li')) {
+                  restoreWidth();
+                  return;
+                }
+
+                const vditorInternal = (vditorRef.current as any)?.vditor;
+                if (vditorInternal?.outline?.render) {
+                  try { vditorInternal.outline.render(vditorInternal); } catch (e) { }
+                }
+
+                setTimeout(() => {
+                  const outlineCheck = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
+                  if (!outlineCheck || outlineCheck.querySelector('li')) {
+                    restoreWidth();
+                    return;
+                  }
+
+                  const outlineBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="outline"]') as HTMLElement;
+                  if (outlineBtn) {
+                    outlineBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                    outlineBtn.click();
+                    setTimeout(() => {
+                      outlineBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                      outlineBtn.click();
+                      setTimeout(restoreWidth, 200);
+                    }, 200);
+                  }
+                }, 200);
+              }, 2000);
+            }
+          }
 
           if (containerRef.current && headingFolding) {
             destroyHeadingFolding(containerRef.current);
