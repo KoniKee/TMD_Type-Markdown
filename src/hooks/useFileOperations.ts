@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useFileStore, useEditorStore, TreeNode } from '../stores';
-import { isTauriCached } from '../utils/platform';
+import { isTauriCached, platformPathSeparator } from '../utils/platform';
 
 export const useFileOperations = () => {
   const { fileTree, rootPath, setRootPath, setFileTree, setFileHandle, setDirHandle, setRootHandle, dirHandles, rootHandle, clearAll } = useFileStore();
@@ -117,10 +117,11 @@ export const useFileOperations = () => {
     try {
       const entries = await readDir(dirPath);
       
+      const sep = platformPathSeparator();
       for (const entry of entries) {
         const nodePath = dirPath.endsWith('\\') || dirPath.endsWith('/') 
           ? `${dirPath}${entry.name}` 
-          : `${dirPath}\\${entry.name}`;
+          : `${dirPath}${sep}${entry.name}`;
         
         if (entry.isFile && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
           nodes.push({
