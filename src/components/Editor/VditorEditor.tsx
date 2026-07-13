@@ -1109,6 +1109,117 @@ const relativePath = `${imageDirectory}/${fileName}`;
         document.addEventListener('selectionchange', handleAlertEditingSelection);
         (vditorRef.current as any)._alertEditingHandler = handleAlertEditingSelection;
         
+        // 大纲与编辑器内容实时联动
+        let lastScrolledHeadingId = '';
+        
+        const getActiveEditor = (): HTMLElement | null => {
+          const selectors = [
+            '.vditor-ir .vditor-reset',
+            '.vditor-sv .vditor-reset',
+            '.vditor-wysiwyg .vditor-reset',
+          ];
+          for (const sel of selectors) {
+            const el = containerRef.current?.querySelector(sel) as HTMLElement;
+            if (el && el.offsetParent !== null) return el;
+          }
+          return null;
+        };
+        
+        const applyHeadingHighlight = (currentHeading: Element) => {
+          const outline = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
+          if (!outline || outline.style.display === 'none' || outline.offsetParent === null) return;
+          
+          const headingId = currentHeading.id;
+          
+          outline.querySelectorAll('.vditor-outline__item--current').forEach(el => {
+            el.classList.remove('vditor-outline__item--current');
+          });
+          
+          const targetItem = outline.querySelector(`span[data-target-id="${headingId}"]`) as HTMLElement;
+          if (targetItem) {
+            targetItem.classList.add('vditor-outline__item--current');
+            if (headingId !== lastScrolledHeadingId) {
+              lastScrolledHeadingId = headingId;
+              const itemLi = targetItem.closest('li') as HTMLElement;
+              if (itemLi) {
+                itemLi.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              }
+            }
+          }
+        };
+        
+        // ---- 光标联动：从 Selection API 定位标题 ----
+        const updateOutlineByCursor = () => {
+          const editorEl = getActiveEditor();
+          if (!editorEl) return;
+          
+          const selection = window.getSelection();
+          if (!selection || selection.rangeCount === 0) return;
+          const range = selection.getRangeAt(0);
+          const startNode = range.startContainer;
+          
+          let heading: Element | null = null;
+          if (startNode.nodeType === Node.ELEMENT_NODE) {
+            heading = (startNode as Element).closest('h1,h2,h3,h4,h5,h6');
+          } else if (startNode.parentElement) {
+            heading = startNode.parentElement.closest('h1,h2,h3,h4,h5,h6');
+          }
+          
+          if (!heading) {
+            const headings = editorEl.querySelectorAll('h1,h2,h3,h4,h5,h6');
+            if (headings.length === 0) return;
+            const cursorRect = range.getBoundingClientRect();
+            const editorRect = editorEl.getBoundingClientRect();
+            const cursorContentTop = cursorRect.top - editorRect.top + editorEl.scrollTop;
+            let nearest: Element | null = headings[0];
+            for (const h of headings) {
+              if ((h as HTMLElement).offsetTop <= cursorContentTop + 2) {
+                nearest = h;
+              }
+            }
+            heading = nearest;
+          }
+          
+          if (heading) applyHeadingHighlight(heading);
+        };
+        
+        // ---- 滚动联动：完全基于滚动位置定位标题 ----
+        const updateOutlineByScroll = () => {
+          const editorEl = getActiveEditor();
+          if (!editorEl) return;
+          
+          const headings = editorEl.querySelectorAll('h1,h2,h3,h4,h5,h6');
+          if (headings.length === 0) return;
+          
+          const scrollTop = editorEl.scrollTop;
+          let nearest: Element | null = headings[0];
+          for (const h of headings) {
+            if ((h as HTMLElement).offsetTop <= scrollTop + 40) {
+              nearest = h;
+            }
+          }
+          
+          if (nearest) applyHeadingHighlight(nearest);
+        };
+        
+        const debouncedOutlineByCursor = debounce(updateOutlineByCursor, 100);
+        const debouncedOutlineByScroll = debounce(updateOutlineByScroll, 50);
+        
+        document.addEventListener('selectionchange', debouncedOutlineByCursor);
+        (vditorRef.current as any)._outlineSyncCursorHandler = debouncedOutlineByCursor;
+        
+        const scrollTargets = [
+          '.vditor-ir .vditor-reset',
+          '.vditor-sv .vditor-reset',
+          '.vditor-wysiwyg .vditor-reset',
+        ];
+        for (const sel of scrollTargets) {
+          const el = containerRef.current?.querySelector(sel) as HTMLElement;
+          if (el) {
+            el.addEventListener('scroll', debouncedOutlineByScroll);
+          }
+        }
+        
         // 拦截 alerts 按钮点击
         const alertsBtn = containerRef.current?.querySelector('.vditor-toolbar button[data-type="alerts"]');
         if (alertsBtn) {
