@@ -439,6 +439,13 @@ export const TitleBar: React.FC = () => {
                     </div>
                   );
                 })}
+                <button
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
+                  onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
+                  title="新建文档"
+                >
+                  <Plus size={16} />
+                </button>
               </div>
 
               {/* 右箭头 - 独立区域，不重叠 */}
@@ -459,14 +466,7 @@ export const TitleBar: React.FC = () => {
                 </div>
               )}
 
-              {/* + 按钮 */}
-              <button
-                className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
-                onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
-                title="新建文档"
-              >
-                <Plus size={16} />
-              </button>
+              {/* + 按钮已在滚动容器内部 */}
             </div>
           )}
         </div>
