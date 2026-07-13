@@ -131,7 +131,13 @@ function insertIcons(editorContent: HTMLElement): void {
       content.forEach(el => el.setAttribute(FOLDED_ATTR, 'true'));
     }
 
-    h.insertBefore(icon, h.firstChild);
+    // 插入到标题标记后面，避免干扰 Vditor 解析标题层级（#符号）
+    const marker = h.querySelector(':scope > .vditor-ir__marker--heading, :scope > .vditor-wysiwyg__marker, :scope > .vditor-ir__marker');
+    if (marker) {
+      marker.after(icon);
+    } else {
+      h.insertBefore(icon, h.firstChild);
+    }
   });
 }
 
