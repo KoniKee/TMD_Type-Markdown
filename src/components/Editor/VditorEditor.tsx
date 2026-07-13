@@ -7,7 +7,7 @@ import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode
 import type { ThemeId } from '../../stores';
 import { useSaveToFile, useSaveAsFile } from '../../hooks/useAutoSave';
 import { useShortcut } from '../../hooks/useShortcutManager';
-import { isTauriCached, waitForTauri } from '../../utils/platform';
+import { isTauriCached, waitForTauri, platformPathSeparator } from '../../utils/platform';
 import { isLocalMdFile, resolveDocPath, readMdFileContent, getFileDisplayName, normalizePath, getFileName } from '../../utils/linkUtils';
 import { shouldRenderEmbed, processEmbedsInMarkdown, createEmbedContainer, createEmbedWarning, EmbedContext } from '../../utils/embedUtils';
 import EmojiPicker from './EmojiPicker';
@@ -130,8 +130,9 @@ async function loadLocalImage(imageSrc: string, docPath: string): Promise<string
         }
       }
       
-      const normalizedSrc = cleanSrc.replace(/\//g, '\\');
-      const imagePath = `${docDir}\\${normalizedSrc}`;
+      const sep = platformPathSeparator();
+      const normalizedSrc = cleanSrc.replace(/\//g, sep);
+      const imagePath = `${docDir}${sep}${normalizedSrc}`;
       const imageData = await readFile(imagePath);
       const blob = new Blob([imageData]);
       const blobUrl = URL.createObjectURL(blob);
@@ -895,7 +896,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
           
           if (tauriDetected) {
             try {
-              const pathSep = '\\';
+              const pathSep = platformPathSeparator();
               const imgDirPath = `${docDir}${pathSep}${imageDirectory}`;
               
               const { mkdir, writeFile } = await import('@tauri-apps/plugin-fs');

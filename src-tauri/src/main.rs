@@ -6,6 +6,7 @@
 mod commands;
 
 use std::sync::Mutex;
+use std::path::Path;
 use tauri::Manager;
 use tauri::Emitter;
 
@@ -17,11 +18,10 @@ fn handle_file_open(app: &tauri::AppHandle, path: String) {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let initial_file = if args.len() > 1 && !args[1].starts_with('-') {
-        Some(args[1].clone())
-    } else {
-        None
-    };
+    let initial_file = args.iter()
+        .skip(1)
+        .find(|arg| !arg.starts_with('-') && Path::new(arg).exists())
+        .cloned();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
@@ -30,8 +30,12 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if args.len() > 1 && !args[1].starts_with('-') {
-                handle_file_open(app, args[1].clone());
+            let file_path = args.iter()
+                .skip(1)
+                .find(|arg| !arg.starts_with('-') && Path::new(arg).exists())
+                .cloned();
+            if let Some(path) = file_path {
+                handle_file_open(app, path);
             }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_focus();

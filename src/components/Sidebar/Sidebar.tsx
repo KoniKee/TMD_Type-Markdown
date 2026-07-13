@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useFileStore, useEditorStore, useSplitStore, TreeNode } from '../../stores';
 import { useFileOperations } from '../../hooks/useFileOperations';
-import { isTauriCached } from '../../utils/platform';
+import { isTauriCached, platformPathSeparator } from '../../utils/platform';
 import { useRecentFilesStore, formatTime } from '../../stores/recentFilesStore';
 import { useInternalDrag } from '../../hooks/useInternalDrag';
 import {
@@ -115,7 +115,8 @@ export const Sidebar: React.FC = () => {
       if (!fullRoot) {
         return relativePath;
       }
-      return `${fullRoot}\\${relativePath}`;
+      const sep = platformPathSeparator();
+      return `${fullRoot}${sep}${relativePath}`;
     }
     return relativePath;
   }, [getFullRootPath]);
@@ -360,7 +361,8 @@ export const Sidebar: React.FC = () => {
     try {
       if (isTauriCached()) {
         const absoluteParentPath = toAbsolutePath(parentPath);
-        const filePath = `${absoluteParentPath}\\${finalName}`;
+        const sep = platformPathSeparator();
+        const filePath = `${absoluteParentPath}${sep}${finalName}`;
         
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
         await writeTextFile(filePath, defaultContent);
@@ -434,7 +436,8 @@ export const Sidebar: React.FC = () => {
     try {
       if (isTauriCached()) {
         const absoluteParentPath = toAbsolutePath(parentPath);
-        const dirPath = `${absoluteParentPath}\\${dirName}`;
+        const sep = platformPathSeparator();
+        const dirPath = `${absoluteParentPath}${sep}${dirName}`;
         
         const { mkdir } = await import('@tauri-apps/plugin-fs');
         await mkdir(dirPath);
@@ -496,7 +499,7 @@ export const Sidebar: React.FC = () => {
       } else {
         const lastSlash = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         const parentPath = path.substring(0, lastSlash);
-        const pathSep = isTauriCached() ? '\\' : '/';
+        const pathSep = platformPathSeparator();
         const oldEntryPath = `${parentPath}${pathSep}${oldName}`;
         const newEntryPath = `${parentPath}${pathSep}${finalName}`;
 

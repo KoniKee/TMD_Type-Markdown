@@ -52,6 +52,28 @@ export const resetTauriCache = () => {
   _isTauriAsyncCache = null;
 };
 
+let _pathSep: string | null = null;
+
+export function platformPathSeparator(): string {
+  if (_pathSep === null) {
+    _pathSep = navigator.platform.toLowerCase().includes('win') ? '\\' : '/';
+  }
+  return _pathSep;
+}
+
+export function joinPaths(...segments: string[]): string {
+  const sep = platformPathSeparator();
+  return segments.join(sep);
+}
+
+export function normalizePath(path: string): string {
+  const sep = platformPathSeparator();
+  if (sep === '\\') {
+    return path.replace(/\//g, '\\');
+  }
+  return path.replace(/\\\\/g, '/');
+}
+
 // 检测是否在浏览器环境且支持 File System Access API
 export const isFileSystemAccessSupported = (): boolean => {
   return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
