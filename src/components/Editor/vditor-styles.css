@@ -423,6 +423,14 @@
   background: var(--accent-500);
 }
 
+/* 大纲当前项高亮 */
+.vditor-outline__item--current {
+  background-color: var(--accent-100) !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  color: var(--accent-600) !important;
+}
+
 /* ============================================
    代码样式 - 使用CSS变量
    ============================================ */

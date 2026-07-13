@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
-import { useSaveToFile, getFileName } from '../../hooks/useAutoSave';
+import { useSaveToFile, useSaveAsFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, Palette, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows } from 'lucide-react';
+import { FileText, X, Save, SaveAll, Palette, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows } from 'lucide-react';
 import { ShortcutsPanel } from '../Shortcuts/ShortcutsPanel';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
@@ -39,6 +39,7 @@ export const TitleBar: React.FC = () => {
   const closeDocument = useEditorStore((state) => state.closeDocument);
   const reorderTabs = useEditorStore((state) => state.reorderTabs);
   const saveToFile = useSaveToFile();
+  const saveAsFile = useSaveAsFile();
   const [showThemePanel, setShowThemePanel] = useState(false);
   const { handleNewFile } = useFileOperations();
   const { hasUpdate, latestVersion } = useUpdateStore();
@@ -391,6 +392,16 @@ export const TitleBar: React.FC = () => {
               title="保存到本地文件 (Ctrl+S)"
             >
               <Save size={16} />
+            </button>
+          )}
+
+          {activeDocPath && (
+            <button
+              className="w-9 h-9 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors"
+              onClick={(e) => { e.stopPropagation(); saveAsFile(); }}
+              title="另存为 (Ctrl+Shift+S)"
+            >
+              <SaveAll size={16} />
             </button>
           )}
 
