@@ -1001,8 +1001,9 @@ export const Sidebar: React.FC = () => {
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
-                  onClick={async () => {
+                  onClick={async (e) => {
                      if (isDragTriggered.current) return;
+                     if ((e.target as HTMLElement).closest('button')) return;
                      try {
                       if (isTauriCached()) {
                         const { readTextFile } = await import('@tauri-apps/plugin-fs');
@@ -1038,7 +1039,9 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('打开最近文件失败:', err);
-                      alert(`打开文件失败: ${err}`);
+                      if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
+                        removeFile(file.path);
+                      }
                     }
                   }}
                 >
@@ -1133,6 +1136,9 @@ export const Sidebar: React.FC = () => {
                     }
                   } catch (err) {
                     console.error('打开最近文件失败:', err);
+                    if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
+                      removeFile(file.path);
+                    }
                   }
                 }}
               />
@@ -1194,6 +1200,9 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('在窗格中打开最近文件失败:', err);
+                      if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
+                        removeFile(file.path);
+                      }
                     }
                   }}
                 />
@@ -1244,6 +1253,18 @@ export const Sidebar: React.FC = () => {
                   />
                 </>
               )}
+              <div className="h-px bg-[var(--sidebar-border)] my-1" />
+              <ContextMenuItem
+                icon={Trash2}
+                label="从最近列表移除"
+                onClick={() => {
+                  const file = contextMenu.recentFile;
+                  if (!file) return;
+                  closeContextMenu();
+                  removeFile(file.path);
+                }}
+                danger
+              />
             </>
           ) : contextMenu.node?.isDir ? (
             <>
