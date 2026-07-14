@@ -334,7 +334,7 @@ export const TitleBar: React.FC = () => {
             <div className="flex items-end h-full flex-1 min-w-0" data-tauri-drag-region>
               {/* 左箭头 - 独立区域，不重叠 */}
               {showScrollButtons && (
-                <div className="flex-shrink-0 flex items-center pl-1.5 pr-0.5 h-full">
+                <div className="flex-shrink-0 flex items-center pl-1.5 pr-0.5 h-full" data-tauri-drag-region>
                   <button
                     className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
                       canScrollLeft
@@ -343,6 +343,7 @@ export const TitleBar: React.FC = () => {
                     }`}
                     disabled={!canScrollLeft}
                     onClick={(e) => { e.stopPropagation(); scrollTabs('left'); }}
+                    onMouseDown={(e) => { e.stopPropagation(); }}
                     title="向左滚动标签"
                   >
                     <ChevronLeft size={14} />
@@ -350,7 +351,7 @@ export const TitleBar: React.FC = () => {
                 </div>
               )}
 
-              <div ref={tabsContainerRef} className="flex items-end h-full overflow-hidden scroll-smooth flex-1">
+              <div ref={tabsContainerRef} className="flex items-end h-full overflow-hidden scroll-smooth flex-1" data-tauri-drag-region>
                 {tabs.map((tabPath, index) => {
                   const isActive = tabPath === activeTabPath;
                   const paneCount = getPaneCount(tabPath);
@@ -442,6 +443,7 @@ export const TitleBar: React.FC = () => {
                 <button
                   className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
                   onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
+                  onMouseDown={(e) => { e.stopPropagation(); }}
                   title="新建文档"
                 >
                   <Plus size={16} />
@@ -450,7 +452,7 @@ export const TitleBar: React.FC = () => {
 
               {/* 右箭头 - 独立区域，不重叠 */}
               {showScrollButtons && (
-                <div className="flex-shrink-0 flex items-center pl-0.5 pr-1.5 h-full">
+                <div className="flex-shrink-0 flex items-center pl-0.5 pr-1.5 h-full" data-tauri-drag-region>
                   <button
                     className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
                       canScrollRight
@@ -459,6 +461,7 @@ export const TitleBar: React.FC = () => {
                     }`}
                     disabled={!canScrollRight}
                     onClick={(e) => { e.stopPropagation(); scrollTabs('right'); }}
+                    onMouseDown={(e) => { e.stopPropagation(); }}
                     title="向右滚动标签"
                   >
                     <ChevronRight size={14} />
