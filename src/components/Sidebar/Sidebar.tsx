@@ -1064,6 +1064,7 @@ export const Sidebar: React.FC = () => {
                     <div className="flex items-center gap-0.5">
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)]"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1075,6 +1076,7 @@ export const Sidebar: React.FC = () => {
                       </button>
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-red-500"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
