@@ -139,6 +139,9 @@ export const Sidebar: React.FC = () => {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const newDirInputRef = useRef<HTMLInputElement>(null);
+  const skipFileOpenRef = useRef(false);
+
+  const [confirmRemoveFile, setConfirmRemoveFile] = useState<string | null>(null);
 
   // 窗口获得焦点时刷新文件树
   useEffect(() => {
@@ -1003,6 +1006,10 @@ export const Sidebar: React.FC = () => {
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
                   onClick={async (e) => {
                      if (isDragTriggered.current) return;
+                     if (skipFileOpenRef.current) {
+                       skipFileOpenRef.current = false;
+                       return;
+                     }
                      if ((e.target as HTMLElement).closest('button')) return;
                      try {
                        if (isTauriCached()) {
@@ -1010,10 +1017,7 @@ export const Sidebar: React.FC = () => {
                          const realPath = file.path.replace(/^file:\/\//, '');
                          const fileExists = await exists(realPath);
                          if (!fileExists) {
-                           alert('文件已被删除或移动，无法打开。');
-                           if (confirm('是否将其从最近文件列表中移除？')) {
-                             removeFile(file.path);
-                           }
+                           setConfirmRemoveFile(file.path);
                            return;
                          }
                          const content = await readTextFile(realPath);
@@ -1037,10 +1041,7 @@ export const Sidebar: React.FC = () => {
                        }
                      } catch (err) {
                        console.error('打开最近文件失败:', err);
-                       alert(`打开文件失败: ${err}`);
-                       if (confirm('是否将其从最近文件列表中移除？')) {
-                         removeFile(file.path);
-                       }
+                       setConfirmRemoveFile(file.path);
                      }
                    }}
                 >
@@ -1071,6 +1072,7 @@ export const Sidebar: React.FC = () => {
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
+                          skipFileOpenRef.current = true;
                           removeFile(file.path);
                         }}
                         title="移除"
@@ -1120,10 +1122,7 @@ export const Sidebar: React.FC = () => {
                         const realPath = file.path.replace(/^file:\/\//, '');
                         const fileExists = await exists(realPath);
                         if (!fileExists) {
-                          alert('文件已被删除或移动，无法打开。');
-                          if (confirm('是否将其从最近文件列表中移除？')) {
-                            removeFile(file.path);
-                          }
+                          setConfirmRemoveFile(file.path);
                           return;
                         }
                         const content = await readTextFile(realPath);
@@ -1143,10 +1142,7 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('打开最近文件失败:', err);
-                      alert(`打开文件失败: ${err}`);
-                      if (confirm('是否将其从最近文件列表中移除？')) {
-                        removeFile(file.path);
-                      }
+                      setConfirmRemoveFile(file.path);
                     }
                   }}
               />
@@ -1188,10 +1184,7 @@ export const Sidebar: React.FC = () => {
                         const realPath = file.path.replace(/^file:\/\//, '');
                         const fileExists = await exists(realPath);
                         if (!fileExists) {
-                          alert('文件已被删除或移动，无法打开。');
-                          if (confirm('是否将其从最近文件列表中移除？')) {
-                            removeFile(file.path);
-                          }
+                          setConfirmRemoveFile(file.path);
                           return;
                         }
                         content = await readTextFile(realPath);
@@ -1216,10 +1209,7 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('在窗格中打开最近文件失败:', err);
-                      alert(`打开文件失败: ${err}`);
-                      if (confirm('是否将其从最近文件列表中移除？')) {
-                        removeFile(file.path);
-                      }
+                      setConfirmRemoveFile(file.path);
                     }
                   }}
                 />
@@ -1438,6 +1428,22 @@ export const Sidebar: React.FC = () => {
           danger
           onConfirm={finishDelete}
           onCancel={cancelDelete}
+        />
+      )}
+
+      {/* 文件不存在确认移除对话框 */}
+      {confirmRemoveFile && (
+        <ConfirmDialog
+          title="文件不存在"
+          message={`文件 "${recentFiles.find(f => f.path === confirmRemoveFile)?.name || ''}" 已被删除或移动，无法打开。\n是否将其从最近文件列表中移除？`}
+          confirmText="移除"
+          cancelText="取消"
+          danger
+          onConfirm={() => {
+            removeFile(confirmRemoveFile);
+            setConfirmRemoveFile(null);
+          }}
+          onCancel={() => setConfirmRemoveFile(null)}
         />
       )}
 
