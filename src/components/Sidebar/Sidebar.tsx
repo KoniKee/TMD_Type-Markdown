@@ -139,6 +139,9 @@ export const Sidebar: React.FC = () => {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
   const newDirInputRef = useRef<HTMLInputElement>(null);
+  const skipFileOpenRef = useRef(false);
+
+  const [confirmRemoveFile, setConfirmRemoveFile] = useState<string | null>(null);
 
   // 窗口获得焦点时刷新文件树
   useEffect(() => {
@@ -1001,46 +1004,50 @@ export const Sidebar: React.FC = () => {
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
-                  onClick={async () => {
-                     if (isDragTriggered.current) return;
-                     try {
-                      if (isTauriCached()) {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                        // Tauri版本：去掉file://前缀
-                        const realPath = file.path.replace(/^file:\/\//, '');
-                        const content = await readTextFile(realPath);
-                        openDocument(file.path, content, false);
-                        addFile(file.path, file.name);
-                      } else {
-                        // 浏览器环境：尝试从fileStore获取文件句柄
-                        const { getFileHandle } = useFileStore.getState();
-                        
-                        // 去掉 file:// 前缀（存储句柄时用的是原始路径）
-                        const realPath = file.path.replace(/^file:\/\//, '');
-                        
-                        // 标准化路径
-                        const normalizedPath = realPath.replace(/\\/g, '/');
-                        
-                        // 尝试多种方式查找句柄
-                        const handle = getFileHandle(normalizedPath) || 
-                                       getFileHandle(realPath) || 
-                                       getFileHandle(file.name);
-                        
-                        if (handle && handle.kind === 'file') {
-                          const fileObj = await handle.getFile();
-                          const content = await fileObj.text();
-                          openDocument(file.path, content, false);
-                          addFile(file.path, file.name);
-                        } else {
-                          // 文件句柄已失效，提示用户
-                          alert(`文件句柄已失效，请从文件树中打开。\n查找路径: ${normalizedPath}`);
-                        }
-                      }
-                    } catch (err) {
-                      console.error('打开最近文件失败:', err);
-                      alert(`打开文件失败: ${err}`);
+                  onClickCapture={(e) => {
+                    if ((e.target as HTMLElement).closest('button')) {
+                      skipFileOpenRef.current = true;
                     }
                   }}
+                  onClick={async (e) => {
+                     if (isDragTriggered.current) return;
+                     if (skipFileOpenRef.current) {
+                       skipFileOpenRef.current = false;
+                       return;
+                     }
+                     try {
+                       if (isTauriCached()) {
+                         const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
+                         const realPath = file.path.replace(/^file:\/\//, '');
+                         const fileExists = await exists(realPath);
+                         if (!fileExists) {
+                           setConfirmRemoveFile(file.path);
+                           return;
+                         }
+                         const content = await readTextFile(realPath);
+                         openDocument(file.path, content, false);
+                         addFile(file.path, file.name);
+                       } else {
+                         const { getFileHandle } = useFileStore.getState();
+                         const realPath = file.path.replace(/^file:\/\//, '');
+                         const normalizedPath = realPath.replace(/\\/g, '/');
+                         const handle = getFileHandle(normalizedPath) || 
+                                        getFileHandle(realPath) || 
+                                        getFileHandle(file.name);
+                         if (handle && handle.kind === 'file') {
+                           const fileObj = await handle.getFile();
+                           const content = await fileObj.text();
+                           openDocument(file.path, content, false);
+                           addFile(file.path, file.name);
+                         } else {
+                           alert(`文件句柄已失效，请从文件树中打开。\n查找路径: ${normalizedPath}`);
+                         }
+                       }
+                     } catch (err) {
+                       console.error('打开最近文件失败:', err);
+                       setConfirmRemoveFile(file.path);
+                     }
+                   }}
                 >
                   <div className="w-4 h-4 flex items-center justify-center mr-2">
                     {file.isPinned ? (
@@ -1057,6 +1064,8 @@ export const Sidebar: React.FC = () => {
                     <div className="flex items-center gap-0.5">
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)]"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
                           file.isPinned ? unpinFile(file.path) : pinFile(file.path);
@@ -1067,6 +1076,8 @@ export const Sidebar: React.FC = () => {
                       </button>
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-red-500"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFile(file.path);
@@ -1108,33 +1119,39 @@ export const Sidebar: React.FC = () => {
               <ContextMenuItem
                 icon={ExternalLink}
                 label="在新Tab中打开"
-                onClick={async () => {
-                  const file = contextMenu.recentFile;
-                  if (!file) return;
-                  closeContextMenu();
-                  try {
-                    if (isTauriCached()) {
-                      const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                      const realPath = file.path.replace(/^file:\/\//, '');
-                      const content = await readTextFile(realPath);
-                      openDocument(file.path, content, false);
-                      addFile(file.path, file.name);
-                    } else {
-                      const { getFileHandle } = useFileStore.getState();
-                      const realPath = file.path.replace(/^file:\/\//, '');
-                      const normalizedPath = realPath.replace(/\\/g, '/');
-                      const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
-                      if (handle && handle.kind === 'file') {
-                        const fileObj = await handle.getFile();
-                        const content = await fileObj.text();
+                  onClick={async () => {
+                    const file = contextMenu.recentFile;
+                    if (!file) return;
+                    closeContextMenu();
+                    try {
+                      if (isTauriCached()) {
+                        const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const fileExists = await exists(realPath);
+                        if (!fileExists) {
+                          setConfirmRemoveFile(file.path);
+                          return;
+                        }
+                        const content = await readTextFile(realPath);
                         openDocument(file.path, content, false);
                         addFile(file.path, file.name);
+                      } else {
+                        const { getFileHandle } = useFileStore.getState();
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const normalizedPath = realPath.replace(/\\/g, '/');
+                        const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
+                        if (handle && handle.kind === 'file') {
+                          const fileObj = await handle.getFile();
+                          const content = await fileObj.text();
+                          openDocument(file.path, content, false);
+                          addFile(file.path, file.name);
+                        }
                       }
+                    } catch (err) {
+                      console.error('打开最近文件失败:', err);
+                      setConfirmRemoveFile(file.path);
                     }
-                  } catch (err) {
-                    console.error('打开最近文件失败:', err);
-                  }
-                }}
+                  }}
               />
               {isTauriCached() && (
                 <ContextMenuItem
@@ -1170,8 +1187,13 @@ export const Sidebar: React.FC = () => {
                     try {
                       let content: string;
                       if (isTauriCached()) {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                        const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
                         const realPath = file.path.replace(/^file:\/\//, '');
+                        const fileExists = await exists(realPath);
+                        if (!fileExists) {
+                          setConfirmRemoveFile(file.path);
+                          return;
+                        }
                         content = await readTextFile(realPath);
                       } else {
                         const { getFileHandle } = useFileStore.getState();
@@ -1194,6 +1216,7 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('在窗格中打开最近文件失败:', err);
+                      setConfirmRemoveFile(file.path);
                     }
                   }}
                 />
@@ -1244,6 +1267,18 @@ export const Sidebar: React.FC = () => {
                   />
                 </>
               )}
+              <div className="h-px bg-[var(--sidebar-border)] my-1" />
+              <ContextMenuItem
+                icon={Trash2}
+                label="从最近列表移除"
+                onClick={() => {
+                  const file = contextMenu.recentFile;
+                  if (!file) return;
+                  closeContextMenu();
+                  removeFile(file.path);
+                }}
+                danger
+              />
             </>
           ) : contextMenu.node?.isDir ? (
             <>
@@ -1400,6 +1435,22 @@ export const Sidebar: React.FC = () => {
           danger
           onConfirm={finishDelete}
           onCancel={cancelDelete}
+        />
+      )}
+
+      {/* 文件不存在确认移除对话框 */}
+      {confirmRemoveFile && (
+        <ConfirmDialog
+          title="文件不存在"
+          message={`文件 "${recentFiles.find(f => f.path === confirmRemoveFile)?.name || ''}" 已被删除或移动，无法打开。\n是否将其从最近文件列表中移除？`}
+          confirmText="移除"
+          cancelText="取消"
+          danger
+          onConfirm={() => {
+            removeFile(confirmRemoveFile);
+            setConfirmRemoveFile(null);
+          }}
+          onCancel={() => setConfirmRemoveFile(null)}
         />
       )}
 

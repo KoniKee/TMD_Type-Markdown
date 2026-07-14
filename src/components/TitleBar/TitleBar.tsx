@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
 import { useSaveToFile, useSaveAsFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, SaveAll, Palette, Keyboard, Settings, Minus, Square, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, X, Save, SaveAll, Palette, Keyboard, Settings, Minus, Square, Copy, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShortcutsPanel } from '../Shortcuts/ShortcutsPanel';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
@@ -562,11 +562,10 @@ export const TitleBar: React.FC = () => {
                 isWindowControl
               />
               <TitleBarButton
-                icon={Square}
+                icon={isMaximized ? Copy : Square}
                 title={isMaximized ? '还原' : '最大化'}
                 onClick={handleToggleMaximize}
                 isWindowControl
-                isActive={isMaximized}
               />
               <TitleBarButton
                 icon={CloseIcon}
@@ -627,7 +626,6 @@ interface TitleBarButtonProps {
   onClick: () => void;
   isWindowControl?: boolean;
   isClose?: boolean;
-  isActive?: boolean;
   disabled?: boolean;
 }
 
@@ -637,7 +635,6 @@ const TitleBarButton: React.FC<TitleBarButtonProps> = ({
   onClick,
   isWindowControl = false,
   isClose = false,
-  isActive = false,
   disabled = false,
 }) => {
   return (
@@ -650,9 +647,7 @@ const TitleBarButton: React.FC<TitleBarButtonProps> = ({
           ? 'opacity-40 cursor-not-allowed'
           : isClose
             ? 'hover:bg-[var(--error-500)] hover:text-white'
-            : isActive
-              ? 'bg-[var(--sidebar-active)]'
-              : 'hover:bg-[var(--toolbar-hover)]'
+            : 'hover:bg-[var(--toolbar-hover)]'
         }
         text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)]
       `}
