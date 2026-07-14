@@ -1004,13 +1004,17 @@ export const Sidebar: React.FC = () => {
                   onMouseEnter={() => setHoveredPath(file.path)}
                   onMouseLeave={() => setHoveredPath(null)}
                   onContextMenu={(e) => handleRecentFileContextMenu(e, file)}
+                  onClickCapture={(e) => {
+                    if ((e.target as HTMLElement).closest('button')) {
+                      skipFileOpenRef.current = true;
+                    }
+                  }}
                   onClick={async (e) => {
                      if (isDragTriggered.current) return;
                      if (skipFileOpenRef.current) {
                        skipFileOpenRef.current = false;
                        return;
                      }
-                     if ((e.target as HTMLElement).closest('button')) return;
                      try {
                        if (isTauriCached()) {
                          const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
@@ -1060,6 +1064,7 @@ export const Sidebar: React.FC = () => {
                     <div className="flex items-center gap-0.5">
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-[var(--sidebar-text)]"
+                        onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
                           file.isPinned ? unpinFile(file.path) : pinFile(file.path);
@@ -1070,9 +1075,9 @@ export const Sidebar: React.FC = () => {
                       </button>
                       <button
                         className="p-1 rounded hover:bg-[var(--sidebar-active)] text-[var(--sidebar-text-muted)] hover:text-red-500"
+                        onMouseDown={() => { skipFileOpenRef.current = true; }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          skipFileOpenRef.current = true;
                           removeFile(file.path);
                         }}
                         title="移除"
