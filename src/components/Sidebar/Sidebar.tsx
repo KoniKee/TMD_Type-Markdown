@@ -1005,45 +1005,44 @@ export const Sidebar: React.FC = () => {
                      if (isDragTriggered.current) return;
                      if ((e.target as HTMLElement).closest('button')) return;
                      try {
-                      if (isTauriCached()) {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                        // Tauri版本：去掉file://前缀
-                        const realPath = file.path.replace(/^file:\/\//, '');
-                        const content = await readTextFile(realPath);
-                        openDocument(file.path, content, false);
-                        addFile(file.path, file.name);
-                      } else {
-                        // 浏览器环境：尝试从fileStore获取文件句柄
-                        const { getFileHandle } = useFileStore.getState();
-                        
-                        // 去掉 file:// 前缀（存储句柄时用的是原始路径）
-                        const realPath = file.path.replace(/^file:\/\//, '');
-                        
-                        // 标准化路径
-                        const normalizedPath = realPath.replace(/\\/g, '/');
-                        
-                        // 尝试多种方式查找句柄
-                        const handle = getFileHandle(normalizedPath) || 
-                                       getFileHandle(realPath) || 
-                                       getFileHandle(file.name);
-                        
-                        if (handle && handle.kind === 'file') {
-                          const fileObj = await handle.getFile();
-                          const content = await fileObj.text();
-                          openDocument(file.path, content, false);
-                          addFile(file.path, file.name);
-                        } else {
-                          // 文件句柄已失效，提示用户
-                          alert(`文件句柄已失效，请从文件树中打开。\n查找路径: ${normalizedPath}`);
-                        }
-                      }
-                    } catch (err) {
-                      console.error('打开最近文件失败:', err);
-                      if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
-                        removeFile(file.path);
-                      }
-                    }
-                  }}
+                       if (isTauriCached()) {
+                         const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
+                         const realPath = file.path.replace(/^file:\/\//, '');
+                         const fileExists = await exists(realPath);
+                         if (!fileExists) {
+                           alert('文件已被删除或移动，无法打开。');
+                           if (confirm('是否将其从最近文件列表中移除？')) {
+                             removeFile(file.path);
+                           }
+                           return;
+                         }
+                         const content = await readTextFile(realPath);
+                         openDocument(file.path, content, false);
+                         addFile(file.path, file.name);
+                       } else {
+                         const { getFileHandle } = useFileStore.getState();
+                         const realPath = file.path.replace(/^file:\/\//, '');
+                         const normalizedPath = realPath.replace(/\\/g, '/');
+                         const handle = getFileHandle(normalizedPath) || 
+                                        getFileHandle(realPath) || 
+                                        getFileHandle(file.name);
+                         if (handle && handle.kind === 'file') {
+                           const fileObj = await handle.getFile();
+                           const content = await fileObj.text();
+                           openDocument(file.path, content, false);
+                           addFile(file.path, file.name);
+                         } else {
+                           alert(`文件句柄已失效，请从文件树中打开。\n查找路径: ${normalizedPath}`);
+                         }
+                       }
+                     } catch (err) {
+                       console.error('打开最近文件失败:', err);
+                       alert(`打开文件失败: ${err}`);
+                       if (confirm('是否将其从最近文件列表中移除？')) {
+                         removeFile(file.path);
+                       }
+                     }
+                   }}
                 >
                   <div className="w-4 h-4 flex items-center justify-center mr-2">
                     {file.isPinned ? (
@@ -1111,36 +1110,45 @@ export const Sidebar: React.FC = () => {
               <ContextMenuItem
                 icon={ExternalLink}
                 label="在新Tab中打开"
-                onClick={async () => {
-                  const file = contextMenu.recentFile;
-                  if (!file) return;
-                  closeContextMenu();
-                  try {
-                    if (isTauriCached()) {
-                      const { readTextFile } = await import('@tauri-apps/plugin-fs');
-                      const realPath = file.path.replace(/^file:\/\//, '');
-                      const content = await readTextFile(realPath);
-                      openDocument(file.path, content, false);
-                      addFile(file.path, file.name);
-                    } else {
-                      const { getFileHandle } = useFileStore.getState();
-                      const realPath = file.path.replace(/^file:\/\//, '');
-                      const normalizedPath = realPath.replace(/\\/g, '/');
-                      const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
-                      if (handle && handle.kind === 'file') {
-                        const fileObj = await handle.getFile();
-                        const content = await fileObj.text();
+                  onClick={async () => {
+                    const file = contextMenu.recentFile;
+                    if (!file) return;
+                    closeContextMenu();
+                    try {
+                      if (isTauriCached()) {
+                        const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const fileExists = await exists(realPath);
+                        if (!fileExists) {
+                          alert('文件已被删除或移动，无法打开。');
+                          if (confirm('是否将其从最近文件列表中移除？')) {
+                            removeFile(file.path);
+                          }
+                          return;
+                        }
+                        const content = await readTextFile(realPath);
                         openDocument(file.path, content, false);
                         addFile(file.path, file.name);
+                      } else {
+                        const { getFileHandle } = useFileStore.getState();
+                        const realPath = file.path.replace(/^file:\/\//, '');
+                        const normalizedPath = realPath.replace(/\\/g, '/');
+                        const handle = getFileHandle(normalizedPath) || getFileHandle(realPath) || getFileHandle(file.name);
+                        if (handle && handle.kind === 'file') {
+                          const fileObj = await handle.getFile();
+                          const content = await fileObj.text();
+                          openDocument(file.path, content, false);
+                          addFile(file.path, file.name);
+                        }
+                      }
+                    } catch (err) {
+                      console.error('打开最近文件失败:', err);
+                      alert(`打开文件失败: ${err}`);
+                      if (confirm('是否将其从最近文件列表中移除？')) {
+                        removeFile(file.path);
                       }
                     }
-                  } catch (err) {
-                    console.error('打开最近文件失败:', err);
-                    if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
-                      removeFile(file.path);
-                    }
-                  }
-                }}
+                  }}
               />
               {isTauriCached() && (
                 <ContextMenuItem
@@ -1176,8 +1184,16 @@ export const Sidebar: React.FC = () => {
                     try {
                       let content: string;
                       if (isTauriCached()) {
-                        const { readTextFile } = await import('@tauri-apps/plugin-fs');
+                        const { readTextFile, exists } = await import('@tauri-apps/plugin-fs');
                         const realPath = file.path.replace(/^file:\/\//, '');
+                        const fileExists = await exists(realPath);
+                        if (!fileExists) {
+                          alert('文件已被删除或移动，无法打开。');
+                          if (confirm('是否将其从最近文件列表中移除？')) {
+                            removeFile(file.path);
+                          }
+                          return;
+                        }
                         content = await readTextFile(realPath);
                       } else {
                         const { getFileHandle } = useFileStore.getState();
@@ -1200,7 +1216,8 @@ export const Sidebar: React.FC = () => {
                       }
                     } catch (err) {
                       console.error('在窗格中打开最近文件失败:', err);
-                      if (confirm(`打开文件失败: ${err}\n\n文件可能已被删除或移动。\n是否将其从最近文件列表中移除？`)) {
+                      alert(`打开文件失败: ${err}`);
+                      if (confirm('是否将其从最近文件列表中移除？')) {
                         removeFile(file.path);
                       }
                     }
