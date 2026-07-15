@@ -70,6 +70,7 @@ export const TitleBar: React.FC = () => {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const dragInfoRef = useRef<{ startX: number; startY: number; hasMoved: boolean; dragPath: string | null; dragIndex: number }>({ startX: 0, startY: 0, hasMoved: false, dragPath: null, dragIndex: -1 });
   const dragOverIndexRef = useRef<number | null>(null);
+  const [tabWidth, setTabWidth] = useState(130);
 
   const updateScrollState = useCallback(() => {
     const container = tabsContainerRef.current;
@@ -92,14 +93,27 @@ export const TitleBar: React.FC = () => {
     const container = tabsContainerRef.current;
     if (!container) return;
 
-    const ro = new ResizeObserver(() => {
-      const hasOverflow = container.scrollWidth > container.clientWidth;
-      setShowScrollButtons(hasOverflow);
-      updateScrollState();
-    });
+    const updateLayout = () => {
+      const currentTabs = useEditorStore.getState().tabs;
+      if (!container || currentTabs.length === 0) {
+        setShowScrollButtons(false);
+        return;
+      }
+      const reservedWidth = 48; // +按钮(32) + 内边距(16)
+      const availableWidth = container.clientWidth - reservedWidth;
+      const idealWidth = Math.floor(availableWidth / currentTabs.length);
+      const newWidth = Math.max(100, Math.min(220, idealWidth));
+      setTabWidth(newWidth);
 
+      // 仅当理想宽度小于最小值 100px 时，才表示内容真正溢出，需显示滚动箭头
+      setShowScrollButtons(idealWidth < 100);
+      updateScrollState();
+    };
+
+    const ro = new ResizeObserver(updateLayout);
     ro.observe(container);
     container.addEventListener('scroll', updateScrollState);
+    updateLayout();
 
     return () => {
       ro.disconnect();
@@ -370,17 +384,16 @@ export const TitleBar: React.FC = () => {
                         else tabRefs.current.delete(tabPath);
                       }}
                       className={`
-                        group relative flex items-center h-[36px] px-3
+                        group relative flex items-center h-[36px] px-3 flex-shrink-0
                         ${dragState.isDragging && dragState.dragPath === tabPath ? 'cursor-grabbing' : 'cursor-pointer'}
                         transition-all duration-[var(--transition-fast)]
-                        w-[130px] flex-shrink-0
                         ${isActive
-                          ? 'bg-[var(--editor-bg)] text-[var(--editor-text)] shadow-[0_-2px_8px_rgba(0,0,0,0.1)]'
+                          ? 'bg-[var(--editor-bg)] text-[var(--editor-text)] font-medium border-b-2 border-b-[var(--editor-bg)] shadow-[inset_0_2px_0_0_var(--tab-active-indicator)]'
                           : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-hover-bg)] hover:text-[var(--editor-text)]'
                         }
                         ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
                       `}
-                      style={{ borderRadius: '12px 12px 0 0' }}
+                      style={{ width: tabWidth, minWidth: tabWidth, borderRadius: '12px 12px 0 0' }}
                       onClick={(e) => {
                         if (dragInfoRef.current.hasMoved) return;
                         e.stopPropagation();
