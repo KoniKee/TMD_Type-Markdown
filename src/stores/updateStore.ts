@@ -37,8 +37,16 @@ export const useUpdateStore = create<UpdateState>()(
 
         set({ checking: true, checkStatus: 'checking', hasUpdate: false });
 
+        const guardTimer = setTimeout(() => {
+          if (get().checking) {
+            console.warn('Update check guard timeout exceeded, force reset');
+            set({ checking: false, checkStatus: 'error' });
+          }
+        }, 20000);
+
         try {
           const info = await checkForUpdate();
+          clearTimeout(guardTimer);
 
           if (info) {
             set({
@@ -58,6 +66,7 @@ export const useUpdateStore = create<UpdateState>()(
             });
           }
         } catch (error) {
+          clearTimeout(guardTimer);
           console.error('Update check failed:', error);
           set({ checking: false, hasUpdate: false, checkStatus: 'error' });
         }
@@ -69,6 +78,7 @@ export const useUpdateStore = create<UpdateState>()(
     }),
     {
       name: 'update-storage',
+      version: 2,
       partialize: (state) => ({
         latestVersion: state.latestVersion,
         releaseNotes: state.releaseNotes,
