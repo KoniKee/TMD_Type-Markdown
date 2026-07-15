@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore, EMBED_MAX_DEPTH_MIN, EMBED_MAX_DEPTH_MAX, EMBED_MAX_COUNT_MIN, EMBED_MAX_COUNT_MAX, EditorWidth, LineHeight } from '../../stores/settingsStore';
-import { X, Palette, Pencil, Keyboard, Info, Columns, AlignLeft, ExternalLink, Hash, Image, Save, FileText } from 'lucide-react';
+import { X, Palette, Pencil, Keyboard, Info, Columns, AlignLeft, ExternalLink, Hash, Image, Save, FileText, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ThemePanel } from '../ThemePanel/ThemePanel';
 import { ShortcutsPanel } from '../Shortcuts/ShortcutsPanel';
+import { useUpdateStore } from '../../stores';
+import { UpdateNotification } from '../Update/UpdateNotification';
 import { version } from '../../../package.json';
 
 type TabId = 'general' | 'editor' | 'shortcuts' | 'about';
@@ -17,6 +19,32 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 export const SettingsPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('general');
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [checkFeedback, setCheckFeedback] = useState<string | null>(null);
+  const updateStore = useUpdateStore();
+  const feedbackTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleManualCheck = useCallback(async () => {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+    setCheckFeedback(null);
+    setShowUpdateDialog(false);
+
+    await updateStore.checkForUpdate();
+
+    const status = useUpdateStore.getState().checkStatus;
+    if (status === 'found') {
+      setShowUpdateDialog(true);
+      setCheckFeedback(null);
+    } else if (status === 'latest') {
+      setCheckFeedback('已是最新版本');
+      feedbackTimerRef.current = setTimeout(() => setCheckFeedback(null), 3000);
+    } else {
+      setCheckFeedback('检查失败，请检查网络');
+      feedbackTimerRef.current = setTimeout(() => setCheckFeedback(null), 3000);
+    }
+  }, [updateStore]);
 
   useEffect(() => {
     const handleOpenSettings = () => setIsOpen(true);
@@ -356,6 +384,38 @@ export const SettingsPanel: React.FC = () => {
                         <p className="text-xs text-[var(--editor-text-muted)]">版本 {version}</p>
                       </div>
                     </div>
+
+                    <div className="flex items-center gap-2 mb-4">
+                      <button
+                        onClick={handleManualCheck}
+                        disabled={updateStore.checking}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--accent-500)] text-white hover:bg-[var(--accent-600)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <RefreshCw
+                          size={12}
+                          className={updateStore.checking ? 'animate-spin' : ''}
+                        />
+                        {updateStore.checking ? '检查中...' : '检查更新'}
+                      </button>
+
+                      {checkFeedback && (
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md ${
+                            checkFeedback === '已是最新版本'
+                              ? 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400'
+                              : 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400'
+                          }`}
+                        >
+                          {checkFeedback === '已是最新版本' ? (
+                            <CheckCircle2 size={12} />
+                          ) : (
+                            <AlertCircle size={12} />
+                          )}
+                          {checkFeedback}
+                        </span>
+                      )}
+                    </div>
+
                     <div className="text-xs text-[var(--editor-text-secondary)] space-y-2">
                       <p className="font-medium text-[var(--editor-text)]">技术栈</p>
                       <div className="flex flex-wrap gap-2">
@@ -386,6 +446,10 @@ export const SettingsPanel: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showUpdateDialog && (
+        <UpdateNotification onClose={() => setShowUpdateDialog(false)} />
       )}
     </>
   );
