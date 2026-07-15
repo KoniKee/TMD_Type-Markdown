@@ -13,10 +13,11 @@ const handleNewFile = (openDocument: any) => {
 export const EditorContainer: React.FC = () => {
   const activeDocPath = useEditorStore((state) => state.activeDocPath);
   const activeTabPath = useEditorStore((state) => state.activeTabPath);
+  const tabs = useEditorStore((state) => state.tabs);
   const openDocument = useEditorStore((state) => state.openDocument);
   const { handleOpenFolder, handleOpenFile } = useFileOperations();
   
-  if (!activeDocPath || !activeTabPath) {
+  if (tabs.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-[var(--editor-bg)]">
         <div className="text-center max-w-lg px-8">
@@ -85,7 +86,15 @@ export const EditorContainer: React.FC = () => {
 
   return (
     <div className="h-full overflow-hidden bg-[var(--editor-bg)]">
-      <PaneContainer key={activeTabPath} tabPath={activeTabPath} />
+      {tabs.map(tabPath => (
+        <div
+          key={tabPath}
+          className="h-full"
+          style={{ display: tabPath === activeTabPath ? undefined : 'none' }}
+        >
+          <PaneContainer tabPath={tabPath} />
+        </div>
+      ))}
     </div>
   );
 };

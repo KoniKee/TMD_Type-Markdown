@@ -92,4 +92,12 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { id: 'vd_redo', defaultKey: 'Ctrl+Shift+Z', label: '重做', category: 'undo-redo', customizable: false },
     ],
   },
+  {
+    id: 'tab-navigation',
+    label: '标签操作',
+    items: [
+      { id: 'nextTab', defaultKey: 'Ctrl+Tab', label: '下一个标签', category: 'tab-navigation', customizable: true },
+      { id: 'prevTab', defaultKey: 'Ctrl+Shift+Tab', label: '上一个标签', category: 'tab-navigation', customizable: true },
+    ],
+  },
 ];
