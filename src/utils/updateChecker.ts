@@ -85,31 +85,42 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
       }
     }
 
-    const response = await fetch(
-      'https://api.github.com/repos/KoniKee/TMD_Type-Markdown/releases/latest',
-      {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-        },
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/KoniKee/TMD_Type-Markdown/releases/latest',
+        {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+          },
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn('GitHub API request failed:', response.status);
+        return null;
       }
-    );
 
-    if (!response.ok) {
-      console.warn('GitHub API request failed:', response.status);
-      return null;
+      const data = await response.json();
+      const info: UpdateInfo = {
+        latestVersion: data.tag_name,
+        releaseNotes: data.body || '',
+        downloadUrl: data.html_url,
+        publishedAt: data.published_at,
+      };
+
+      setCachedUpdate(info);
+
+      return compareVersions(info.latestVersion, `v${version}`) > 0 ? info : null;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
-
-    const data = await response.json();
-    const info: UpdateInfo = {
-      latestVersion: data.tag_name,
-      releaseNotes: data.body || '',
-      downloadUrl: data.html_url,
-      publishedAt: data.published_at,
-    };
-
-    setCachedUpdate(info);
-
-    return compareVersions(info.latestVersion, `v${version}`) > 0 ? info : null;
   } catch (error) {
     console.error('Check update failed:', error);
     return null;
