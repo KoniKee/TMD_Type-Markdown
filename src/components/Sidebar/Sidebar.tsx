@@ -1103,7 +1103,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* 底部提示 */}
-      <div className="px-3 py-2 text-xs text-[var(--sidebar-text-muted)] border-t border-[var(--sidebar-border)] flex items-center gap-1.5">
+      <div className="h-6 px-3 text-xs text-[var(--sidebar-text-muted)] border-t border-[var(--sidebar-border)] flex items-center gap-1.5">
         <FileText size={12} />
         <span>支持拖放 .md 文件</span>
       </div>
