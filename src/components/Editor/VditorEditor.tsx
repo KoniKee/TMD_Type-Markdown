@@ -1040,6 +1040,8 @@ const relativePath = `${imageDirectory}/${fileName}`;
       // Tab行为配置：由自定义 handler 处理，这里禁用
       tab: '',
       value: contentRef.current,
+      // @ts-expect-error Vditor 支持 loading 参数，但类型定义未包含
+      loading: '<div class="vditor-loading-container"><div class="vditor-loading-spinner"></div><div class="vditor-loading-text">正在打开文档...</div></div>',
       input: (value: string) => {
         const normalized = value.replace(/^》\s/gm, '> ');
         updateDocument(path, normalized);
