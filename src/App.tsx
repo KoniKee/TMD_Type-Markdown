@@ -16,11 +16,41 @@ function App() {
     const init = async () => {
       await waitForTauri();
       (window as any).__TAURI_READY__ = true;
+
+      // 在首次渲染前检测并打开通过文件关联传入的文档
+      if (isTauriCached()) {
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          const { readTextFile } = await import('@tauri-apps/plugin-fs');
+          const pendingFile = await invoke<string | null>('get_pending_file');
+          if (pendingFile) {
+            const content = await readTextFile(pendingFile);
+            useEditorStore.getState().openDocument(`file://${pendingFile}`, content, false);
+            useFileStore.getState().clearAll();
+
+            const dirPath = pendingFile.replace(/[/\\][^/\\]+$/, '');
+            const normalizedDirPath = dirPath.replace(/[/\\]+$/, '');
+            if (normalizedDirPath) {
+              const folderName = normalizedDirPath.split(/[/\\]/).pop() || normalizedDirPath;
+              useFileStore.getState().setRootPath(folderName);
+              useFileStore.getState().setRootHandle(normalizedDirPath as any);
+              const tree = await readDirectoryTauri(normalizedDirPath);
+              useFileStore.getState().setFileTree(tree);
+            }
+
+            await invoke('clear_pending_file');
+            (window as any).__PENDING_PROCESSED__ = true;
+          }
+        } catch (err) {
+          console.error('处理待打开文件失败:', err);
+        }
+      }
+
       setIsReady(true);
     };
     
     init();
-  }, []);
+  }, [readDirectoryTauri]);
   
   // Tauri 原生拖拽事件处理（仅桌面版）
   useEffect(() => {
@@ -401,10 +431,12 @@ function App() {
           await openFile(filePath);
         }
 
-        const pendingFile = await invoke<string | null>('get_pending_file');
-        if (pendingFile) {
-          await openFile(pendingFile);
-          await invoke('clear_pending_file');
+        if (!(window as any).__PENDING_PROCESSED__) {
+          const pendingFile = await invoke<string | null>('get_pending_file');
+          if (pendingFile) {
+            await openFile(pendingFile);
+            await invoke('clear_pending_file');
+          }
         }
       } catch (err) {
         console.error('设置文件打开监听失败:', err);
