@@ -349,7 +349,7 @@ export const TitleBar: React.FC = () => {
         className="h-10 bg-[var(--titlebar-bg)] border-b border-[var(--editor-border)] flex items-center select-none"
         data-tauri-drag-region
       >
-        {tabBarStyle !== 'vertical' && (
+        {tabBarStyle !== 'vertical' ? (
           <div className="flex-1 flex items-end h-full min-w-0" data-tauri-drag-region>
             {tabs.length === 0 ? (
               <div className="flex items-center h-full px-4" data-tauri-drag-region>
@@ -501,6 +501,8 @@ export const TitleBar: React.FC = () => {
               </div>
             )}
           </div>
+        ) : (
+          <div className="flex-1" data-tauri-drag-region />
         )}
 
         <div 
