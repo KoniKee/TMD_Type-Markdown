@@ -1535,9 +1535,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
           setupOutlineEnhancements();
 
           // 初始化后与全局状态同步：用 Vditor toggle 而非直接改 style.display
-          const vditorAny = vditorRef.current as any;
-          if (vditorAny && !useLayoutStore.getState().rightSidebarVisible) {
-            vditorAny.outline?.toggle(vditorAny, false);
+          // 注意：outline 在 vditorRef.current.vditor 上，而非直接挂在实例上
+          const vditorInternal = (vditorRef.current as any)?.vditor;
+          if (vditorInternal?.outline && !useLayoutStore.getState().rightSidebarVisible) {
+            vditorInternal.outline.toggle(vditorInternal, false);
           }
         }
         
@@ -2456,9 +2457,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
     if (isInPane) return;
     const unsub = useLayoutStore.subscribe((state, prevState) => {
       if (state.rightSidebarVisible !== prevState.rightSidebarVisible) {
-        const v = vditorRef.current as any;
-        if (v?.vditor && v.outline) {
-          v.outline.toggle(v, state.rightSidebarVisible);
+        // outline 在 vditorRef.current.vditor 上
+        const vditorInternal = (vditorRef.current as any)?.vditor;
+        if (vditorInternal?.outline) {
+          vditorInternal.outline.toggle(vditorInternal, state.rightSidebarVisible);
         }
       }
     });
