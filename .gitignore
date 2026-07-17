@@ -30,6 +30,9 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# AGENTS.md (配置文档，供 AI 使用，不入库)
+AGENTS.md
+
 # Design docs (internal)
 design/
 
