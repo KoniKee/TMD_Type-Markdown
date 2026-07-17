@@ -27,6 +27,14 @@
   border-bottom: 1px solid var(--editor-border) !important;
 }
 
+.vditor .vditor-toolbar button {
+  flex-shrink: 0 !important;
+}
+
+.vditor-toolbar--pin {
+  padding-left: 5px !important;
+}
+
 .vditor .vditor-content {
   background-color: var(--editor-bg) !important;
 }
