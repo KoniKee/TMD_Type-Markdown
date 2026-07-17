@@ -292,7 +292,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const updateDocument = useEditorStore((state) => state.updateDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
-  const setRightSidebarVisible = useLayoutStore((state) => state.setRightSidebarVisible);
   const setEditorMode = useEditorStore((state) => state.setEditorMode);
   const setScrollPosition = useEditorStore((state) => state.setScrollPosition);
   const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
@@ -362,15 +361,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
     setPreviewModeRef.current = setPreviewMode;
   }, [setPreviewMode]);
 
-  // 全局大纲状态同步：切换 tab 时跟随 layoutStore 的全局状态
-  const rightSidebarVisible = useLayoutStore((s) => s.rightSidebarVisible);
-  useEffect(() => {
-    if (isInPane) return;
-    const outlineElement = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
-    if (!outlineElement) return;
-    outlineElement.style.display = rightSidebarVisible ? '' : 'none';
-  }, [rightSidebarVisible, isInPane]);
-  
   useShortcut('modeSwitch', (e: KeyboardEvent) => {
     const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
     if (!toolbar) return;
@@ -581,7 +571,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
 
     // 获取保存的状态 - 从当前store获取最新状态
     const currentDocState = useEditorStore.getState().documents[path];
-    const savedOutlineVisible = isInPane ? false : useLayoutStore.getState().rightSidebarVisible;
     const savedEditorMode = currentDocState?.editorMode ?? 'ir';
     const savedScrollPosition = currentDocState?.scrollPosition ?? 0;
     const savedPreviewMode = currentDocState?.previewMode ?? 'editor';
@@ -661,7 +650,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         pin: true,
       },
       outline: {
-        enable: savedOutlineVisible,
+        enable: !isInPane,
         position: 'right',
       },
       cdn: VDITOR_CDN,
@@ -1446,7 +1435,9 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const outlineElement = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
         if (outlineElement) {
           const outlineObserver = new MutationObserver(() => {
-            const isVisible = outlineElement.style.display !== 'none';
+            const container = containerRef.current;
+            if (!container || container.offsetParent === null) return;
+            const isVisible = outlineElement.style.display !== 'none' && outlineElement.offsetParent !== null;
             useLayoutStore.getState().setRightSidebarVisible(isVisible);
           });
           outlineObserver.observe(outlineElement, { attributes: true, attributeFilter: ['style', 'class'] });

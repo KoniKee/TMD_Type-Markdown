@@ -20,11 +20,21 @@
   border: none !important;
   height: 100% !important;
   background-color: var(--editor-bg) !important;
+  overflow: hidden !important;
 }
 
 .vditor .vditor-toolbar {
   background-color: var(--toolbar-bg) !important;
   border-bottom: 1px solid var(--editor-border) !important;
+  overflow: hidden !important;
+}
+
+.vditor .vditor-toolbar button {
+  flex-shrink: 0 !important;
+}
+
+.vditor-toolbar--pin {
+  padding-left: 5px !important;
 }
 
 .vditor .vditor-content {
