@@ -1533,20 +1533,40 @@ const relativePath = `${imageDirectory}/${fileName}`;
           };
           
           setupOutlineEnhancements();
+
+          // 初始化后与全局状态同步：用 Vditor toggle 而非直接改 style.display
+          const vditorAny = vditorRef.current as any;
+          if (vditorAny && !useLayoutStore.getState().rightSidebarVisible) {
+            vditorAny.outline?.toggle(vditorAny, false);
+          }
         }
         
-        // 锁定工具栏 paddingLeft，阻止 Vditor 的 setPadding 在 outline 切换时改变它
-        const toolbarEl = containerRef.current?.querySelector('.vditor-toolbar') as HTMLElement;
-        if (toolbarEl) {
-          const initialPaddingLeft = toolbarEl.style.paddingLeft || getComputedStyle(toolbarEl).paddingLeft;
-          toolbarEl.style.paddingLeft = initialPaddingLeft;
-          const toolbarObserver = new MutationObserver(() => {
-            if (toolbarEl.style.paddingLeft !== initialPaddingLeft) {
-              toolbarEl.style.paddingLeft = initialPaddingLeft;
+        // 锁定工具栏 paddingLeft — 仅在 tab 可见时锁定，隐藏时待可见后再锁
+        const setupToolbarLock = (tb: HTMLElement) => {
+          if ((vditorRef.current as any)._toolbarPaddingObserver) return;
+          const initPL = tb.style.paddingLeft || getComputedStyle(tb).paddingLeft;
+          const obs = new MutationObserver(() => {
+            if (tb.style.paddingLeft !== initPL) {
+              tb.style.paddingLeft = initPL;
             }
           });
-          toolbarObserver.observe(toolbarEl, { attributes: true, attributeFilter: ['style'] });
-          (vditorRef.current as any)._toolbarPaddingObserver = toolbarObserver;
+          obs.observe(tb, { attributes: true, attributeFilter: ['style'] });
+          (vditorRef.current as any)._toolbarPaddingObserver = obs;
+        };
+        const tbEl = containerRef.current?.querySelector('.vditor-toolbar') as HTMLElement;
+        if (tbEl) {
+          if (containerRef.current?.offsetParent !== null) {
+            setupToolbarLock(tbEl);
+          } else {
+            const visObs = new MutationObserver(() => {
+              if (containerRef.current?.offsetParent !== null) {
+                setupToolbarLock(tbEl);
+                visObs.disconnect();
+              }
+            });
+            visObs.observe(containerRef.current!.parentElement!, { attributes: true, attributeFilter: ['style'] });
+            (vditorRef.current as any)._toolbarVisibilityObserver = visObs;
+          }
         }
         
         // 监听编辑模式切换 - 监听三个编辑区域的display变化
@@ -2356,8 +2376,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const modeObserver = (vditorRef.current as any)._modeObserver;
         const previewModeObserver = (vditorRef.current as any)._previewModeObserver;
         const toolbarPaddingObserver = (vditorRef.current as any)._toolbarPaddingObserver;
+        const toolbarVisibilityObserver = (vditorRef.current as any)._toolbarVisibilityObserver;
         
         if (imageObserver) imageObserver.disconnect();
+        if (toolbarVisibilityObserver) toolbarVisibilityObserver.disconnect();
         if (toolbarPaddingObserver) toolbarPaddingObserver.disconnect();
         if (previewObserver) previewObserver.disconnect();
         if (outlineObserver) outlineObserver.disconnect();
@@ -2428,6 +2450,20 @@ const relativePath = `${imageDirectory}/${fileName}`;
       }
     };
   }, [path, initKey, updateDocument, saveToFile]);
+
+  // 跨 tab 大纲全局同步：任一 tab 切换大纲时，其他 tab 跟随
+  useEffect(() => {
+    if (isInPane) return;
+    const unsub = useLayoutStore.subscribe((state, prevState) => {
+      if (state.rightSidebarVisible !== prevState.rightSidebarVisible) {
+        const v = vditorRef.current as any;
+        if (v?.vditor && v.outline) {
+          v.outline.toggle(v, state.rightSidebarVisible);
+        }
+      }
+    });
+    return unsub;
+  }, [isInPane]);
 
   // 监听主题变化
   useEffect(() => {
