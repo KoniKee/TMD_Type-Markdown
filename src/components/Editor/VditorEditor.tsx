@@ -1446,7 +1446,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const outlineElement = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
         if (outlineElement) {
           const outlineObserver = new MutationObserver(() => {
-            const isVisible = outlineElement.style.display !== 'none' && outlineElement.offsetParent !== null;
+            const isVisible = outlineElement.style.display !== 'none';
             useLayoutStore.getState().setRightSidebarVisible(isVisible);
           });
           outlineObserver.observe(outlineElement, { attributes: true, attributeFilter: ['style', 'class'] });
