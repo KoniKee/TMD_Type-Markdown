@@ -157,7 +157,7 @@ export const VerticalTabBar: React.FC = () => {
 
   return (
     <div
-      className="flex flex-col h-full bg-[var(--sidebar-surface)] border-r border-[var(--sidebar-border)] relative"
+      className="flex flex-col h-full bg-[var(--titlebar-bg)] border-r border-[var(--editor-border)] relative"
       style={{ width: verticalTabWidth }}
     >
       {/* 标签列表 */}
@@ -186,10 +186,10 @@ export const VerticalTabBar: React.FC = () => {
                     else tabRefs.current.delete(tabPath);
                   }}
                   className={`
-                    group relative flex items-center h-[36px] mx-1.5 px-2 rounded-md cursor-pointer
+                    group relative flex items-center h-[34px] mx-1.5 px-2.5 rounded-md cursor-pointer
                     transition-all duration-[var(--transition-fast)]
                     ${isActive
-                      ? 'bg-[var(--tab-active-bg)] text-[var(--editor-text)] font-medium shadow-[inset_3px_0_0_0_var(--tab-active-indicator)]'
+                      ? 'bg-[var(--tab-active-bg)] text-[var(--editor-text)] font-medium shadow-[inset_2px_0_0_0_var(--tab-active-indicator)]'
                       : 'text-[var(--editor-text-secondary)] hover:bg-[var(--tab-hover-bg)] hover:text-[var(--editor-text)]'
                     }
                     ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
@@ -258,9 +258,9 @@ export const VerticalTabBar: React.FC = () => {
       </div>
 
       {/* 底部操作区 */}
-      <div className="flex-shrink-0 border-t border-[var(--sidebar-border)]">
+      <div className="flex-shrink-0 border-t border-[var(--editor-border)]">
         <button
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)] transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)] transition-colors"
           onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
           title="新建文档"
         >
@@ -268,7 +268,7 @@ export const VerticalTabBar: React.FC = () => {
           <span>新建标签</span>
         </button>
         <button
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)] transition-colors border-t border-[var(--sidebar-border)]"
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)] transition-colors border-t border-[var(--editor-border)]"
           onClick={() => setTabBarStyle('horizontal')}
           title="切换到水平标签栏"
         >

@@ -165,11 +165,11 @@ export const Sidebar: React.FC = () => {
     }
   }, [rootPath, refreshTree]);
 
-  // 首次加载文件树时默认展开顶部一级目录
-  const initialExpandDoneRef = useRef(false);
+  // 首次加载文件树时默认展开顶部一级目录（按根路径追踪，切换目录时重新展开）
+  const expandedRootsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (fileTree.length > 0 && rootPath && !initialExpandDoneRef.current) {
-      initialExpandDoneRef.current = true;
+    if (fileTree.length > 0 && rootPath && !expandedRootsRef.current.has(rootPath)) {
+      expandedRootsRef.current.add(rootPath);
       const dirs = new Set<string>();
       dirs.add(rootPath);
       fileTree.forEach(node => {

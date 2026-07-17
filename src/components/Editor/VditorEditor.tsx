@@ -361,6 +361,15 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   useEffect(() => {
     setPreviewModeRef.current = setPreviewMode;
   }, [setPreviewMode]);
+
+  // 全局大纲状态同步：切换 tab 时跟随 layoutStore 的全局状态
+  const rightSidebarVisible = useLayoutStore((s) => s.rightSidebarVisible);
+  useEffect(() => {
+    if (isInPane) return;
+    const outlineElement = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
+    if (!outlineElement) return;
+    outlineElement.style.display = rightSidebarVisible ? '' : 'none';
+  }, [rightSidebarVisible, isInPane]);
   
   useShortcut('modeSwitch', (e: KeyboardEvent) => {
     const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
