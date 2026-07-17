@@ -132,7 +132,7 @@ export const TitleBar: React.FC = () => {
       container.removeEventListener('scroll', updateScrollState);
       container.removeEventListener('wheel', handleWheel);
     };
-  }, [tabs, updateScrollState]);
+  }, [tabs, updateScrollState, tabBarStyle]);
 
   // tabs 数量增加时自动滚动到最右（新 tab）
   const prevTabsLengthRef = useRef(tabs.length);
