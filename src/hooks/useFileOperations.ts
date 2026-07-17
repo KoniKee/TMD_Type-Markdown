@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useFileStore, useEditorStore, TreeNode } from '../stores';
+import { useFileStore, useEditorStore, useLayoutStore, TreeNode } from '../stores';
 import { isTauriCached, platformPathSeparator } from '../utils/platform';
 
 export const useFileOperations = () => {
@@ -171,6 +171,8 @@ export const useFileOperations = () => {
         // 清理旧状态
         clearAll();
         
+        useLayoutStore.getState().setLeftSidebarVisible(true);
+        
         // 设置新状态
         setRootPath(folderName);
         setRootHandle(folderPath as any);
@@ -183,6 +185,7 @@ export const useFileOperations = () => {
       if ('showDirectoryPicker' in window) {
         try {
           const dirHandle = await (window as any).showDirectoryPicker();
+          useLayoutStore.getState().setLeftSidebarVisible(true);
           setRootPath(dirHandle.name);
           setRootHandle(dirHandle);
           
