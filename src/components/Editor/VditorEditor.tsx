@@ -5,6 +5,7 @@ import './vditor-styles.css';
 import '../../styles/embed.css';
 import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode, THEMES } from '../../stores';
 import type { ThemeId } from '../../stores';
+import { useLayoutStore } from '../../stores/layoutStore';
 import { useSaveToFile, useSaveAsFile } from '../../hooks/useAutoSave';
 import { useShortcut } from '../../hooks/useShortcutManager';
 import { isTauriCached, waitForTauri, platformPathSeparator } from '../../utils/platform';
@@ -291,7 +292,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const updateDocument = useEditorStore((state) => state.updateDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
-  const setOutlineVisible = useEditorStore((state) => state.setOutlineVisible);
   const setEditorMode = useEditorStore((state) => state.setEditorMode);
   const setScrollPosition = useEditorStore((state) => state.setScrollPosition);
   const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
@@ -337,7 +337,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   
   const pathRef = useRef(path);
   const openDocumentRef = useRef(openDocument);
-  const setOutlineVisibleRef = useRef(setOutlineVisible);
   const setEditorModeRef = useRef(setEditorMode);
   const setScrollPositionRef = useRef(setScrollPosition);
   const setPreviewModeRef = useRef(setPreviewMode);
@@ -351,10 +350,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   }, [openDocument]);
   
   useEffect(() => {
-    setOutlineVisibleRef.current = setOutlineVisible;
-  }, [setOutlineVisible]);
-  
-  useEffect(() => {
     setEditorModeRef.current = setEditorMode;
   }, [setEditorMode]);
   
@@ -365,7 +360,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   useEffect(() => {
     setPreviewModeRef.current = setPreviewMode;
   }, [setPreviewMode]);
-  
+
   useShortcut('modeSwitch', (e: KeyboardEvent) => {
     const toolbar = containerRef.current?.querySelector('.vditor-toolbar');
     if (!toolbar) return;
@@ -576,7 +571,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
 
     // 获取保存的状态 - 从当前store获取最新状态
     const currentDocState = useEditorStore.getState().documents[path];
-    const savedOutlineVisible = isInPane ? false : (currentDocState?.outlineVisible ?? true);
     const savedEditorMode = currentDocState?.editorMode ?? 'ir';
     const savedScrollPosition = currentDocState?.scrollPosition ?? 0;
     const savedPreviewMode = currentDocState?.previewMode ?? 'editor';
@@ -656,7 +650,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
         pin: true,
       },
       outline: {
-        enable: savedOutlineVisible,
+        enable: !isInPane,
         position: 'right',
       },
       cdn: VDITOR_CDN,
@@ -1441,15 +1435,16 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const outlineElement = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
         if (outlineElement) {
           const outlineObserver = new MutationObserver(() => {
+            const container = containerRef.current;
+            if (!container || container.offsetParent === null) return;
             const isVisible = outlineElement.style.display !== 'none' && outlineElement.offsetParent !== null;
-            setOutlineVisibleRef.current(pathRef.current, isVisible);
+            useLayoutStore.getState().setRightSidebarVisible(isVisible);
           });
           outlineObserver.observe(outlineElement, { attributes: true, attributeFilter: ['style', 'class'] });
           (vditorRef.current as any)._outlineObserver = outlineObserver;
           
           // 大纲增强功能：tooltip + 可调整宽度
           const setupOutlineEnhancements = () => {
-            const OUTLINE_WIDTH_KEY = 'md-editor-outline-width';
             const MIN_WIDTH = 180;
             
             const getContentContainer = () => {
@@ -1469,13 +1464,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
               outlineElement.style.flexBasis = `${finalWidth}px`;
             };
             
-            const savedWidth = localStorage.getItem(OUTLINE_WIDTH_KEY);
-            if (savedWidth) {
-              const width = parseInt(savedWidth, 10);
-              if (!isNaN(width)) {
-                applyWidth(width);
-              }
-            }
+            applyWidth(useLayoutStore.getState().rightSidebarWidth);
             
             const handleOutlineMouseOver = (e: MouseEvent) => {
               const target = (e.target as HTMLElement).closest('li > span > span') as HTMLElement | null;
@@ -1531,7 +1520,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
               document.body.style.userSelect = '';
               outlineElement.classList.remove('outline-resizing');
               const currentWidth = outlineElement.offsetWidth;
-              localStorage.setItem(OUTLINE_WIDTH_KEY, currentWidth.toString());
+              useLayoutStore.getState().setRightSidebarWidth(currentWidth);
             };
             
             document.addEventListener('mousedown', handleMouseDown);
@@ -1544,6 +1533,41 @@ const relativePath = `${imageDirectory}/${fileName}`;
           };
           
           setupOutlineEnhancements();
+
+          // 初始化后与全局状态同步：用 Vditor toggle 而非直接改 style.display
+          // 注意：outline 在 vditorRef.current.vditor 上，而非直接挂在实例上
+          const vditorInternal = (vditorRef.current as any)?.vditor;
+          if (vditorInternal?.outline && !useLayoutStore.getState().rightSidebarVisible) {
+            vditorInternal.outline.toggle(vditorInternal, false);
+          }
+        }
+        
+        // 锁定工具栏 paddingLeft — 仅在 tab 可见时锁定，隐藏时待可见后再锁
+        const setupToolbarLock = (tb: HTMLElement) => {
+          if ((vditorRef.current as any)._toolbarPaddingObserver) return;
+          const initPL = tb.style.paddingLeft || getComputedStyle(tb).paddingLeft;
+          const obs = new MutationObserver(() => {
+            if (tb.style.paddingLeft !== initPL) {
+              tb.style.paddingLeft = initPL;
+            }
+          });
+          obs.observe(tb, { attributes: true, attributeFilter: ['style'] });
+          (vditorRef.current as any)._toolbarPaddingObserver = obs;
+        };
+        const tbEl = containerRef.current?.querySelector('.vditor-toolbar') as HTMLElement;
+        if (tbEl) {
+          if (containerRef.current?.offsetParent !== null) {
+            setupToolbarLock(tbEl);
+          } else {
+            const visObs = new MutationObserver(() => {
+              if (containerRef.current?.offsetParent !== null) {
+                setupToolbarLock(tbEl);
+                visObs.disconnect();
+              }
+            });
+            visObs.observe(containerRef.current!.parentElement!, { attributes: true, attributeFilter: ['style'] });
+            (vditorRef.current as any)._toolbarVisibilityObserver = visObs;
+          }
         }
         
         // 监听编辑模式切换 - 监听三个编辑区域的display变化
@@ -1576,17 +1600,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
               const restoreWidth = () => {
                 const outline = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
                 if (!outline) return;
-                const savedWidth = localStorage.getItem('md-editor-outline-width');
-                if (savedWidth) {
-                  const w = parseInt(savedWidth, 10);
-                  if (!isNaN(w)) {
-                    const content = outline.closest('.vditor-content') as HTMLElement;
-                    const maxW = content ? Math.floor(content.offsetWidth * 0.5) : 400;
-                    const fw = Math.max(180, Math.min(maxW, w));
-                    outline.style.width = `${fw}px`;
-                    outline.style.flexBasis = `${fw}px`;
-                  }
-                }
+                const w = useLayoutStore.getState().rightSidebarWidth;
+                const content = outline.closest('.vditor-content') as HTMLElement;
+                const maxW = content ? Math.floor(content.offsetWidth * 0.5) : 400;
+                const fw = Math.max(180, Math.min(maxW, w));
+                outline.style.width = `${fw}px`;
+                outline.style.flexBasis = `${fw}px`;
               };
 
               setTimeout(() => {
@@ -2357,8 +2376,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const outlineResizeMouseUp = (vditorRef.current as any)._outlineResizeMouseUp;
         const modeObserver = (vditorRef.current as any)._modeObserver;
         const previewModeObserver = (vditorRef.current as any)._previewModeObserver;
+        const toolbarPaddingObserver = (vditorRef.current as any)._toolbarPaddingObserver;
+        const toolbarVisibilityObserver = (vditorRef.current as any)._toolbarVisibilityObserver;
         
         if (imageObserver) imageObserver.disconnect();
+        if (toolbarVisibilityObserver) toolbarVisibilityObserver.disconnect();
+        if (toolbarPaddingObserver) toolbarPaddingObserver.disconnect();
         if (previewObserver) previewObserver.disconnect();
         if (outlineObserver) outlineObserver.disconnect();
         if (outlineMouseOverHandler && outlineMouseOverTarget) {
@@ -2428,6 +2451,21 @@ const relativePath = `${imageDirectory}/${fileName}`;
       }
     };
   }, [path, initKey, updateDocument, saveToFile]);
+
+  // 跨 tab 大纲全局同步：任一 tab 切换大纲时，其他 tab 跟随
+  useEffect(() => {
+    if (isInPane) return;
+    const unsub = useLayoutStore.subscribe((state, prevState) => {
+      if (state.rightSidebarVisible !== prevState.rightSidebarVisible) {
+        // outline 在 vditorRef.current.vditor 上
+        const vditorInternal = (vditorRef.current as any)?.vditor;
+        if (vditorInternal?.outline) {
+          vditorInternal.outline.toggle(vditorInternal, state.rightSidebarVisible);
+        }
+      }
+    });
+    return unsub;
+  }, [isInPane]);
 
   // 监听主题变化
   useEffect(() => {

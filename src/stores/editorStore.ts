@@ -10,7 +10,6 @@ export interface DocumentState {
   isNewFile: boolean;
   hasBeenModified: boolean;
   lastSaved: number | null;
-  outlineVisible: boolean;
   editorMode: EditorMode;
   scrollPosition: number;
   previewMode: PreviewMode;
@@ -46,7 +45,6 @@ function loadFromStorage(): { documents: Record<string, DocumentState>; tabs: st
           isNewFile: docState.isNewFile || false,
           hasBeenModified: docState.hasBeenModified || false,
           lastSaved: docState.timestamp || Date.now(),
-          outlineVisible: true,
           editorMode: 'ir',
           scrollPosition: 0,
           previewMode: 'editor',
@@ -102,7 +100,6 @@ interface EditorStateStore {
   renameDocument: (oldPath: string, newPath: string) => void;
   setWordCount: (count: number) => void;
   setMarkdownLength: (length: number) => void;
-  setOutlineVisible: (path: string, visible: boolean) => void;
   setEditorMode: (path: string, mode: EditorMode) => void;
   setScrollPosition: (path: string, position: number) => void;
   setPreviewMode: (path: string, mode: PreviewMode) => void;
@@ -137,7 +134,6 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             isNewFile: isNew || false,
             hasBeenModified: false,
             lastSaved: isNew ? null : Date.now(),
-            outlineVisible: true,
             editorMode: 'ir',
             scrollPosition: 0,
             previewMode: 'editor',
@@ -192,7 +188,6 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
             isNewFile: isNew || false,
             hasBeenModified: false,
             lastSaved: isNew ? null : Date.now(),
-            outlineVisible: true,
             editorMode: 'ir',
             scrollPosition: 0,
             previewMode: 'editor',
@@ -323,22 +318,6 @@ export const useEditorStore = create<EditorStateStore>((set, get) => ({
 
   setWordCount: (count: number) => set({ wordCount: count }),
   setMarkdownLength: (length: number) => set({ markdownLength: length }),
-  
-  setOutlineVisible: (path: string, visible: boolean) => {
-    const { documents } = get();
-    const doc = documents[path];
-    if (doc) {
-      set({
-        documents: {
-          ...documents,
-          [path]: {
-            ...doc,
-            outlineVisible: visible,
-          },
-        },
-      });
-    }
-  },
   
   setEditorMode: (path: string, mode: EditorMode) => {
     const { documents } = get();

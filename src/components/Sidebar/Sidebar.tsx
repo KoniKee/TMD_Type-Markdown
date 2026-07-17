@@ -165,6 +165,22 @@ export const Sidebar: React.FC = () => {
     }
   }, [rootPath, refreshTree]);
 
+  // 首次加载文件树时默认展开顶部一级目录（按根路径追踪，切换目录时重新展开）
+  const expandedRootsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (fileTree.length > 0 && rootPath && !expandedRootsRef.current.has(rootPath)) {
+      expandedRootsRef.current.add(rootPath);
+      const dirs = new Set<string>();
+      dirs.add(rootPath);
+      fileTree.forEach(node => {
+        if (node.isDir) {
+          dirs.add(node.path);
+        }
+      });
+      setExpandedDirs(dirs);
+    }
+  }, [fileTree, rootPath]);
+
   // 点击文件打开
   const handleFileClick = async (node: TreeNode) => {
     if (node.isDir) {

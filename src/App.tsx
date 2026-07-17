@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { useTheme, useFileOperations } from './hooks';
 import { waitForTauri, isTauriCached } from './utils/platform';
-import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore, useSplitStore } from './stores';
+import { useEditorStore, useUpdateStore, useSettingsStore, useFileStore, useSplitStore, useLayoutStore } from './stores';
 
 function App() {
   const [isReady, setIsReady] = useState(false);
@@ -161,6 +161,7 @@ function App() {
             if (isDir) {
               const folderName = path.split(/[/\\]/).pop() || path;
               clearAll();
+              useLayoutStore.getState().setLeftSidebarVisible(true);
               setRootPath(folderName);
               setRootHandle(path as any);
               const tree = await readDirectoryTauri(path);
@@ -235,6 +236,7 @@ function App() {
               try {
                 const dirHandle = await (entry as any).getDirectoryHandle?.();
                 if (dirHandle) {
+                  useLayoutStore.getState().setLeftSidebarVisible(true);
                   setRootPath(entry.name);
                   setRootHandle(dirHandle);
                   
@@ -282,6 +284,7 @@ function App() {
                 console.log('无法获取目录句柄，使用备用方法');
               }
               
+              useLayoutStore.getState().setLeftSidebarVisible(true);
               setRootPath(entry.name);
               
               const readDirectoryFromEntry = async (dirEntry: FileSystemDirectoryEntry, basePath: string): Promise<any[]> => {
