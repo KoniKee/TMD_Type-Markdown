@@ -1535,6 +1535,20 @@ const relativePath = `${imageDirectory}/${fileName}`;
           setupOutlineEnhancements();
         }
         
+        // 锁定工具栏 paddingLeft，阻止 Vditor 的 setPadding 在 outline 切换时改变它
+        const toolbarEl = containerRef.current?.querySelector('.vditor-toolbar') as HTMLElement;
+        if (toolbarEl) {
+          const initialPaddingLeft = toolbarEl.style.paddingLeft || getComputedStyle(toolbarEl).paddingLeft;
+          toolbarEl.style.paddingLeft = initialPaddingLeft;
+          const toolbarObserver = new MutationObserver(() => {
+            if (toolbarEl.style.paddingLeft !== initialPaddingLeft) {
+              toolbarEl.style.paddingLeft = initialPaddingLeft;
+            }
+          });
+          toolbarObserver.observe(toolbarEl, { attributes: true, attributeFilter: ['style'] });
+          (vditorRef.current as any)._toolbarPaddingObserver = toolbarObserver;
+        }
+        
         // 监听编辑模式切换 - 监听三个编辑区域的display变化
         let prevMode: EditorMode | null = null;
         let lastOutlineFixTime = 0;
@@ -2341,8 +2355,10 @@ const relativePath = `${imageDirectory}/${fileName}`;
         const outlineResizeMouseUp = (vditorRef.current as any)._outlineResizeMouseUp;
         const modeObserver = (vditorRef.current as any)._modeObserver;
         const previewModeObserver = (vditorRef.current as any)._previewModeObserver;
+        const toolbarPaddingObserver = (vditorRef.current as any)._toolbarPaddingObserver;
         
         if (imageObserver) imageObserver.disconnect();
+        if (toolbarPaddingObserver) toolbarPaddingObserver.disconnect();
         if (previewObserver) previewObserver.disconnect();
         if (outlineObserver) outlineObserver.disconnect();
         if (outlineMouseOverHandler && outlineMouseOverTarget) {

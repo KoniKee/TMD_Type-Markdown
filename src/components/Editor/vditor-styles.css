@@ -33,9 +33,6 @@
   flex-shrink: 0 !important;
 }
 
-.vditor-toolbar--pin {
-  padding-left: 5px !important;
-}
 
 .vditor .vditor-content {
   overflow: hidden !important;
