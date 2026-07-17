@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useEditorStore, useSettingsStore, useUpdateStore, useSplitStore } from '../../stores';
 import { useSaveToFile, useSaveAsFile, getFileName } from '../../hooks/useAutoSave';
 import { isTauriCached } from '../../utils/platform';
-import { FileText, X, Save, SaveAll, Palette, Keyboard, Settings, Minus, Square, Copy, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, X, Save, SaveAll, Palette, Keyboard, Settings, Minus, Square, Copy, X as CloseIcon, LucideIcon, Plus, ArrowUpCircle, Columns, Rows, ChevronLeft, ChevronRight, PanelRight } from 'lucide-react';
 import { ShortcutsPanel } from '../Shortcuts/ShortcutsPanel';
 import { useFileOperations } from '../../hooks/useFileOperations';
 import { UpdateNotification } from '../Update/UpdateNotification';
@@ -50,6 +50,8 @@ export const TitleBar: React.FC = () => {
   const cleanupTabSplitState = useSplitStore((state) => state.cleanupTabSplitState);
   const getPaneCount = useSplitStore((state) => state.getPaneCount);
   const getActiveDocPath = useSplitStore((state) => state.getActiveDocPath);
+  const tabBarStyle = useSettingsStore((state) => state.tabBarStyle);
+  const setTabBarStyle = useSettingsStore((state) => state.setTabBarStyle);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -113,11 +115,22 @@ export const TitleBar: React.FC = () => {
     const ro = new ResizeObserver(updateLayout);
     ro.observe(container);
     container.addEventListener('scroll', updateScrollState);
+
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > 0) {
+        e.preventDefault();
+        container.scrollBy({ left: e.deltaY * 0.8, behavior: 'auto' });
+        updateScrollState();
+      }
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
     updateLayout();
 
     return () => {
       ro.disconnect();
       container.removeEventListener('scroll', updateScrollState);
+      container.removeEventListener('wheel', handleWheel);
     };
   }, [tabs, updateScrollState]);
 
@@ -336,162 +349,164 @@ export const TitleBar: React.FC = () => {
         className="h-10 bg-[var(--titlebar-bg)] border-b border-[var(--editor-border)] flex items-center select-none"
         data-tauri-drag-region
       >
-        <div className="flex-1 flex items-end h-full min-w-0" data-tauri-drag-region>
-          {tabs.length === 0 ? (
-            <div className="flex items-center h-full px-4" data-tauri-drag-region>
-              <span className="text-sm text-[var(--editor-text-muted)] flex items-center gap-2">
-                <FileText size={14} />
-                MD Editor
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-end h-full flex-1 min-w-0" data-tauri-drag-region>
-              {/* 左箭头 - 独立区域，不重叠 */}
-              {showScrollButtons && (
-                <div className="flex-shrink-0 flex items-center pl-1.5 pr-0.5 h-full" data-tauri-drag-region>
-                  <button
-                    className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
-                      canScrollLeft
-                        ? 'text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)]'
-                        : 'text-[var(--editor-text-muted)] opacity-30 cursor-default'
-                    }`}
-                    disabled={!canScrollLeft}
-                    onClick={(e) => { e.stopPropagation(); scrollTabs('left'); }}
-                    onMouseDown={(e) => { e.stopPropagation(); }}
-                    title="向左滚动标签"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                </div>
-              )}
-
-              <div ref={tabsContainerRef} className="flex items-end h-full overflow-hidden scroll-smooth flex-1" data-tauri-drag-region>
-                {tabs.map((tabPath, index) => {
-                  const isActive = tabPath === activeTabPath;
-                  const paneCount = getPaneCount(tabPath);
-                  const hasSplitState = getCurrentState(tabPath) !== null;
-                  const activePaneDoc = hasSplitState && isActive ? getActiveDocPath(tabPath) : null;
-                  const displayDocPath = activePaneDoc || tabPath;
-                  const displayFileName = getFileName(displayDocPath);
-                  const doc = documents[displayDocPath];
-                  const isModified = doc?.isModified || false;
-
-                  return (
-                    <div
-                      key={tabPath}
-                      ref={(el) => {
-                        if (el) tabRefs.current.set(tabPath, el);
-                        else tabRefs.current.delete(tabPath);
-                      }}
-                      className={`
-                        group relative flex items-center h-[36px] px-3 flex-shrink-0
-                        ${dragState.isDragging && dragState.dragPath === tabPath ? 'cursor-grabbing' : 'cursor-pointer'}
-                        transition-all duration-[var(--transition-fast)]
-                        ${isActive
-                          ? 'bg-[var(--editor-bg)] text-[var(--editor-text)] font-medium border-b-2 border-b-[var(--editor-bg)] shadow-[inset_0_2px_0_0_var(--tab-active-indicator)]'
-                          : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-hover-bg)] hover:text-[var(--editor-text)]'
-                        }
-                        ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
-                      `}
-                      style={{ width: tabWidth, minWidth: tabWidth, borderRadius: '12px 12px 0 0' }}
-                      onClick={(e) => {
-                        if (dragInfoRef.current.hasMoved) return;
-                        e.stopPropagation();
-                        setActiveDocument(tabPath);
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        if (e.button === 1) {
-                          e.preventDefault();
-                          handleCloseTab(tabPath);
-                          return;
-                        }
-                        if (e.button === 0) {
-                          startTabDrag(e, tabPath, index);
-                        }
-                      }}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
-                      }}
+        {tabBarStyle !== 'vertical' && (
+          <div className="flex-1 flex items-end h-full min-w-0" data-tauri-drag-region>
+            {tabs.length === 0 ? (
+              <div className="flex items-center h-full px-4" data-tauri-drag-region>
+                <span className="text-sm text-[var(--editor-text-muted)] flex items-center gap-2">
+                  <FileText size={14} />
+                  MD Editor
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-end h-full flex-1 min-w-0" data-tauri-drag-region>
+                {/* 左箭头 - 独立区域，不重叠 */}
+                {showScrollButtons && (
+                  <div className="flex-shrink-0 flex items-center pl-1.5 pr-0.5 h-full" data-tauri-drag-region>
+                    <button
+                      className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+                        canScrollLeft
+                          ? 'text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)]'
+                          : 'text-[var(--editor-text-muted)] opacity-30 cursor-default'
+                      }`}
+                      disabled={!canScrollLeft}
+                      onClick={(e) => { e.stopPropagation(); scrollTabs('left'); }}
+                      onMouseDown={(e) => { e.stopPropagation(); }}
+                      title="向左滚动标签"
                     >
-                      {dragState.isDragging && dragState.dragOverIndex === index && dragState.dragPath !== tabPath && (
-                        <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
-                      )}
-                      <FileText
-                        size={14}
-                        className={`mr-1.5 flex-shrink-0 ${isActive ? 'text-[var(--accent-500)]' : 'text-[var(--editor-text-muted)]'}`}
-                      />
+                      <ChevronLeft size={14} />
+                    </button>
+                  </div>
+                )}
 
-                      {isModified && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] mr-1.5 flex-shrink-0" />
-                      )}
+                <div ref={tabsContainerRef} className="flex items-end h-full overflow-hidden scroll-smooth flex-1" data-tauri-drag-region>
+                  {tabs.map((tabPath, index) => {
+                    const isActive = tabPath === activeTabPath;
+                    const paneCount = getPaneCount(tabPath);
+                    const hasSplitState = getCurrentState(tabPath) !== null;
+                    const activePaneDoc = hasSplitState && isActive ? getActiveDocPath(tabPath) : null;
+                    const displayDocPath = activePaneDoc || tabPath;
+                    const displayFileName = getFileName(displayDocPath);
+                    const doc = documents[displayDocPath];
+                    const isModified = doc?.isModified || false;
 
-                      <span className="text-sm truncate flex-1" title={displayDocPath.replace(/^file:\/\//, '')}>
-                        {displayFileName}
-                      </span>
-
-                      <button
+                    return (
+                      <div
+                        key={tabPath}
+                        ref={(el) => {
+                          if (el) tabRefs.current.set(tabPath, el);
+                          else tabRefs.current.delete(tabPath);
+                        }}
                         className={`
-                          ml-1 p-0.5 rounded flex-shrink-0
-                          opacity-0 group-hover:opacity-100
-                          hover:bg-[var(--sidebar-hover)]
-                          text-[var(--editor-text-muted)] hover:text-[var(--editor-text)]
-                          transition-all
+                          group relative flex items-center h-[36px] px-3 flex-shrink-0
+                          ${dragState.isDragging && dragState.dragPath === tabPath ? 'cursor-grabbing' : 'cursor-pointer'}
+                          transition-all duration-[var(--transition-fast)]
+                          ${isActive
+                            ? 'bg-[var(--editor-bg)] text-[var(--editor-text)] font-medium border-b-2 border-b-[var(--editor-bg)] shadow-[inset_0_2px_0_0_var(--tab-active-indicator)]'
+                            : 'bg-[var(--tab-inactive-bg)] text-[var(--editor-text-secondary)] hover:bg-[var(--tab-hover-bg)] hover:text-[var(--editor-text)]'
+                          }
+                          ${dragState.isDragging && dragState.dragPath === tabPath ? 'opacity-50' : ''}
                         `}
+                        style={{ width: tabWidth, minWidth: tabWidth, borderRadius: '12px 12px 0 0' }}
                         onClick={(e) => {
+                          if (dragInfoRef.current.hasMoved) return;
                           e.stopPropagation();
-                          handleCloseTab(tabPath);
+                          setActiveDocument(tabPath);
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          if (e.button === 1) {
+                            e.preventDefault();
+                            handleCloseTab(tabPath);
+                            return;
+                          }
+                          if (e.button === 0) {
+                            startTabDrag(e, tabPath, index);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setContextMenu({ path: tabPath, x: e.clientX, y: e.clientY });
                         }}
                       >
-                        <X size={12} />
-                      </button>
-                      {dragState.isDragging && dragState.dragOverIndex === index + 1 && dragState.dragPath !== tabPath && (
-                        <div className="absolute right-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
-                      )}
-                    </div>
-                  );
-                })}
-                <button
-                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
-                  onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
-                  onMouseDown={(e) => { e.stopPropagation(); }}
-                  title="新建文档"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
+                        {dragState.isDragging && dragState.dragOverIndex === index && dragState.dragPath !== tabPath && (
+                          <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
+                        )}
+                        <FileText
+                          size={14}
+                          className={`mr-1.5 flex-shrink-0 ${isActive ? 'text-[var(--accent-500)]' : 'text-[var(--editor-text-muted)]'}`}
+                        />
 
-              {/* 右箭头 - 独立区域，不重叠 */}
-              {showScrollButtons && (
-                <div className="flex-shrink-0 flex items-center pl-0.5 pr-1.5 h-full" data-tauri-drag-region>
+                        {isModified && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-500)] mr-1.5 flex-shrink-0" />
+                        )}
+
+                        <span className="text-sm truncate flex-1" title={displayDocPath.replace(/^file:\/\//, '')}>
+                          {displayFileName}
+                        </span>
+
+                        <button
+                          className={`
+                            ml-1 p-0.5 rounded flex-shrink-0
+                            opacity-0 group-hover:opacity-100
+                            hover:bg-[var(--sidebar-hover)]
+                            text-[var(--editor-text-muted)] hover:text-[var(--editor-text)]
+                            transition-all
+                          `}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCloseTab(tabPath);
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                        {dragState.isDragging && dragState.dragOverIndex === index + 1 && dragState.dragPath !== tabPath && (
+                          <div className="absolute right-0 top-1 bottom-1 w-0.5 bg-[var(--accent-500)] rounded-full z-10" />
+                        )}
+                      </div>
+                    );
+                  })}
                   <button
-                    className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
-                      canScrollRight
-                        ? 'text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)]'
-                        : 'text-[var(--editor-text-muted)] opacity-30 cursor-default'
-                    }`}
-                    disabled={!canScrollRight}
-                    onClick={(e) => { e.stopPropagation(); scrollTabs('right'); }}
+                    className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-active-bg)] transition-colors mb-0.5"
+                    onClick={(e) => { e.stopPropagation(); handleNewFile(); }}
                     onMouseDown={(e) => { e.stopPropagation(); }}
-                    title="向右滚动标签"
+                    title="新建文档"
                   >
-                    <ChevronRight size={14} />
+                    <Plus size={16} />
                   </button>
                 </div>
-              )}
 
-              {/* + 按钮已在滚动容器内部 */}
-            </div>
-          )}
-        </div>
+                {/* 右箭头 - 独立区域，不重叠 */}
+                {showScrollButtons && (
+                  <div className="flex-shrink-0 flex items-center pl-0.5 pr-1.5 h-full" data-tauri-drag-region>
+                    <button
+                      className={`w-6 h-6 flex items-center justify-center rounded-md transition-colors ${
+                        canScrollRight
+                          ? 'text-[var(--editor-text-secondary)] hover:text-[var(--editor-text)] hover:bg-[var(--tab-hover-bg)]'
+                          : 'text-[var(--editor-text-muted)] opacity-30 cursor-default'
+
+                      }`}
+                      disabled={!canScrollRight}
+                      onClick={(e) => { e.stopPropagation(); scrollTabs('right'); }}
+                      onMouseDown={(e) => { e.stopPropagation(); }}
+                      title="向右滚动标签"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {/* + 按钮已在滚动容器内部 */}
+              </div>
+            )}
+          </div>
+        )}
 
         <div 
           className="w-20 h-full flex-shrink-0"
           data-tauri-drag-region
         />
-
         <div className="flex items-center h-full flex-shrink-0">
 
           {activeDocPath && (
@@ -558,6 +573,12 @@ export const TitleBar: React.FC = () => {
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />
             </button>
           )}
+
+          <TitleBarButton
+            icon={PanelRight}
+            title={tabBarStyle === 'horizontal' ? '切换到垂直标签栏' : '切换到水平标签栏'}
+            onClick={() => setTabBarStyle(tabBarStyle === 'horizontal' ? 'vertical' : 'horizontal')}
+          />
 
           <TitleBarButton
             icon={Settings}

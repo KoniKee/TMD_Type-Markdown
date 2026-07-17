@@ -5,6 +5,7 @@ import './vditor-styles.css';
 import '../../styles/embed.css';
 import { useEditorStore, useFileStore, useSettingsStore, EditorMode, PreviewMode, THEMES } from '../../stores';
 import type { ThemeId } from '../../stores';
+import { useLayoutStore } from '../../stores/layoutStore';
 import { useSaveToFile, useSaveAsFile } from '../../hooks/useAutoSave';
 import { useShortcut } from '../../hooks/useShortcutManager';
 import { isTauriCached, waitForTauri, platformPathSeparator } from '../../utils/platform';
@@ -291,7 +292,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const updateDocument = useEditorStore((state) => state.updateDocument);
   const openDocument = useEditorStore((state) => state.openDocument);
-  const setOutlineVisible = useEditorStore((state) => state.setOutlineVisible);
+  const setRightSidebarVisible = useLayoutStore((state) => state.setRightSidebarVisible);
   const setEditorMode = useEditorStore((state) => state.setEditorMode);
   const setScrollPosition = useEditorStore((state) => state.setScrollPosition);
   const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
@@ -337,7 +338,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   
   const pathRef = useRef(path);
   const openDocumentRef = useRef(openDocument);
-  const setOutlineVisibleRef = useRef(setOutlineVisible);
   const setEditorModeRef = useRef(setEditorMode);
   const setScrollPositionRef = useRef(setScrollPosition);
   const setPreviewModeRef = useRef(setPreviewMode);
@@ -349,10 +349,6 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
   useEffect(() => {
     openDocumentRef.current = openDocument;
   }, [openDocument]);
-  
-  useEffect(() => {
-    setOutlineVisibleRef.current = setOutlineVisible;
-  }, [setOutlineVisible]);
   
   useEffect(() => {
     setEditorModeRef.current = setEditorMode;
@@ -576,7 +572,7 @@ export const VditorEditor = React.memo<VditorEditorProps>(({ path, isInPane }) =
 
     // 获取保存的状态 - 从当前store获取最新状态
     const currentDocState = useEditorStore.getState().documents[path];
-    const savedOutlineVisible = isInPane ? false : (currentDocState?.outlineVisible ?? true);
+    const savedOutlineVisible = isInPane ? false : useLayoutStore.getState().rightSidebarVisible;
     const savedEditorMode = currentDocState?.editorMode ?? 'ir';
     const savedScrollPosition = currentDocState?.scrollPosition ?? 0;
     const savedPreviewMode = currentDocState?.previewMode ?? 'editor';
@@ -1442,14 +1438,13 @@ const relativePath = `${imageDirectory}/${fileName}`;
         if (outlineElement) {
           const outlineObserver = new MutationObserver(() => {
             const isVisible = outlineElement.style.display !== 'none' && outlineElement.offsetParent !== null;
-            setOutlineVisibleRef.current(pathRef.current, isVisible);
+            useLayoutStore.getState().setRightSidebarVisible(isVisible);
           });
           outlineObserver.observe(outlineElement, { attributes: true, attributeFilter: ['style', 'class'] });
           (vditorRef.current as any)._outlineObserver = outlineObserver;
           
           // 大纲增强功能：tooltip + 可调整宽度
           const setupOutlineEnhancements = () => {
-            const OUTLINE_WIDTH_KEY = 'md-editor-outline-width';
             const MIN_WIDTH = 180;
             
             const getContentContainer = () => {
@@ -1469,13 +1464,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
               outlineElement.style.flexBasis = `${finalWidth}px`;
             };
             
-            const savedWidth = localStorage.getItem(OUTLINE_WIDTH_KEY);
-            if (savedWidth) {
-              const width = parseInt(savedWidth, 10);
-              if (!isNaN(width)) {
-                applyWidth(width);
-              }
-            }
+            applyWidth(useLayoutStore.getState().rightSidebarWidth);
             
             const handleOutlineMouseOver = (e: MouseEvent) => {
               const target = (e.target as HTMLElement).closest('li > span > span') as HTMLElement | null;
@@ -1531,7 +1520,7 @@ const relativePath = `${imageDirectory}/${fileName}`;
               document.body.style.userSelect = '';
               outlineElement.classList.remove('outline-resizing');
               const currentWidth = outlineElement.offsetWidth;
-              localStorage.setItem(OUTLINE_WIDTH_KEY, currentWidth.toString());
+              useLayoutStore.getState().setRightSidebarWidth(currentWidth);
             };
             
             document.addEventListener('mousedown', handleMouseDown);
@@ -1576,17 +1565,12 @@ const relativePath = `${imageDirectory}/${fileName}`;
               const restoreWidth = () => {
                 const outline = containerRef.current?.querySelector('.vditor-outline') as HTMLElement;
                 if (!outline) return;
-                const savedWidth = localStorage.getItem('md-editor-outline-width');
-                if (savedWidth) {
-                  const w = parseInt(savedWidth, 10);
-                  if (!isNaN(w)) {
-                    const content = outline.closest('.vditor-content') as HTMLElement;
-                    const maxW = content ? Math.floor(content.offsetWidth * 0.5) : 400;
-                    const fw = Math.max(180, Math.min(maxW, w));
-                    outline.style.width = `${fw}px`;
-                    outline.style.flexBasis = `${fw}px`;
-                  }
-                }
+                const w = useLayoutStore.getState().rightSidebarWidth;
+                const content = outline.closest('.vditor-content') as HTMLElement;
+                const maxW = content ? Math.floor(content.offsetWidth * 0.5) : 400;
+                const fw = Math.max(180, Math.min(maxW, w));
+                outline.style.width = `${fw}px`;
+                outline.style.flexBasis = `${fw}px`;
               };
 
               setTimeout(() => {

@@ -6,6 +6,7 @@ export type Theme = ThemeId | 'system';
 export type ThemeGroup = 'light' | 'dark';
 export type EditorWidth = 'full' | 'wide' | 'normal';
 export type LineHeight = 1 | 1.15 | 1.5 | 2 | 2.5 | 3;
+export type TabBarStyle = 'horizontal' | 'vertical';
 
 export const THEMES: Record<ThemeId, { name: string; group: ThemeGroup }> = {
   'chen-guang': { name: '晨光', group: 'light' },
@@ -49,6 +50,7 @@ interface SettingsState {
   editorWidth: EditorWidth;
   lineHeight: LineHeight;
   headingFolding: boolean;
+  tabBarStyle: TabBarStyle;
 
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
@@ -62,6 +64,7 @@ interface SettingsState {
   setEditorWidth: (width: EditorWidth) => void;
   setLineHeight: (height: LineHeight) => void;
   setHeadingFolding: (folding: boolean) => void;
+  setTabBarStyle: (style: TabBarStyle) => void;
   getEffectiveTheme: () => 'light' | 'dark';
   getEffectiveThemeId: () => ThemeId;
   getThemeGroup: () => ThemeGroup;
@@ -81,6 +84,7 @@ export const useSettingsStore = create<SettingsState>()(
       editorWidth: 'full' as EditorWidth,
       lineHeight: 1.5 as LineHeight,
       headingFolding: true,
+      tabBarStyle: 'horizontal' as TabBarStyle,
 
       setTheme: (theme: Theme) => set({ theme }),
       toggleTheme: () => {
@@ -108,6 +112,7 @@ export const useSettingsStore = create<SettingsState>()(
       setEditorWidth: (width: EditorWidth) => set({ editorWidth: width }),
       setLineHeight: (height: LineHeight) => set({ lineHeight: height }),
       setHeadingFolding: (folding: boolean) => set({ headingFolding: folding }),
+      setTabBarStyle: (style: TabBarStyle) => set({ tabBarStyle: style }),
 
       getEffectiveTheme: () => {
         const { theme } = get();
@@ -135,7 +140,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'md-editor-settings',
-      version: 5,
+      version: 6,
       migrate: (persistedState: any) => {
         if (persistedState && persistedState.theme === 'shuang-ye') {
           persistedState.theme = 'na-tie';
@@ -156,6 +161,9 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (persistedState && persistedState.headingFolding === undefined) {
           persistedState.headingFolding = true;
+        }
+        if (persistedState && !persistedState.tabBarStyle) {
+          persistedState.tabBarStyle = 'horizontal';
         }
         return persistedState;
       },

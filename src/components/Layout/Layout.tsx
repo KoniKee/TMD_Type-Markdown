@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Sidebar } from '../Sidebar/Sidebar';
 import { TitleBar } from '../TitleBar/TitleBar';
+import { VerticalTabBar } from '../Tabs/VerticalTabBar';
 import { EditorContainer } from '../Editor/EditorContainer';
 import { SettingsPanel } from '../Settings/SettingsPanel';
-import { useEditorStore } from '../../stores';
+import { useLayoutStore } from '../../stores/layoutStore';
+import { useEditorStore, useSettingsStore } from '../../stores';
 import { useAutoSave, useTheme, useFileChangeDetection, useSplitShortcuts, useTabShortcuts } from '../../hooks';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Layout: React.FC = () => {
-  const [sidebarWidth, setSidebarWidth] = useState(260);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    // 初始化时检查 localStorage 标记，用于新窗口隐藏侧边栏
-    return localStorage.getItem('md-editor-sidebar-hidden') === 'true';
-  });
+  const leftSidebarVisible = useLayoutStore((s) => s.leftSidebarVisible);
+  const leftSidebarWidth = useLayoutStore((s) => s.leftSidebarWidth);
+  const toggleLeftSidebar = useLayoutStore((s) => s.toggleLeftSidebar);
+  const setLeftSidebarVisible = useLayoutStore((s) => s.setLeftSidebarVisible);
+  const setLeftSidebarWidth = useLayoutStore((s) => s.setLeftSidebarWidth);
+  const tabBarStyle = useSettingsStore((s) => s.tabBarStyle);
+  const verticalTabWidth = useLayoutStore((s) => s.verticalTabWidth);
 
   useAutoSave();
   useTheme();
@@ -23,32 +27,22 @@ export const Layout: React.FC = () => {
   // 监听自定义事件，用于新窗口初始化时隐藏侧边栏
   useEffect(() => {
     const handleSidebarHide = () => {
-      setIsSidebarCollapsed(true);
-      // 清除 localStorage 标记，避免影响后续正常启动
-      localStorage.removeItem('md-editor-sidebar-hidden');
+      setLeftSidebarVisible(false);
     };
 
     window.addEventListener('sidebar-hide', handleSidebarHide);
     return () => {
       window.removeEventListener('sidebar-hide', handleSidebarHide);
     };
-  }, []);
-
-  // 初始化时如果侧边栏因 localStorage 被折叠，清除标记
-  useEffect(() => {
-    if (isSidebarCollapsed && localStorage.getItem('md-editor-sidebar-hidden') === 'true') {
-      localStorage.removeItem('md-editor-sidebar-hidden');
-    }
-  }, []);
+  }, [setLeftSidebarVisible]);
 
   const handleSidebarResize = (e: React.MouseEvent) => {
     const startX = e.clientX;
-    const startWidth = sidebarWidth;
+    const startWidth = leftSidebarWidth;
 
     const handleMouseMove = (e: MouseEvent) => {
       const diff = e.clientX - startX;
-      const newWidth = Math.max(180, Math.min(400, startWidth + diff));
-      setSidebarWidth(newWidth);
+      setLeftSidebarWidth(startWidth + diff);
     };
 
     const handleMouseUp = () => {
@@ -65,12 +59,12 @@ export const Layout: React.FC = () => {
       {/* Sidebar */}
       <div
         className="flex-shrink-0 relative transition-all duration-[var(--transition-normal)]"
-        style={{ width: isSidebarCollapsed ? 0 : sidebarWidth }}
+        style={{ width: leftSidebarVisible ? leftSidebarWidth : 0 }}
       >
-        {!isSidebarCollapsed && <Sidebar />}
+        {leftSidebarVisible && <Sidebar />}
 
         {/* Resize handle */}
-        {!isSidebarCollapsed && (
+        {leftSidebarVisible && (
           <div
             className="absolute top-0 right-0 w-1 h-full cursor-col-resize group"
             onMouseDown={handleSidebarResize}
@@ -79,6 +73,13 @@ export const Layout: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Vertical Tab Bar (垂直模式) */}
+      {tabBarStyle === 'vertical' && (
+        <div className="flex-shrink-0 relative" style={{ width: verticalTabWidth }}>
+          <VerticalTabBar />
+        </div>
+      )}
 
       {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -106,10 +107,10 @@ export const Layout: React.FC = () => {
           transition-all duration-[var(--transition-fast)]
           group
         `}
-        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        style={{ left: isSidebarCollapsed ? 0 : sidebarWidth - 1 }}
+        onClick={toggleLeftSidebar}
+        style={{ left: leftSidebarVisible ? leftSidebarWidth - 1 : 0 }}
       >
-        {isSidebarCollapsed ? (
+        {!leftSidebarVisible ? (
           <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
         ) : (
           <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
